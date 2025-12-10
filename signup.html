@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - LeasePilot AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen flex items-center justify-center p-4">
+    
+    <div class="w-full max-w-md">
+        <!-- Logo and Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-white mb-4 shadow-lg">
+                <i data-lucide="building-2" class="h-8 w-8"></i>
+            </div>
+            <h1 class="text-3xl font-semibold tracking-tight text-slate-900 mb-2">LeasePilot AI</h1>
+            <p class="text-sm text-slate-500">Start managing your properties today</p>
+        </div>
+
+        <!-- Signup Card -->
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-8">
+            <div class="mb-6">
+                <h2 class="text-2xl font-semibold text-slate-900 mb-2">Create your account</h2>
+                <p class="text-sm text-slate-500">Get started with a free 14-day trial</p>
+            </div>
+
+            <form id="signupForm" class="space-y-5">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-slate-700 mb-2">Full name</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"></i>
+                        <input type="text" id="name" name="name" required 
+                               class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none transition-all placeholder:text-slate-400"
+                               placeholder="John Doe">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="email" class="block text-sm font-medium text-slate-700 mb-2">Email address</label>
+                    <div class="relative">
+                        <i data-lucide="mail" class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"></i>
+                        <input type="email" id="email" name="email" required 
+                               class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none transition-all placeholder:text-slate-400"
+                               placeholder="you@example.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-slate-700 mb-2">Password</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"></i>
+                        <input type="password" id="password" name="password" required 
+                               class="w-full pl-10 pr-12 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none transition-all placeholder:text-slate-400"
+                               placeholder="••••••••">
+                        <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <i data-lucide="eye" id="eyeIcon" class="h-5 w-5"></i>
+                        </button>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-400">Must be at least 8 characters</p>
+                </div>
+
+                <div>
+                    <label for="company" class="block text-sm font-medium text-slate-700 mb-2">Company (optional)</label>
+                    <div class="relative">
+                        <i data-lucide="building" class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"></i>
+                        <input type="text" id="company" name="company" 
+                               class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none transition-all placeholder:text-slate-400"
+                               placeholder="Your Company">
+                    </div>
+                </div>
+
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" required class="h-4 w-4 mt-0.5 rounded border-slate-300 text-slate-900 focus:ring-slate-200">
+                    <span class="text-sm text-slate-600">I agree to the <a href="#" class="text-slate-900 font-medium hover:underline">Terms of Service</a> and <a href="#" class="text-slate-900 font-medium hover:underline">Privacy Policy</a></span>
+                </label>
+
+                <button type="submit" 
+                        class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    <span>Create account</span>
+                    <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                </button>
+            </form>
+
+            <div class="mt-6 pt-6 border-t border-slate-200">
+                <p class="text-center text-sm text-slate-500">
+                    Already have an account? 
+                    <a href="login.html" class="font-medium text-slate-900 hover:text-slate-700">Sign in</a>
+                </p>
+            </div>
+        </div>
+
+        <p class="text-center text-xs text-slate-400 mt-6">© 2024 LeasePilot AI Inc. All rights reserved.</p>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const company = document.getElementById('company').value;
+
+            if (password.length < 8) {
+                alert('Password must be at least 8 characters');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, name, company })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Registration failed');
+                }
+
+                const data = await response.json();
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                window.location.href = 'index.html';
+            } catch (error) {
+                alert(error.message || 'Registration failed. Please try again.');
+                console.error('Signup error:', error);
+            }
+        });
+
+        // Check if already logged in
+        const token = localStorage.getItem('token');
+        if (token) {
+            fetch('http://localhost:3000/api/auth/verify', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.user) {
+                    window.location.href = 'index.html';
+                }
+            })
+            .catch(() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+            });
+        }
+    </script>
+</body>
+</html>
+

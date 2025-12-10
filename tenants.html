@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tenants - LeasePilot AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="app.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Inter', sans-serif; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.checkbox-checked { background-color: #0f172a; border-color: #0f172a; background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e"); }
+</style></head>
+<body class="bg-[#F3F5F7] text-slate-900 antialiased selection:bg-slate-200">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="hidden md:flex w-72 flex-col justify-between border-r border-slate-200 bg-white p-6">
+            <div>
+                <a href="index.html" class="flex items-center gap-3 mb-10">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white">
+                        <i data-lucide="building-2" class="h-5 w-5"></i>
+                    </div>
+                    <span class="text-xl font-medium tracking-tight">LeasePilot AI</span>
+                </a>
+
+                <nav class="space-y-1">
+                    <a href="index.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="layout-grid" class="h-5 w-5"></i>
+                        Dashboard
+                    </a>
+                    <a href="properties.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="home" class="h-5 w-5"></i>
+                        Properties
+                    </a>
+                    <a href="tenants.html" class="flex items-center gap-3 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition-colors">
+                        <i data-lucide="users" class="h-5 w-5 text-slate-900"></i>
+                        Tenants
+                    </a>
+                    <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="wallet" class="h-5 w-5"></i>
+                        Financials
+                    </a>
+                    <a href="settings.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="settings" class="h-5 w-5"></i>
+                        Settings
+                    </a>
+                </nav>
+            </div>
+
+            <div>
+                <div class="mb-6 rounded-3xl bg-[#EBC7B6] p-5 relative overflow-hidden">
+                    <div class="relative z-10">
+                        <p class="mb-2 text-lg font-medium tracking-tight text-slate-900">Upgrade to Pro</p>
+                        <p class="mb-4 text-sm text-slate-700">Unlock advanced AI forecasting for your portfolio.</p>
+                        <button class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
+                            View Plans
+                        </button>
+                    </div>
+                    <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/20"></div>
+                </div>
+
+                <div class="flex items-center gap-3 border-t border-slate-100 pt-5">
+                    <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
+                        <div class="flex flex-col flex-1">
+                            <span class="text-sm font-medium" data-user-name>Sarah Jenkins</span>
+                            <span class="text-xs text-slate-500">Portfolio Manager</span>
+                        </div>
+                    </a>
+                    <button onclick="LeasePilot.logout()" class="text-slate-400 hover:text-slate-600" title="Logout">
+                        <i data-lucide="log-out" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto hide-scrollbar">
+            <!-- Header Mobile -->
+            <div class="flex md:hidden items-center justify-between bg-white p-4 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white">
+                        <i data-lucide="building-2" class="h-4 w-4"></i>
+                    </div>
+                    <span class="text-lg font-medium tracking-tight">LeasePilot AI</span>
+                </div>
+                <button class="text-slate-500"><i data-lucide="menu" class="h-6 w-6"></i></button>
+            </div>
+
+            <div class="mx-auto max-w-7xl px-6 py-8 md:px-10 md:py-12">
+                
+                <!-- Page Header -->
+                <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <h1 class="text-3xl font-medium tracking-tight text-slate-900">Tenants</h1>
+                        <p class="mt-2 text-sm text-slate-500">Manage leases, applications, and tenant relationships.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                            <i data-lucide="download" class="h-4 w-4"></i>
+                            Export
+                        </button>
+                        <button onclick="LeasePilot.Modal.open('addTenantModal')" class="flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors shadow-sm hover:shadow-md">
+                            <i data-lucide="plus" class="h-4 w-4"></i>
+                            Add Tenant
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                     <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                         <div class="flex items-start justify-between">
+                            <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Tenants</span>
+                            <i data-lucide="users" class="h-4 w-4 text-slate-400"></i>
+                         </div>
+                         <div class="mt-4">
+                            <span class="text-2xl font-medium text-slate-900 tracking-tight">124</span>
+                            <span class="text-xs text-green-600 ml-2 font-medium">+12%</span>
+                         </div>
+                     </div>
+                     <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                         <div class="flex items-start justify-between">
+                            <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">Occupancy</span>
+                            <i data-lucide="percent" class="h-4 w-4 text-slate-400"></i>
+                         </div>
+                         <div class="mt-4">
+                            <span class="text-2xl font-medium text-slate-900 tracking-tight">94%</span>
+                            <span class="text-xs text-slate-400 ml-2">Stable</span>
+                         </div>
+                     </div>
+                     <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                         <div class="flex items-start justify-between">
+                            <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">Pending Apps</span>
+                            <i data-lucide="file-text" class="h-4 w-4 text-slate-400"></i>
+                         </div>
+                         <div class="mt-4">
+                            <span class="text-2xl font-medium text-slate-900 tracking-tight">8</span>
+                            <span class="text-xs text-blue-600 ml-2 font-medium">Reviewing</span>
+                         </div>
+                     </div>
+                     <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                         <div class="flex items-start justify-between relative z-10">
+                            <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">AI Risk Alert</span>
+                            <i data-lucide="alert-triangle" class="h-4 w-4 text-amber-500"></i>
+                         </div>
+                         <div class="mt-4 relative z-10">
+                            <span class="text-2xl font-medium text-slate-900 tracking-tight">2</span>
+                            <span class="text-xs text-slate-500 ml-2">At risk of churn</span>
+                         </div>
+                         <div class="absolute -right-4 -bottom-4 h-16 w-16 rounded-full bg-amber-50"></div>
+                     </div>
+                </div>
+
+                <!-- Filters & Controls -->
+                <div class="mb-4 flex flex-col gap-4 rounded-3xl bg-white p-2 shadow-sm border border-slate-100 md:flex-row md:items-center justify-between">
+                    <div class="flex items-center gap-1 overflow-x-auto p-1 hide-scrollbar">
+                        <button class="whitespace-nowrap rounded-full bg-slate-100 px-4 py-2 text-xs font-medium text-slate-900 transition-colors">
+                            All Tenants
+                        </button>
+                        <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                            Active Leases
+                        </button>
+                        <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                            Applicants <span class="ml-1 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-blue-100 px-1 text-[10px] text-blue-700">8</span>
+                        </button>
+                        <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                            Past
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 px-3 py-1 md:py-0">
+                        <div class="h-4 w-px bg-slate-200 hidden md:block"></div>
+                        <div class="relative group w-full md:w-auto">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-slate-900 transition-colors"></i>
+                            <input type="text" placeholder="Search tenants..." class="h-10 w-full md:w-64 rounded-full border-none bg-slate-50 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-slate-100 transition-all placeholder:text-slate-400">
+                        </div>
+                        <div class="flex items-center rounded-full bg-slate-50 p-1 border border-slate-100">
+                             <button class="rounded-full bg-white p-1.5 shadow-sm text-slate-900">
+                                <i data-lucide="list" class="h-4 w-4"></i>
+                            </button>
+                            <button class="rounded-full p-1.5 text-slate-400 hover:text-slate-600">
+                                <i data-lucide="grid" class="h-4 w-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tenants Table -->
+                <div class="rounded-[2rem] border border-slate-100 bg-white overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-100 bg-slate-50/50">
+                                    <th class="w-12 px-6 py-4">
+                                        <label class="flex h-5 w-5 cursor-pointer items-center justify-center rounded bg-white border border-slate-300 shadow-sm">
+                                            <input type="checkbox" class="peer h-full w-full appearance-none rounded checked:bg-slate-900 checked:border-slate-900 transition-all cursor-pointer">
+                                            <i data-lucide="minus" class="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100"></i>
+                                        </label>
+                                    </th>
+                                    <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Tenant</th>
+                                    <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Property</th>
+                                    <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Lease End</th>
+                                    <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Payment</th>
+                                    <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50" id="tenantsTableBody">
+                                <!-- Tenants will be loaded here dynamically -->
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="mt-8 flex items-center justify-between">
+                     <div class="text-xs text-slate-500">
+                        Showing <span class="font-medium text-slate-900">1-6</span> of <span class="font-medium text-slate-900">124</span> tenants
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors" disabled="">
+                            <i data-lucide="chevron-left" class="h-3 w-3"></i> Previous
+                        </button>
+                        <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                            Next <i data-lucide="chevron-right" class="h-3 w-3"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <footer class="mt-12 pt-8 text-center md:text-left border-t border-slate-200">
+                    <p class="text-xs text-slate-400">© 2024 LeasePilot AI Inc.</p>
+                </footer>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Tenant Modal -->
+    <div id="addTenantModal" class="modal hidden fixed inset-0 z-50 items-center justify-center modal-backdrop bg-black/50 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+                <h2 class="text-xl font-semibold text-slate-900">Add New Tenant</h2>
+                <button onclick="LeasePilot.Modal.close('addTenantModal')" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+            <form id="tenantForm" class="p-6 space-y-5">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">First Name</label>
+                        <input type="text" name="firstName" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Last Name</label>
+                        <input type="text" name="lastName" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                    <input type="email" name="email" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Phone</label>
+                    <input type="tel" name="phone" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Property</label>
+                    <select name="propertyId" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                        <option value="">Select Property</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Unit</label>
+                    <input type="text" name="unit" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="LeasePilot.Modal.close('addTenantModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-medium">Add Tenant</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Load properties for dropdown
+        async function loadProperties() {
+            try {
+                const properties = await LeasePilot.DataManager.getProperties();
+                const propertySelect = document.querySelector('#tenantForm select[name="propertyId"]');
+                if (propertySelect) {
+                    propertySelect.innerHTML = '<option value="">Select Property</option>';
+                    properties.forEach(prop => {
+                        const option = document.createElement('option');
+                        option.value = prop.id;
+                        option.textContent = prop.name || prop.address;
+                        propertySelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading properties:', error);
+            }
+        }
+
+        // Load tenants dynamically
+        async function loadTenants() {
+            try {
+                console.log('🔍 Starting to load tenants...');
+                const tenants = await LeasePilot.DataManager.getTenants();
+                console.log('📦 Tenants received:', tenants);
+                const tbody = document.getElementById('tenantsTableBody');
+                tbody.innerHTML = '';
+
+                if (tenants && tenants.length > 0) {
+                    console.log(`✅ Loading ${tenants.length} tenants`);
+                    tenants.forEach(tenant => {
+                        const row = document.createElement('tr');
+                        row.className = 'group hover:bg-slate-50 transition-colors cursor-pointer';
+                        row.onclick = () => window.location.href = `tenant-detail.html?id=${tenant.id}`;
+                        
+                        const statusColors = {
+                            'active': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-100', label: 'Active' },
+                            'pending': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100', label: 'Pending' },
+                            'inactive': { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200', label: 'Inactive' }
+                        };
+                        const status = statusColors[tenant.status] || statusColors.inactive;
+                        
+                        const initials = `${tenant.first_name?.[0] || ''}${tenant.last_name?.[0] || ''}`.toUpperCase();
+                        const avatar = tenant.image_url ? 
+                            `<img src="${tenant.image_url}" class="h-10 w-10 rounded-full object-cover ring-2 ring-white" alt="">` :
+                            `<div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white">${initials}</div>`;
+                        
+                        const leaseEndDate = tenant.lease_end ? 
+                            new Date(tenant.lease_end).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 
+                            '-';
+                        
+                        row.innerHTML = `
+                            <td class="px-6 py-4" onclick="event.stopPropagation();">
+                                <label class="flex h-5 w-5 cursor-pointer items-center justify-center rounded bg-white border border-slate-300 shadow-sm">
+                                    <input type="checkbox" class="peer h-full w-full appearance-none rounded checked:bg-slate-900 checked:border-slate-900 transition-all cursor-pointer" onclick="event.stopPropagation();">
+                                    <i data-lucide="check" class="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100"></i>
+                                </label>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="relative">
+                                        ${avatar}
+                                        <div class="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${tenant.status === 'active' ? 'bg-green-500' : tenant.status === 'pending' ? 'bg-amber-500' : 'bg-slate-300'}"></div>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-900">${tenant.first_name} ${tenant.last_name}</p>
+                                        <p class="text-xs text-slate-500">${tenant.email || tenant.phone || 'No contact'}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <a href="property-detail.html?id=${tenant.property_id || ''}" class="flex flex-col hover:text-slate-700 transition-colors" onclick="event.stopPropagation();">
+                                    <span class="text-sm font-medium text-slate-900">${tenant.property_name || 'No Property'}</span>
+                                    <span class="text-xs text-slate-500">${tenant.unit ? `Unit ${tenant.unit}` : 'No unit'}</span>
+                                </a>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-1.5 rounded-full ${status.bg} px-2.5 py-1 text-xs font-medium ${status.text} border ${status.border}">
+                                    ${status.label}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="text-sm text-slate-600">${leaseEndDate}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="check-circle-2" class="h-4 w-4 text-green-500"></i>
+                                    <span class="text-sm text-slate-600">Paid</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-right" onclick="event.stopPropagation();">
+                                <a href="tenant-detail.html?id=${tenant.id}" class="rounded-full p-2 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all inline-block">
+                                    <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                                </a>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    lucide.createIcons();
+                    console.log('✅ Tenants loaded successfully');
+                } else {
+                    console.log('🤷 No tenants found');
+                    tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-slate-500">No tenants found</td></tr>';
+                }
+            } catch (error) {
+                console.error('❌ Error loading tenants:', error);
+                console.error('Error details:', error.message, error.stack);
+                if (typeof LeasePilot !== 'undefined' && LeasePilot.Toast) {
+                    LeasePilot.Toast.show('Failed to load tenants: ' + error.message, 'error');
+                } else {
+                    alert('Failed to load tenants. Check console for details.');
+                }
+            }
+        }
+
+        // Wait for LeasePilot to be available and initialize
+        (async () => {
+            try {
+                let attempts = 0;
+                while (typeof LeasePilot === 'undefined' && attempts < 100) {
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    attempts++;
+                }
+                
+                if (typeof LeasePilot === 'undefined') {
+                    throw new Error('LeasePilot library failed to load.');
+                }
+                
+                console.log('✅ LeasePilot loaded successfully');
+                await LeasePilot.checkAuth();
+                console.log('✅ Authentication verified');
+                
+                // Load data after authentication
+                await loadProperties();
+                await loadTenants();
+            } catch (error) {
+                console.error('❌ Error initializing tenants page:', error);
+                alert('Error loading page: ' + error.message);
+            }
+        })();
+        
+        lucide.createIcons({
+            attrs: {
+                'stroke-width': 1.5
+            }
+        });
+
+        // Add Tenant Button
+        document.querySelector('button:has-text("Add Tenant"), a:has-text("Add Tenant")')?.addEventListener('click', function(e) {
+            if (this.textContent.includes('Add Tenant')) {
+                e.preventDefault();
+                LeasePilot.Modal.open('addTenantModal');
+            }
+        });
+
+        // Tenant Form Handler
+        document.getElementById('tenantForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const tenant = {
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                propertyId: formData.get('propertyId'),
+                unit: formData.get('unit'),
+                status: 'active'
+            };
+            
+            try {
+                await LeasePilot.DataManager.saveTenant(tenant);
+                LeasePilot.Toast.show('Tenant added successfully!', 'success');
+                LeasePilot.Modal.close('addTenantModal');
+                e.target.reset();
+                setTimeout(() => location.reload(), 1000);
+            } catch (error) {
+                LeasePilot.Toast.show('Failed to add tenant. Please try again.', 'error');
+            }
+        });
+    </script>
+
+</body></html>
