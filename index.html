@@ -1,17 +1,17 @@
 <html lang="en"><head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LeasePilot AI - Intelligent Property Management</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
-  <style>
+    <style>
       body { font-family: 'Inter', sans-serif; }
-      .hide-scrollbar::-webkit-scrollbar { display: none; }
-      .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  </style>
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
 <body class="bg-[#F3F5F7] text-slate-900 antialiased selection:bg-slate-200">
 
@@ -20,11 +20,10 @@
       <aside class="hidden md:flex w-72 flex-col justify-between border-r border-slate-200 bg-white p-6">
           <div>
               <div class="flex items-center gap-3 mb-10">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white">
-                      <i data-lucide="building-2" class="h-5 w-5"></i>
-                  </div>
-                  <span class="text-xl font-medium tracking-tight">LeasePilot</span>
-              </div>
+                  <a href="index.html" class="flex items-center">
+                      <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-12">
+          </a>
+        </div>
 
               <nav class="space-y-1">
                   <a href="index.html" class="flex items-center gap-3 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition-colors">
@@ -48,9 +47,9 @@
                       Settings
                   </a>
               </nav>
-          </div>
+        </div>
 
-          <div>
+            <div>
               <div class="mb-6 rounded-3xl bg-[#EBC7B6] p-5 relative overflow-hidden">
                   <div class="relative z-10">
                       <p class="mb-2 text-lg font-medium tracking-tight text-slate-900">Upgrade to Pro</p>
@@ -58,10 +57,10 @@
                       <button class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
                           View Plans
                       </button>
-                  </div>
+            </div>
                   <!-- Decorative circle -->
                   <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/20"></div>
-              </div>
+          </div>
 
               <div class="flex items-center gap-3 border-t border-slate-100 pt-5">
                   <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity">
@@ -69,13 +68,13 @@
                       <div class="flex flex-col flex-1">
                           <span class="text-sm font-medium" data-user-name>Sarah Jenkins</span>
                           <span class="text-xs text-slate-500">Portfolio Manager</span>
-                      </div>
-                  </a>
+            </div>
+          </a>
                   <button onclick="LeasePilot.logout()" class="text-slate-400 hover:text-slate-600" title="Logout">
                       <i data-lucide="log-out" class="h-4 w-4"></i>
                   </button>
-              </div>
           </div>
+        </div>
       </aside>
 
       <!-- Main Content -->
@@ -83,48 +82,47 @@
           <!-- Header Mobile -->
           <div class="flex md:hidden items-center justify-between bg-white p-4 border-b border-slate-100">
               <div class="flex items-center gap-2">
-                  <div class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white">
-                      <i data-lucide="building-2" class="h-4 w-4"></i>
-                  </div>
-                  <span class="text-lg font-medium tracking-tight">LeasePilot</span>
-              </div>
+                  <a href="index.html" class="flex items-center">
+                      <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-10">
+              </a>
+            </div>
               <button class="text-slate-500"><i data-lucide="menu" class="h-6 w-6"></i></button>
-          </div>
-
+              </div>
+              
           <div class="mx-auto max-w-7xl px-6 py-8 md:px-10 md:py-12">
               
               <!-- Top Actions -->
               <div class="mb-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-                  <div>
+          <div>
                       <div class="flex flex-wrap gap-2 mb-3">
                           <span class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm border border-slate-100">
                               Safety
                               <i data-lucide="arrow-up-right" class="h-3 w-3 text-slate-400"></i>
-                          </span>
+              </span>
                           <span class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm border border-slate-100">
                               Peace of mind
                               <i data-lucide="arrow-up-right" class="h-3 w-3 text-slate-400"></i>
-                          </span>
-                      </div>
+              </span>
+            </div>
                       <h1 class="text-3xl md:text-4xl font-medium tracking-tight text-slate-900">
                           Protect and optimize <br>
                           <span class="text-slate-400">your investments.</span>
                       </h1>
-                  </div>
+          </div>
                   <div class="flex items-center gap-3">
                       <div class="relative hidden md:block group">
                           <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-slate-900 transition-colors"></i>
                           <input type="text" placeholder="Search properties..." class="h-12 w-64 rounded-full border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-slate-900 transition-all placeholder:text-slate-400">
-                      </div>
+              </div>
                       <button class="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-900 hover:bg-slate-50 transition-colors">
                           <i data-lucide="bell" class="h-5 w-5"></i>
-                      </button>
+            </button>
                       <button class="flex h-12 items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
                           <i data-lucide="plus" class="h-4 w-4"></i>
                           Add Property
-                      </button>
-                  </div>
-              </div>
+            </button>
+        </div>
+      </div>
 
               <!-- Bento Grid -->
               <div class="grid grid-cols-1 gap-6 md:grid-cols-12 mb-10">
@@ -132,58 +130,58 @@
                   <!-- Main Stats Card -->
                   <div class="col-span-1 md:col-span-8 rounded-[2rem] bg-white p-8 shadow-sm border border-slate-100 relative overflow-hidden">
                        <div class="flex items-start justify-between mb-8">
-                          <div>
+            <div>
                               <h3 class="text-sm font-medium text-slate-500 mb-1">Total Revenue (YTD)</h3>
                               <div class="flex items-baseline gap-2">
                                   <span class="text-4xl font-medium tracking-tight text-slate-900">$1,240,500</span>
                                   <span class="rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-600 flex items-center gap-0.5">
                                       <i data-lucide="trending-up" class="h-3 w-3"></i> 12.5%
                                   </span>
-                              </div>
-                          </div>
+            </div>
+            </div>
                           <button class="rounded-full border border-slate-200 px-4 py-2 text-xs font-medium hover:bg-slate-50">View Report</button>
-                      </div>
-                      
+        </div>
+
                       <!-- Abstract Chart Representation -->
                       <div class="flex items-end gap-3 h-48 w-full">
                           <div class="w-full bg-slate-50 rounded-t-xl h-[40%] hover:h-[45%] transition-all duration-500 relative group">
                               <div class="absolute bottom-0 w-full bg-slate-200 rounded-t-xl h-0 group-hover:h-full transition-all duration-500"></div>
-                          </div>
+          </div>
                           <div class="w-full bg-slate-50 rounded-t-xl h-[60%] hover:h-[65%] transition-all duration-500 relative group">
                                <div class="absolute bottom-0 w-full bg-[#EBC7B6] rounded-t-xl h-0 group-hover:h-full transition-all duration-500"></div>
-                          </div>
+            </div>
                           <div class="w-full bg-slate-50 rounded-t-xl h-[55%] hover:h-[60%] transition-all duration-500 relative group">
                               <div class="absolute bottom-0 w-full bg-slate-200 rounded-t-xl h-0 group-hover:h-full transition-all duration-500"></div>
-                          </div>
+            </div>
                           <div class="w-full bg-slate-50 rounded-t-xl h-[80%] hover:h-[85%] transition-all duration-500 relative group">
                               <div class="absolute bottom-0 w-full bg-slate-900 rounded-t-xl h-0 group-hover:h-full transition-all duration-500"></div>
-                          </div>
+          </div>
                           <div class="w-full bg-slate-50 rounded-t-xl h-[70%] hover:h-[75%] transition-all duration-500 relative group">
                               <div class="absolute bottom-0 w-full bg-slate-300 rounded-t-xl h-0 group-hover:h-full transition-all duration-500"></div>
-                          </div>
+        </div>
                           <div class="w-full bg-slate-50 rounded-t-xl h-[90%] hover:h-[95%] transition-all duration-500 relative group">
                               <div class="absolute bottom-0 w-full bg-slate-900 rounded-t-xl h-0 group-hover:h-full transition-all duration-500"></div>
-                          </div>
-                      </div>
-                      
+          </div>
+        </div>
+
                       <div class="mt-4 flex gap-8">
                           <div class="flex items-center gap-2">
                               <span class="h-2 w-2 rounded-full bg-slate-900"></span>
                               <span class="text-xs text-slate-500">Rental Income</span>
-                          </div>
+          </div>
                            <div class="flex items-center gap-2">
                               <span class="h-2 w-2 rounded-full bg-[#EBC7B6]"></span>
                               <span class="text-xs text-slate-500">Projected</span>
-                          </div>
-                      </div>
-                  </div>
+            </div>
+            </div>
+          </div>
 
                   <!-- Occupancy Card -->
                   <div class="col-span-1 md:col-span-4 rounded-[2rem] bg-white p-8 shadow-sm border border-slate-100 flex flex-col justify-between">
-                      <div>
+        <div>
                           <h3 class="text-sm font-medium text-slate-500 mb-1">Occupancy Rate</h3>
                           <span class="text-3xl font-medium tracking-tight text-slate-900">98%</span>
-                      </div>
+          </div>
 
                       <div class="relative mx-auto my-6 flex h-40 w-40 items-center justify-center">
                           <!-- Circular Progress -->
@@ -193,34 +191,34 @@
                           </svg>
                           <div class="absolute flex flex-col items-center">
                               <span class="text-xs text-slate-400">Target 95%</span>
-                          </div>
-                      </div>
-                      
+          </div>
+        </div>
+
                       <div class="flex items-center justify-between">
                           <div class="flex -space-x-2">
                               <img class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&amp;fit=crop&amp;q=80&amp;w=64&amp;h=64" alt="">
                               <img class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&amp;fit=crop&amp;q=80&amp;w=64&amp;h=64" alt="">
                               <div class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-600 ring-2 ring-white">+42</div>
-                          </div>
+            </div>
                           <span class="text-xs text-slate-500">Satisfied investors</span>
-                      </div>
-                  </div>
+          </div>
+          </div>
 
                   <!-- AI Actions Card -->
                   <div class="col-span-1 md:col-span-12 rounded-[2rem] bg-slate-900 p-8 text-white shadow-lg overflow-hidden relative">
                        <div class="absolute top-0 right-0 p-12 opacity-10">
                           <i data-lucide="shield-check" class="h-64 w-64"></i>
-                      </div>
-                      
+          </div>
+
                       <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                           <div class="max-w-lg">
                               <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
                                   <i data-lucide="sparkles" class="h-3 w-3"></i>
                                   AI Recommendation
-                              </div>
+          </div>
                               <h3 class="text-2xl font-medium tracking-tight mb-2">Review Pending Leases</h3>
                               <p class="text-slate-400 text-base leading-relaxed">LeasePilot has identified 3 lease agreements that match your high-value criteria but require manual approval for custom clauses.</p>
-                          </div>
+          </div>
                           <div class="flex gap-4">
                               <a href="tenants.html" class="rounded-full bg-white px-6 py-3 text-sm font-medium text-slate-900 hover:bg-slate-100 transition-colors inline-block">
                                   Review Now
@@ -228,10 +226,10 @@
                               <button onclick="this.closest('.col-span-1').remove()" class="rounded-full border border-white/20 px-6 py-3 text-sm font-medium text-white hover:bg-white/10 transition-colors">
                                   Dismiss
                               </button>
-                          </div>
-                      </div>
-                  </div>
-              </div>
+          </div>
+        </div>
+      </div>
+        </div>
 
               <!-- Properties List -->
               <div class="mb-6 flex items-center justify-between">
@@ -239,7 +237,7 @@
                   <a href="properties.html" class="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900">
                       View all <i data-lucide="arrow-right" class="h-4 w-4"></i>
                   </a>
-              </div>
+        </div>
 
               <div class="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm">
                   <table class="w-full text-left text-sm text-slate-500">
@@ -259,12 +257,12 @@
                                   <div class="flex items-center gap-4">
                                       <div class="h-12 w-12 overflow-hidden rounded-xl bg-slate-100">
                                           <img src="https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/917d6f93-fb36-439a-8c48-884b67b35381_1600w.jpg" class="h-full w-full object-cover" alt="Property">
-                                      </div>
-                                      <div>
+            </div>
+            <div>
                                           <div class="font-medium text-slate-900">Highland Lofts</div>
                                           <div class="text-xs text-slate-500">Unit 402 • Downtown</div>
-                                      </div>
-                                  </div>
+            </div>
+          </div>
                               </td>
                               <td class="whitespace-nowrap px-6 py-4">
                                   <span class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
@@ -277,7 +275,7 @@
                                   <div class="flex items-center gap-2">
                                       <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&amp;fit=crop&amp;q=80&amp;w=50&amp;h=50" class="h-6 w-6 rounded-full object-cover" alt="Tenant">
                                       <span>Arthur Clarke</span>
-                                  </div>
+            </div>
                               </td>
                               <td class="whitespace-nowrap px-6 py-4 text-right">
                                   <button class="rounded-full border border-slate-200 p-2 text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all">
@@ -291,12 +289,12 @@
                                   <div class="flex items-center gap-4">
                                       <div class="h-12 w-12 overflow-hidden rounded-xl bg-slate-100">
                                           <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=100&h=100" class="h-full w-full object-cover" alt="Property">
-                                      </div>
-                                      <div>
+            </div>
+            <div>
                                           <div class="font-medium text-slate-900">The Meridian</div>
                                           <div class="text-xs text-slate-500">Unit 12B • Westside</div>
-                                      </div>
-                                  </div>
+            </div>
+          </div>
                               </td>
                               <td class="whitespace-nowrap px-6 py-4">
                                   <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
@@ -323,12 +321,12 @@
                                   <div class="flex items-center gap-4">
                                       <div class="h-12 w-12 overflow-hidden rounded-xl bg-slate-100">
                                           <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=100&h=100" class="h-full w-full object-cover" alt="Property">
-                                      </div>
-                                      <div>
+            </div>
+            <div>
                                           <div class="font-medium text-slate-900">Sunset Villas</div>
                                           <div class="text-xs text-slate-500">Unit 101 • Coastal</div>
-                                      </div>
-                                  </div>
+            </div>
+          </div>
                               </td>
                               <td class="whitespace-nowrap px-6 py-4">
                                   <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
@@ -348,15 +346,15 @@
                           </tr>
                       </tbody>
                   </table>
-              </div>
+        </div>
               
               <footer class="mt-12 border-t border-slate-200 pt-8 text-center md:text-left">
                   <p class="text-xs text-slate-400">© 2024 LeasePilot AI Inc. Gold Standard Protection for Your Digital World.</p>
               </footer>
 
-          </div>
+            </div>
       </main>
-  </div>
+          </div>
 
     <script src="app.js"></script>
     <script>
@@ -374,7 +372,7 @@
             attrs: {
                 'stroke-width': 1.5
             }
-        });
+      });
     </script>
-
+  
 </body></html>

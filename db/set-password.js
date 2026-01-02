@@ -9,7 +9,7 @@ const pool = createPool();
 async function setPassword() {
   try {
     const email = 'aroldo@investsupreme.com';
-    const password = 'password123';
+    const password = 'Primomotif2!';
     
     console.log(`🔐 Setting password for ${email}...`);
     
@@ -37,4 +37,6 @@ async function setPassword() {
 }
 
 setPassword();
+
+
 
