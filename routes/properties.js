@@ -3,15 +3,13 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all properties for user
+// Get all properties for the organization
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
-      `SELECT * FROM properties 
-       WHERE user_id = $1 
-       ORDER BY created_at DESC`,
-      [req.userId]
+      `SELECT * FROM properties WHERE organization_id = $1 ORDER BY created_at DESC`,
+      [req.orgId]
     );
     res.json(result.rows);
   } catch (error) {
@@ -26,8 +24,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const pool = req.app.locals.pool;
     const result = await pool.query(
       `SELECT * FROM properties 
-       WHERE id = $1 AND user_id = $2`,
-      [req.params.id, req.userId]
+       WHERE id = $1 AND organization_id = $2`,
+      [req.params.id, req.orgId]
     );
 
     if (result.rows.length === 0) {
@@ -52,10 +50,10 @@ router.post('/', authenticateToken, async (req, res) => {
     const pool = req.app.locals.pool;
     const result = await pool.query(
       `INSERT INTO properties 
-       (user_id, name, type, address, city, state, zip, bedrooms, bathrooms, sqft, rent, image_url, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       (user_id, organization_id, name, type, address, city, state, zip, bedrooms, bathrooms, sqft, rent, image_url, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
-      [req.userId, name, type, address, city, state, zip, bedrooms || 0, bathrooms || 0, sqft || 0, rent || 0, image_url, status || 'vacant']
+      [req.userId, req.orgId, name, type, address, city, state, zip, bedrooms || 0, bathrooms || 0, sqft || 0, rent || 0, image_url, status || 'vacant']
     );
 
     res.status(201).json(result.rows[0]);
@@ -79,9 +77,9 @@ router.put('/:id', authenticateToken, async (req, res) => {
        SET name = $1, type = $2, address = $3, city = $4, state = $5, zip = $6,
            bedrooms = $7, bathrooms = $8, sqft = $9, rent = $10, image_url = $11,
            status = $12, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $13 AND user_id = $14
+       WHERE id = $13 AND organization_id = $14
        RETURNING *`,
-      [name, type, address, city, state, zip, bedrooms, bathrooms, sqft, rent, image_url, status, req.params.id, req.userId]
+      [name, type, address, city, state, zip, bedrooms, bathrooms, sqft, rent, image_url, status, req.params.id, req.orgId]
     );
 
     if (result.rows.length === 0) {
@@ -100,8 +98,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
-      'DELETE FROM properties WHERE id = $1 AND user_id = $2 RETURNING id',
-      [req.params.id, req.userId]
+      'DELETE FROM properties WHERE id = $1 AND organization_id = $2 RETURNING id',
+      [req.params.id, req.orgId]
     );
 
     if (result.rows.length === 0) {

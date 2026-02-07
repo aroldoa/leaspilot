@@ -78,6 +78,35 @@ A modern, AI-powered property management application built with HTML, CSS, and J
 5. **Financials**: Track finances at `financials.html`
 6. **Settings**: Configure your account at `settings.html`
 
+### Migration & Demo seed
+
+Create a staging `DATABASE_URL` and set `JWT_SECRET` for preview (Vercel preview or local `.env`).
+
+Run the migration to add organizations and `organization_id` columns:
+
+```bash
+npm run migrate:org
+# or: node db/migrations/001-org-multitenancy.js
+```
+
+(Optional) Seed demo data (creates demo org, demo user `demo@leasepilot.ai` / `demo123`):
+
+```bash
+node db/seed-demo.js
+```
+
+Start the server:
+
+```bash
+npm start
+```
+
+Login with `demo@leasepilot.ai` / `demo123` (if you seeded demo data).
+
+**Notes**
+- After migration, all API routes are scoped to `organization_id`. Use the demo account on staging to verify scoping.
+- Preview builds require `DATABASE_URL` and `JWT_SECRET` set in Vercel's Preview environment.
+
 ## File Structure
 
 ```

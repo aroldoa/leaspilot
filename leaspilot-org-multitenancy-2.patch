@@ -1,0 +1,295 @@
+----- BEGIN PATCH (copy everything below) -----
+*** Begin Patch
+*** Update File: routes/transactions.js
+@@
+-router.get('/', authenticateToken, async (req, res) => {
+try {
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `SELECT t.*, p.name as property_name
+  FROM transactions t
+  LEFT JOIN properties p ON t.property_id = p.id
+  WHERE t.user_id = $1
+  ORDER BY t.transaction_date DESC, t.created_at DESC`,
+ [req.userId]
+);
+res.json(result.rows);
+} catch (error) {
+console.error('Error fetching transactions:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
+-});
++// Get all transactions for the organization (org-scoped)
++router.get('/', authenticateToken, async (req, res) => {
+try {
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `SELECT t.*, p.name as property_name
+  FROM transactions t
+  LEFT JOIN properties p ON t.property_id = p.id
+  WHERE t.organization_id = $1
+  ORDER BY t.transaction_date DESC, t.created_at DESC`,
+ [req.orgId]
+);
+res.json(result.rows);
+} catch (error) {
+console.error('Error fetching transactions:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
++});
+@@
+-router.get('/:id', authenticateToken, async (req, res) => {
+try {
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `SELECT t.*, p.name as property_name
+  FROM transactions t
+  LEFT JOIN properties p ON t.property_id = p.id
+  WHERE t.id = $1 AND t.user_id = $2`,
+ [req.params.id, req.userId]
+);
+if (result.rows.length === 0) {
+ return res.status(404).json({ error: 'Transaction not found' });
+}
+res.json(result.rows[0]);
+} catch (error) {
+console.error('Error fetching transaction:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
+-});
++// Get single transaction (org-scoped)
++router.get('/:id', authenticateToken, async (req, res) => {
+try {
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `SELECT t.*, p.name as property_name
+  FROM transactions t
+  LEFT JOIN properties p ON t.property_id = p.id
+  WHERE t.id = $1 AND t.organization_id = $2`,
+ [req.params.id, req.orgId]
+);
+if (result.rows.length === 0) {
+ return res.status(404).json({ error: 'Transaction not found' });
+}
+res.json(result.rows[0]);
+} catch (error) {
+console.error('Error fetching transaction:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
++});
+@@
+-router.post('/', authenticateToken, async (req, res) => {
+try {
+const {
+ type, description, amount, category, property_id, transaction_date, status
+} = req.body;
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `INSERT INTO transactions 
+  (user_id, type, description, amount, category, property_id, transaction_date, status)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+  RETURNING *`,
+ [req.userId, type, description, amount, category, property_id || null, transaction_date, status || 'cleared']
+);
+res.status(201).json(result.rows[0]);
+} catch (error) {
+console.error('Error creating transaction:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
+-});
++// Create transaction (org-scoped)
++router.post('/', authenticateToken, async (req, res) => {
+try {
+const {
+ type, description, amount, category, property_id, transaction_date, status
+} = req.body;
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `INSERT INTO transactions
+  (user_id, organization_id, type, description, amount, category, property_id, transaction_date, status)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+  RETURNING *`,
+ [req.userId, req.orgId, type, description, amount, category, property_id || null, transaction_date, status || 'cleared']
+);
+res.status(201).json(result.rows[0]);
+} catch (error) {
+console.error('Error creating transaction:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
++});
+@@
+-router.put('/:id', authenticateToken, async (req, res) => {
+try {
+const {
+ type, description, amount, category, property_id, transaction_date, status
+} = req.body;
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `UPDATE transactions 
+  SET type = $1, description = $2, amount = $3, category = $4,
+      property_id = $5, transaction_date = $6, status = $7,
+      updated_at = CURRENT_TIMESTAMP
+  WHERE id = $8 AND user_id = $9
+  RETURNING *`,
+ [type, description, amount, category, property_id, transaction_date, status, req.params.id, req.userId]
+);
+if (result.rows.length === 0) {
+ return res.status(404).json({ error: 'Transaction not found' });
+}
+res.json(result.rows[0]);
+} catch (error) {
+console.error('Error updating transaction:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
+-});
++// Update transaction (org-scoped)
++router.put('/:id', authenticateToken, async (req, res) => {
+try {
+const {
+ type, description, amount, category, property_id, transaction_date, status
+} = req.body;
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `UPDATE transactions 
+  SET type = $1, description = $2, amount = $3, category = $4,
+      property_id = $5, transaction_date = $6, status = $7,
+      updated_at = CURRENT_TIMESTAMP
+  WHERE id = $8 AND organization_id = $9
+  RETURNING *`,
+ [type, description, amount, category, property_id, transaction_date, status, req.params.id, req.orgId]
+);
+if (result.rows.length === 0) {
+ return res.status(404).json({ error: 'Transaction not found' });
+}
+res.json(result.rows[0]);
+} catch (error) {
+console.error('Error updating transaction:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
++});
+@@
+-router.delete('/:id', authenticateToken, async (req, res) => {
+try {
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ 'DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING id',
+ [req.params.id, req.userId]
+);
+if (result.rows.length === 0) {
+ return res.status(404).json({ error: 'Transaction not found' });
+}
+res.json({ message: 'Transaction deleted successfully' });
+} catch (error) {
+console.error('Error deleting transaction:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
+-});
++// Delete transaction (org-scoped)
++router.delete('/:id', authenticateToken, async (req, res) => {
+try {
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ 'DELETE FROM transactions WHERE id = $1 AND organization_id = $2 RETURNING id',
+ [req.params.id, req.orgId]
+);
+if (result.rows.length === 0) {
+ return res.status(404).json({ error: 'Transaction not found' });
+}
+res.json({ message: 'Transaction deleted successfully' });
+} catch (error) {
+console.error('Error deleting transaction:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
++});
+*** End Patch
+*** Begin Patch
+*** Update File: routes/notifications.js
+@@
+-router.get('/', authenticateToken, async (req, res) => {
+try {
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `SELECT * FROM notifications
+  WHERE user_id = $1
+  ORDER BY created_at DESC`,
+ [req.userId]
+);
+res.json(result.rows);
+} catch (error) {
+console.error('Error fetching notifications:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
+-});
++// Get notifications for organization (org-scoped)
++router.get('/', authenticateToken, async (req, res) => {
+try {
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `SELECT * FROM notifications
+  WHERE organization_id = $1
+  ORDER BY created_at DESC`,
+ [req.orgId]
+);
+res.json(result.rows);
+} catch (error) {
+console.error('Error fetching notifications:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
++});
+@@
+-router.post('/', authenticateToken, async (req, res) => {
+try {
+const { title, message, type } = req.body;
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `INSERT INTO notifications (user_id, title, message, type)
+  VALUES ($1, $2, $3, $4) RETURNING *`,
+ [req.userId, title, message, type || 'info']
+);
+res.status(201).json(result.rows[0]);
+} catch (error) {
+console.error('Error creating notification:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
+-});
++// Create notification (org-scoped)
++router.post('/', authenticateToken, async (req, res) => {
+try {
+const { title, message, type } = req.body;
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `INSERT INTO notifications (user_id, organization_id, title, message, type)
+  VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+ [req.userId, req.orgId, title, message, type || 'info']
+);
+res.status(201).json(result.rows[0]);
+} catch (error) {
+console.error('Error creating notification:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
++});
+*** End Patch
+*** Begin Patch
+*** Update File: README.md
+@@
+Migration & Demo seed (new)
+
+Create a staging DATABASE_URL and set JWT_SECRET for preview (Vercel preview or local .env).
+Run the migration to add organizations and organization_id columns:
+node db/migrate-add-organizations.js
+(Optional) Seed demo data (creates demo org, demo user demo@leasepilot.ai / demo123):
+node db/seed-demo.js
+Start the server:
+npm start
+Login with demo@leasepilot.ai / demo123 (if you seeded demo data)
++Notes
++- After migration, all API routes are scoped to organization_id. Use the demo account on staging to verify scoping.
++- Preview builds require DATABASE_URL and JWT_SECRET set in Vercel's Preview environment.
+*** End Patch
+*** Begin Patch
+*** Add File: .env.example
++DATABASE_URL=postgres://user:pass@host:5432/dbname
++JWT_SECRET=changemeinpreview
++PORT=3000
+*** End Patch
+----- END PATCH -----
