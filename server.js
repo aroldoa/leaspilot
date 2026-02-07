@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { createPool } from './db/pool.js';
 import { initializeDatabase } from './db/schema.js';
 import authRoutes from './routes/auth.js';
@@ -11,16 +13,17 @@ import userRoutes from './routes/users.js';
 
 dotenv.config();
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('.'));
+app.use(express.static(__dirname));
 
 // Initialize database only when DATABASE_URL is set (required on Vercel)
-const pool = createPool();
+let pool = createPool();
 app.locals.pool = pool;
 
 if (pool) {
@@ -28,6 +31,8 @@ if (pool) {
     console.log('✅ Database initialized successfully');
   }).catch(err => {
     console.error('❌ Database initialization failed:', err);
+    app.locals.pool = null;
+    pool = null;
   });
 }
 
@@ -55,6 +60,11 @@ app.use('/api/users', userRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'LeasePilot AI API is running' });
+});
+
+// Explicit root so / always serves the app (works when cwd differs on Vercel)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Start server only when not on Vercel (serverless handles requests there)

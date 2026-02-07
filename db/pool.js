@@ -7,9 +7,27 @@ const { Pool } = pg;
 
 let pool = null;
 
+function isPlaceholderDatabaseUrl(url) {
+  if (!url || typeof url !== 'string') return true;
+  try {
+    const u = new URL(url);
+    const host = (u.hostname || '').toLowerCase();
+    // Refuse placeholder/invalid hosts so we don't crash with ENOTFOUND (allow localhost for local dev)
+    if (['base', 'host', 'changeme', 'example.com', 'dbname'].includes(host)) return true;
+    if (host.startsWith('your-') || host === '') return true;
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 export function createPool() {
   if (!process.env.DATABASE_URL) {
     console.warn('⚠️ DATABASE_URL not set — database disabled (set in Vercel env for production)');
+    return null;
+  }
+  if (isPlaceholderDatabaseUrl(process.env.DATABASE_URL)) {
+    console.warn('⚠️ DATABASE_URL looks like a placeholder (e.g. host "base") — database disabled. Set a real Neon/Postgres URL in Vercel.');
     return null;
   }
   if (!pool) {
