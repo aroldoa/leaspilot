@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Highland Lofts - LeasePilot AI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+    <script src="app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Inter', sans-serif; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.checkbox-checked { background-color: #0f172a; border-color: #0f172a; }
+</style></head>
+<body class="bg-[#F3F5F7] text-slate-900 antialiased selection:bg-slate-200">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="hidden md:flex w-72 flex-col justify-between border-r border-slate-200 bg-white p-6">
+            <div>
+                <a href="index.html" class="flex items-center mb-10">
+                    <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-12">
+                </a>
+
+                <nav class="space-y-1">
+                    <a href="index.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="layout-grid" class="h-5 w-5"></i>
+                        Dashboard
+                    </a>
+                    <a href="properties.html" class="flex items-center gap-3 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition-colors">
+                        <i data-lucide="home" class="h-5 w-5 text-slate-900"></i>
+                        Properties
+                    </a>
+                    <a href="tenants.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="users" class="h-5 w-5"></i>
+                        Tenants
+                    </a>
+                    <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="wallet" class="h-5 w-5"></i>
+                        Financials
+                    </a>
+                    <a href="settings.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="settings" class="h-5 w-5"></i>
+                        Settings
+                    </a>
+                </nav>
+            </div>
+
+            <div>
+                <div class="mb-6 rounded-3xl bg-[#EBC7B6] p-5 relative overflow-hidden">
+                    <div class="relative z-10">
+                        <p class="mb-2 text-lg font-medium tracking-tight text-slate-900">Upgrade to Pro</p>
+                        <p class="mb-4 text-sm text-slate-700">Unlock advanced AI forecasting for your portfolio.</p>
+                        <button class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
+                            View Plans
+                        </button>
+                    </div>
+                    <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/20"></div>
+                </div>
+
+                <div class="flex items-center gap-3 border-t border-slate-100 pt-5">
+                    <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
+                        <div class="flex flex-col flex-1">
+                            <span class="text-sm font-medium" data-user-name>Sarah Jenkins</span>
+                        <span class="text-xs text-slate-500">Portfolio Manager</span>
+                    </div>
+                    </a>
+                    <button onclick="LeasePilot.logout()" class="text-slate-400 hover:text-slate-600" title="Logout">
+                        <i data-lucide="log-out" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto hide-scrollbar">
+            <!-- Header Mobile -->
+            <div class="flex md:hidden items-center justify-between bg-white p-4 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <a href="index.html" class="flex items-center">
+                        <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-10">
+                    </a>
+                </div>
+                <button class="text-slate-500"><i data-lucide="menu" class="h-6 w-6"></i></button>
+            </div>
+
+            <div class="mx-auto max-w-7xl px-6 py-8 md:px-10 md:py-12">
+                
+                <!-- Breadcrumb -->
+                <nav class="mb-6 flex items-center gap-2 text-sm text-slate-500">
+                    <a href="properties.html" class="hover:text-slate-900 transition-colors">Properties</a>
+                    <i data-lucide="chevron-right" class="h-3 w-3"></i>
+                    <span class="font-medium text-slate-900">The Highland Lofts</span>
+                </nav>
+
+                <!-- Property Header Info -->
+                <div class="mb-8 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+                    <div class="flex items-start gap-5">
+                        <div class="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-slate-200 ring-1 ring-slate-900/5 md:h-28 md:w-28">
+                            <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&amp;fit=crop&amp;q=80&amp;w=400&amp;h=400" alt="Property" class="h-full w-full object-cover">
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <h1 class="text-2xl font-medium tracking-tight text-slate-900 md:text-3xl">The Highland Lofts</h1>
+                                <span class="rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">Operational</span>
+                            </div>
+                            <div class="mt-2 flex flex-col gap-1 text-sm text-slate-500">
+                                <span class="flex items-center gap-2" id="propertyAddress"><i data-lucide="map-pin" class="h-3.5 w-3.5"></i> Loading...</span>
+                                <span class="flex items-center gap-2" id="propertyInfo"><i data-lucide="building" class="h-3.5 w-3.5"></i> Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                         <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                            <i data-lucide="share" class="h-4 w-4"></i>
+                            Share
+                        </button>
+                        <button onclick="editProperty()" class="flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors shadow-sm hover:shadow-md">
+                            <i data-lucide="pencil" class="h-4 w-4"></i>
+                            Edit Property
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="mb-8 border-b border-slate-200">
+                    <div class="flex gap-6 overflow-x-auto hide-scrollbar">
+                        <button onclick="showTab('overview')" class="tab-button border-b-2 border-slate-900 pb-3 text-sm font-medium text-slate-900" data-tab="overview">Overview</button>
+                        <button onclick="showTab('units')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all" data-tab="units">Units</button>
+                        <button onclick="showTab('leases')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all" data-tab="leases">Leases</button>
+                        <button onclick="showTab('financials')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all" data-tab="financials">Financials</button>
+                        <button onclick="showTab('maintenance')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all" data-tab="maintenance">Maintenance <span class="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600" id="maintenanceBadge">0</span></button>
+                        <button onclick="showTab('documents')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all" data-tab="documents">Documents</button>
+                    </div>
+                </div>
+
+                <!-- Overview Tab Content -->
+                <div id="overviewTab" class="tab-content">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                     <!-- Occupancy Card -->
+                     <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                         <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-slate-500">Occupancy</h3>
+                            <button class="text-slate-400 hover:text-slate-600"><i data-lucide="more-horizontal" class="h-4 w-4"></i></button>
+                         </div>
+                         <div class="flex items-end gap-4">
+                            <div>
+                                <div class="text-3xl font-medium tracking-tight text-slate-900">92%</div>
+                                <div class="text-xs text-slate-500 mt-1">22 of 24 Units Occupied</div>
+                            </div>
+                            <!-- Simple progress bar visual -->
+                            <div class="flex h-12 flex-1 items-end gap-1">
+                                <div class="h-[92%] w-full rounded-sm bg-slate-900"></div>
+                                <div class="h-[92%] w-full rounded-sm bg-slate-900"></div>
+                                <div class="h-[92%] w-full rounded-sm bg-slate-900"></div>
+                                <div class="h-[92%] w-full rounded-sm bg-slate-900"></div>
+                                <div class="h-[80%] w-full rounded-sm bg-slate-900"></div>
+                                <div class="h-[92%] w-full rounded-sm bg-slate-900"></div>
+                                <div class="h-[100%] w-full rounded-sm bg-slate-200"></div>
+                            </div>
+                         </div>
+                     </div>
+
+                     <!-- Financial Health -->
+                     <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                         <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-slate-500">Monthly Revenue</h3>
+                             <div class="flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700">
+                                <i data-lucide="arrow-up" class="h-3 w-3"></i> 4.5%
+                             </div>
+                         </div>
+                         <div class="mt-2">
+                             <div class="text-3xl font-medium tracking-tight text-slate-900">$58,240</div>
+                             <div class="mt-4 flex flex-col gap-2">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-500">Collected</span>
+                                    <span class="font-medium text-slate-900">$54,100</span>
+                                </div>
+                                <div class="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                                    <div class="h-full w-[92%] rounded-full bg-slate-900"></div>
+                                </div>
+                             </div>
+                         </div>
+                     </div>
+
+                     <!-- Pending Items -->
+                     <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                         <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-medium text-slate-500">Action Required</h3>
+                            <div class="h-8 w-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+                                <i data-lucide="bell" class="h-4 w-4"></i>
+                            </div>
+                         </div>
+                         <div class="mt-4 space-y-3">
+                            <div class="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-2">
+                                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm text-red-500">
+                                    <i data-lucide="wrench" class="h-4 w-4"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-xs font-medium text-slate-900">Leaking faucet</div>
+                                    <div class="text-[10px] text-slate-500">Unit 304 • High Priority</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-2">
+                                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm text-blue-500">
+                                    <i data-lucide="file-signature" class="h-4 w-4"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-xs font-medium text-slate-900">Lease Renewal</div>
+                                    <div class="text-[10px] text-slate-500">Unit 102 • Due in 5 days</div>
+                                </div>
+                            </div>
+                         </div>
+                     </div>
+                </div>
+
+                </div>
+
+                <!-- Units Tab Content -->
+                <div id="unitsTab" class="tab-content hidden">
+                    <!-- Unit List Header & Filters -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                        <h2 class="text-lg font-medium text-slate-900">Units</h2>
+                        
+                        <div class="flex items-center gap-2">
+                             <div class="relative group">
+                                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-slate-900 transition-colors"></i>
+                                <input type="text" placeholder="Search units or tenants..." class="h-9 w-full md:w-56 rounded-full border border-slate-200 bg-white pl-9 pr-4 text-sm outline-none focus:border-slate-400 transition-all placeholder:text-slate-400" id="unitSearch">
+                            </div>
+                            <div class="h-9 w-px bg-slate-200 mx-1"></div>
+                            <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                                <i data-lucide="filter" class="h-3.5 w-3.5"></i> Filter
+                            </button>
+                            <button onclick="window.location.href='tenants.html'" class="flex items-center gap-2 rounded-full bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 transition-colors">
+                                <i data-lucide="plus" class="h-3.5 w-3.5"></i> Add Tenant
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Units Table -->
+                    <div class="rounded-[2rem] border border-slate-100 bg-white overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-100 bg-slate-50/50">
+                                        <th class="w-20 px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Unit</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Tenant</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Lease Ends</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">Rent</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">Deposit</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-50" id="unitsTableBody">
+                                    <!-- Units will be loaded here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leases Tab Content -->
+                <div id="leasesTab" class="tab-content hidden">
+                    <div class="mb-4 flex items-center justify-between">
+                        <h2 class="text-lg font-medium text-slate-900">Lease Agreements</h2>
+                        <button onclick="window.location.href='tenants.html'" class="flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
+                            <i data-lucide="plus" class="h-4 w-4"></i> Add Lease
+                        </button>
+                    </div>
+                    <div class="rounded-[2rem] border border-slate-100 bg-white overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-100 bg-slate-50/50">
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Tenant</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Unit</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Lease Start</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Lease End</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Monthly Rent</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-50" id="leasesTableBody">
+                                    <!-- Leases will be loaded here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financials Tab Content -->
+                <div id="financialsTab" class="tab-content hidden">
+                    <!-- Financial Summary -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                            <div class="text-xs font-medium text-slate-500 mb-1">Total Revenue</div>
+                            <div class="text-2xl font-medium text-slate-900" id="totalRevenue">$0</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                            <div class="text-xs font-medium text-slate-500 mb-1">Total Expenses</div>
+                            <div class="text-2xl font-medium text-slate-900" id="totalExpenses">$0</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                            <div class="text-xs font-medium text-slate-500 mb-1">Net Income</div>
+                            <div class="text-2xl font-medium text-green-600" id="netIncome">$0</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                            <div class="text-xs font-medium text-slate-500 mb-1">This Month</div>
+                            <div class="text-2xl font-medium text-slate-900" id="monthlyIncome">$0</div>
+                        </div>
+                    </div>
+
+                    <!-- Transactions Table -->
+                    <div class="mb-4 flex items-center justify-between">
+                        <h2 class="text-lg font-medium text-slate-900">Transactions</h2>
+                        <button onclick="window.location.href='financials.html'" class="flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
+                            <i data-lucide="plus" class="h-4 w-4"></i> Add Transaction
+                        </button>
+                    </div>
+                    <div class="rounded-[2rem] border border-slate-100 bg-white overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-100 bg-slate-50/50">
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Category</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">Amount</th>
+                                        <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-50" id="financialsTableBody">
+                                    <!-- Transactions will be loaded here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Maintenance Tab Content -->
+                <div id="maintenanceTab" class="tab-content hidden">
+                    <div class="mb-4 flex items-center justify-between">
+                        <h2 class="text-lg font-medium text-slate-900">Maintenance Requests</h2>
+                        <button class="flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
+                            <i data-lucide="plus" class="h-4 w-4"></i> New Request
+                        </button>
+                    </div>
+                    <div class="rounded-[2rem] border border-slate-100 bg-white overflow-hidden shadow-sm p-8">
+                        <div class="text-center py-12">
+                            <i data-lucide="wrench" class="h-12 w-12 mx-auto mb-4 text-slate-300"></i>
+                            <p class="text-slate-500 mb-4">No maintenance requests yet</p>
+                            <p class="text-sm text-slate-400">Maintenance tracking coming soon</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents Tab Content -->
+                <div id="documentsTab" class="tab-content hidden">
+                    <div class="mb-4 flex items-center justify-between">
+                        <h2 class="text-lg font-medium text-slate-900">Documents</h2>
+                        <button class="flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
+                            <i data-lucide="upload" class="h-4 w-4"></i> Upload Document
+                        </button>
+                    </div>
+                    <div class="rounded-[2rem] border border-slate-100 bg-white overflow-hidden shadow-sm p-8">
+                        <div class="text-center py-12">
+                            <i data-lucide="file-text" class="h-12 w-12 mx-auto mb-4 text-slate-300"></i>
+                            <p class="text-slate-500 mb-4">No documents uploaded yet</p>
+                            <p class="text-sm text-slate-400">Document management coming soon</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <footer class="mt-12 pt-8 text-center md:text-left border-t border-slate-200">
+                    <p class="text-xs text-slate-400">© 2024 LeasePilot AI Inc.</p>
+                </footer>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let currentProperty = null;
+        let propertyTenants = [];
+        let propertyTransactions = [];
+
+        // Get property ID from URL
+        function getPropertyId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        // Tab switching functionality
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Remove active state from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('border-slate-900', 'text-slate-900');
+                btn.classList.add('border-transparent', 'text-slate-500');
+            });
+            
+            // Show selected tab
+            const selectedTab = document.getElementById(tabName + 'Tab');
+            if (selectedTab) {
+                selectedTab.classList.remove('hidden');
+            }
+            
+            // Add active state to clicked button
+            const clickedButton = document.querySelector(`[data-tab="${tabName}"]`);
+            if (clickedButton) {
+                clickedButton.classList.remove('border-transparent', 'text-slate-500');
+                clickedButton.classList.add('border-slate-900', 'text-slate-900');
+            }
+            
+            // Load tab-specific data
+            if (tabName === 'units') {
+                renderUnitsTable();
+            } else if (tabName === 'leases') {
+                renderLeasesTable();
+            } else if (tabName === 'financials') {
+                renderFinancialsTable();
+            }
+        }
+
+        // Load property data
+        async function loadProperty() {
+            const propertyId = getPropertyId();
+            if (!propertyId) {
+                console.error('No property ID in URL');
+                alert('Property ID not found. Redirecting to properties page.');
+                window.location.href = 'properties.html';
+                return;
+            }
+
+            try {
+                console.log('Loading property:', propertyId);
+                currentProperty = await LeasePilot.DataManager.getProperty(propertyId);
+                
+                if (!currentProperty) {
+                    alert('Property not found. Redirecting to properties page.');
+                    window.location.href = 'properties.html';
+                    return;
+                }
+
+                console.log('Property loaded:', currentProperty);
+                renderProperty();
+                await loadPropertyTenants();
+                await loadPropertyTransactions();
+                updateStats();
+                renderUnitsTable(); // Initial render for units tab
+            } catch (error) {
+                console.error('Error loading property:', error);
+                LeasePilot.Toast.show('Failed to load property data.', 'error');
+            }
+        }
+
+        // Render property information
+        function renderProperty() {
+            if (!currentProperty) return;
+
+            // Update page title
+            document.title = `${currentProperty.name} - LeasePilot AI`;
+
+            // Update breadcrumb
+            const breadcrumb = document.querySelector('nav span.font-medium');
+            if (breadcrumb) breadcrumb.textContent = currentProperty.name;
+
+            // Update property header
+            const propertyName = document.querySelector('h1');
+            if (propertyName) propertyName.textContent = currentProperty.name;
+
+            // Update property image
+            const propertyImg = document.querySelector('.relative.h-24 img, .relative.h-28 img');
+            if (propertyImg) {
+                propertyImg.src = currentProperty.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=400&h=400';
+                propertyImg.alt = currentProperty.name;
+            }
+
+            // Update status badge
+            const statusBadge = document.querySelector('.bg-green-50, .bg-slate-50, .bg-amber-50');
+            if (statusBadge) {
+                const statusColors = {
+                    'occupied': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Occupied' },
+                    'vacant': { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', label: 'Vacant' },
+                    'maintenance': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'Maintenance' }
+                };
+                const status = statusColors[currentProperty.status] || statusColors.vacant;
+                statusBadge.className = `rounded-full border ${status.border} ${status.bg} px-2.5 py-0.5 text-xs font-medium ${status.text}`;
+                statusBadge.textContent = status.label;
+            }
+
+            // Update address
+            const addressElement = document.getElementById('propertyAddress');
+            if (addressElement && currentProperty.address) {
+                const fullAddress = `${currentProperty.address}${currentProperty.city ? ', ' + currentProperty.city : ''}${currentProperty.state ? ', ' + currentProperty.state : ''}${currentProperty.zip ? ' ' + currentProperty.zip : ''}`;
+                addressElement.innerHTML = `<i data-lucide="map-pin" class="h-3.5 w-3.5"></i> ${fullAddress}`;
+            }
+
+            // Update property type info
+            const infoElement = document.getElementById('propertyInfo');
+            if (infoElement) {
+                infoElement.innerHTML = `<i data-lucide="building" class="h-3.5 w-3.5"></i> ${currentProperty.type || 'Property'} • ${currentProperty.bedrooms || 0} Bed • ${currentProperty.bathrooms || 0} Bath • ${currentProperty.sqft || 0} sqft`;
+            }
+            
+            // Update breadcrumb
+            const breadcrumbSpan = document.querySelector('nav span.font-medium');
+            if (breadcrumbSpan) {
+                breadcrumbSpan.textContent = currentProperty.name;
+            }
+            
+            lucide.createIcons();
+        }
+
+        // Load tenants for this property
+        async function loadPropertyTenants() {
+            try {
+                const allTenants = await LeasePilot.DataManager.getTenants();
+                propertyTenants = allTenants.filter(t => t.property_id == currentProperty.id);
+                console.log('Property tenants:', propertyTenants);
+                renderTenantsTable();
+            } catch (error) {
+                console.error('Error loading tenants:', error);
+            }
+        }
+
+        // Load transactions for this property
+        async function loadPropertyTransactions() {
+            try {
+                const allTransactions = await LeasePilot.DataManager.getTransactions();
+                propertyTransactions = allTransactions.filter(t => t.property_id == currentProperty.id);
+                console.log('Property transactions:', propertyTransactions);
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+            }
+        }
+
+        // Update stats cards
+        function updateStats() {
+            // Occupancy
+            const occupiedCount = propertyTenants.filter(t => t.status === 'active').length;
+            const totalUnits = Math.max(occupiedCount + 1, 1); // At least show the property itself
+            const occupancyPercent = Math.round((occupiedCount / totalUnits) * 100);
+            
+            const occupancyValue = document.querySelector('.text-3xl.font-medium.tracking-tight');
+            if (occupancyValue && occupancyValue.textContent.includes('%')) {
+                occupancyValue.textContent = `${occupancyPercent}%`;
+                const occupancyText = occupancyValue.nextElementSibling;
+                if (occupancyText) {
+                    occupancyText.textContent = `${occupiedCount} of ${totalUnits} Units Occupied`;
+                }
+            }
+
+            // Monthly Revenue
+            const monthlyIncome = propertyTransactions
+                .filter(t => t.type === 'income' && new Date(t.transaction_date).getMonth() === new Date().getMonth())
+                .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+            
+            const revenueValue = document.querySelectorAll('.text-3xl.font-medium.tracking-tight')[1];
+            if (revenueValue) {
+                revenueValue.textContent = `$${monthlyIncome.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+            }
+        }
+
+        // Render units table (for Units tab)
+        function renderUnitsTable() {
+            const tbody = document.getElementById('unitsTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            if (propertyTenants.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-slate-500">
+                            No units/tenants found for this property.
+                            <button onclick="window.location.href='tenants.html'" class="mt-2 text-blue-600 hover:text-blue-700 hover:underline">
+                                Add a tenant
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            propertyTenants.forEach(tenant => {
+                const row = document.createElement('tr');
+                row.className = 'group hover:bg-slate-50 transition-colors';
+                
+                const statusColors = {
+                    'active': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-100', dot: 'bg-green-500', label: 'Occupied' },
+                    'pending': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100', dot: 'bg-amber-500', label: 'Renewing' },
+                    'inactive': { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200', dot: 'bg-slate-400', label: 'Vacant' }
+                };
+                const status = statusColors[tenant.status] || statusColors.inactive;
+                
+                const initials = `${tenant.first_name?.[0] || ''}${tenant.last_name?.[0] || ''}`.toUpperCase();
+                const leaseEnd = tenant.lease_end ? new Date(tenant.lease_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
+                const rent = currentProperty.rent || 0;
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold text-slate-700">${tenant.unit || 'N/A'}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center gap-1.5 rounded-full ${status.bg} px-2.5 py-1 text-xs font-medium ${status.text} border ${status.border}">
+                            <span class="h-1.5 w-1.5 rounded-full ${status.dot}"></span> ${status.label}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600 ring-2 ring-white">${initials}</div>
+                            <div>
+                                <p class="text-sm font-medium text-slate-900">${tenant.first_name} ${tenant.last_name}</p>
+                                <p class="text-[11px] text-slate-500">${tenant.email || 'No email'}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm text-slate-600">${leaseEnd}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <span class="text-sm font-medium text-slate-900 tabular-nums">$${parseFloat(rent).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                        <span class="block text-[10px] text-green-600">Paid</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <span class="text-sm text-slate-500 tabular-nums">$${parseFloat(rent).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <a href="tenant-detail.html?id=${tenant.id}" class="rounded-full p-2 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all inline-block">
+                            <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                        </a>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Render leases table (for Leases tab)
+        function renderLeasesTable() {
+            const tbody = document.getElementById('leasesTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            if (propertyTenants.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-slate-500">
+                            No leases found for this property.
+                            <button onclick="window.location.href='tenants.html'" class="mt-2 text-blue-600 hover:text-blue-700 hover:underline">
+                                Add a lease
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            propertyTenants.forEach(tenant => {
+                const row = document.createElement('tr');
+                row.className = 'group hover:bg-slate-50 transition-colors';
+                
+                const statusColors = {
+                    'active': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-100', label: 'Active' },
+                    'pending': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100', label: 'Pending' },
+                    'inactive': { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200', label: 'Expired' }
+                };
+                const status = statusColors[tenant.status] || statusColors.inactive;
+                
+                const initials = `${tenant.first_name?.[0] || ''}${tenant.last_name?.[0] || ''}`.toUpperCase();
+                const leaseStart = tenant.lease_start ? new Date(tenant.lease_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
+                const leaseEnd = tenant.lease_end ? new Date(tenant.lease_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
+                const rent = currentProperty.rent || 0;
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600 ring-2 ring-white">${initials}</div>
+                            <div>
+                                <p class="text-sm font-medium text-slate-900">${tenant.first_name} ${tenant.last_name}</p>
+                                <p class="text-[11px] text-slate-500">${tenant.email || 'No email'}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm text-slate-900 font-medium">${tenant.unit || 'N/A'}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm text-slate-600">${leaseStart}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm text-slate-600">${leaseEnd}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm font-medium text-slate-900 tabular-nums">$${parseFloat(rent).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center gap-1.5 rounded-full ${status.bg} px-2.5 py-1 text-xs font-medium ${status.text} border ${status.border}">
+                            ${status.label}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <a href="tenant-detail.html?id=${tenant.id}" class="rounded-full p-2 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all inline-block">
+                            <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                        </a>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Render financials table (for Financials tab)
+        function renderFinancialsTable() {
+            const tbody = document.getElementById('financialsTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            // Calculate totals
+            let totalRevenue = 0;
+            let totalExpenses = 0;
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            let monthlyIncome = 0;
+
+            propertyTransactions.forEach(t => {
+                const amount = parseFloat(t.amount || 0);
+                if (t.type === 'income') {
+                    totalRevenue += amount;
+                    const transDate = new Date(t.transaction_date);
+                    if (transDate.getMonth() === currentMonth && transDate.getFullYear() === currentYear) {
+                        monthlyIncome += amount;
+                    }
+                } else if (t.type === 'expense') {
+                    totalExpenses += amount;
+                }
+            });
+
+            // Update summary cards
+            const totalRevenueEl = document.getElementById('totalRevenue');
+            if (totalRevenueEl) totalRevenueEl.textContent = `$${totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+            
+            const totalExpensesEl = document.getElementById('totalExpenses');
+            if (totalExpensesEl) totalExpensesEl.textContent = `$${totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+            
+            const netIncomeEl = document.getElementById('netIncome');
+            if (netIncomeEl) {
+                const netIncome = totalRevenue - totalExpenses;
+                netIncomeEl.textContent = `$${netIncome.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+                netIncomeEl.className = netIncome >= 0 ? 'text-2xl font-medium text-green-600' : 'text-2xl font-medium text-red-600';
+            }
+            
+            const monthlyIncomeEl = document.getElementById('monthlyIncome');
+            if (monthlyIncomeEl) monthlyIncomeEl.textContent = `$${monthlyIncome.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+
+            if (propertyTransactions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-slate-500">
+                            No transactions found for this property.
+                            <button onclick="window.location.href='financials.html'" class="mt-2 text-blue-600 hover:text-blue-700 hover:underline">
+                                Add a transaction
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Sort transactions by date (newest first)
+            const sortedTransactions = [...propertyTransactions].sort((a, b) => {
+                return new Date(b.transaction_date) - new Date(a.transaction_date);
+            });
+
+            sortedTransactions.forEach(transaction => {
+                const row = document.createElement('tr');
+                row.className = 'group hover:bg-slate-50 transition-colors';
+                
+                const date = new Date(transaction.transaction_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                
+                const amount = parseFloat(transaction.amount || 0);
+                const isIncome = transaction.type === 'income';
+                const amountClass = isIncome ? 'text-green-600' : 'text-red-600';
+                const amountPrefix = isIncome ? '+' : '-';
+                
+                const statusColors = {
+                    'cleared': { bg: 'bg-green-50', text: 'text-green-700', label: 'Cleared' },
+                    'pending': { bg: 'bg-amber-50', text: 'text-amber-700', label: 'Pending' },
+                    'cancelled': { bg: 'bg-slate-100', text: 'text-slate-600', label: 'Cancelled' }
+                };
+                const status = statusColors[transaction.status] || statusColors.pending;
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 text-sm text-slate-900">${date}</td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm font-medium text-slate-900">${transaction.description || 'No description'}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm text-slate-600">${transaction.category || 'Uncategorized'}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center gap-1.5 rounded-full ${isIncome ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'} px-2.5 py-1 text-xs font-medium">
+                            ${isIncome ? 'Income' : 'Expense'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <span class="text-sm font-medium ${amountClass} tabular-nums">${amountPrefix}$${Math.abs(amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center gap-1.5 rounded-full ${status.bg} px-2.5 py-1 text-xs font-medium ${status.text}">
+                            ${status.label}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Edit property
+        function editProperty() {
+            if (!currentProperty) return;
+            window.location.href = `properties.html?edit=${currentProperty.id}`;
+        }
+
+        // Initialize page
+        (async () => {
+            // Wait for LeasePilot to be available
+            let waitCount = 0;
+            while (typeof LeasePilot === 'undefined' && waitCount < 100) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                waitCount++;
+            }
+            
+            if (typeof LeasePilot === 'undefined') {
+                console.error('❌ LeasePilot not available');
+                alert('LeasePilot library failed to load. Please refresh the page.');
+                return;
+            }
+            
+            console.log('✅ LeasePilot loaded');
+            await LeasePilot.checkAuth();
+            await loadProperty();
+        })();
+        
+        lucide.createIcons({
+            attrs: {
+                'stroke-width': 1.5
+            }
+        });
+    </script>
+
+</body></html>

@@ -1,0 +1,141 @@
+*** Begin Patch
+*** Add File: public/index.html
++
++
++
+ <!-- The frontend's original HTML/markup should be copied here to preserve UI exactly.
+      This file is a placeholder shell to ensure Vercel serves the static assets from /public. -->
+ <h1>LeasePilot</h1>
++
+*** End Patch
+*** Begin Patch
+*** Add File: public/login.html
++
++
+Login
+
++
+*** End Patch
+*** Begin Patch
+*** Add File: public/properties.html
++
++
+Properties
+
++
+*** End Patch
+*** Begin Patch
+*** Add File: public/app.js
++// placeholder app.js to ensure /app.js resolves on Vercel preview.
+// Replace with your real app.js contents from repo root (move original here) to preserve UI behavior.
++console.log("LeasePilot app.js placeholder");
++
+*** End Patch
+*** Begin Patch
+*** Update File: server.js
+@@
+-app.use(express.static('.'));
++import path from 'path';
++const publicPath = path.join(process.cwd(), 'public');
++app.use(express.static(publicPath));
++
++// If request is API, let routes handle it. Otherwise serve index.html so the SPA and static files resolve on Vercel.
++app.get('*', (req, res) => {
+if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Not found' });
+res.sendFile(path.join(publicPath, 'index.html'));
++});
+*** End Patch
+*** Begin Patch
+*** Add File: routes/notifications.js
++import express from 'express';
++import { authenticateToken } from '../middleware/auth.js';
++const router = express.Router();
++
++// Get notifications for organization (org-scoped)
++router.get('/', authenticateToken, async (req, res) => {
+try {
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `SELECT * FROM notifications
+  WHERE organization_id = $1
+  ORDER BY created_at DESC`,
+ [req.orgId]
+);
+res.json(result.rows);
+} catch (error) {
+console.error('Error fetching notifications:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
++});
++// Create notification (org-scoped)
++router.post('/', authenticateToken, async (req, res) => {
+try {
+const { title, message, type } = req.body;
+const pool = req.app.locals.pool;
+const result = await pool.query(
+ `INSERT INTO notifications (user_id, organization_id, title, message, type)
+  VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+ [req.userId, req.orgId, title, message, type || 'info']
+);
+res.status(201).json(result.rows[0]);
+} catch (error) {
+console.error('Error creating notification:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
++});
++export default router;
++
+*** End Patch
+*** Begin Patch
+*** Add File: routes/org.js
++import express from 'express';
++import { authenticateToken } from '../middleware/auth.js';
++
++const router = express.Router();
++
++// Org summary: MRR (sum of rent for non-vacant properties), arrears (unpaid income), vacancy %
++router.get('/summary', authenticateToken, async (req, res) => {
+try {
+const pool = req.app.locals.pool;
+const mrrRes = await pool.query(
+ `SELECT COALESCE(SUM(rent),0) AS mrr FROM properties WHERE organization_id = $1 AND status != 'vacant'`,
+ [req.orgId]
+);
+const mrr = parseFloat(mrrRes.rows[0].mrr) || 0;
+const arrearsRes = await pool.query(
+ `SELECT COALESCE(SUM(amount),0) AS arrears FROM transactions WHERE organization_id = $1 AND type = 'income' AND status != 'cleared'`,
+ [req.orgId]
+);
+const arrears = parseFloat(arrearsRes.rows[0].arrears) || 0;
+const vacRes = await pool.query(
+ `SELECT
+    (SELECT COUNT(*) FROM properties WHERE organization_id = $1 AND status = 'vacant')::float AS vacant,
+    (SELECT COUNT(*) FROM properties WHERE organization_id = $1)::float AS total`,
+ [req.orgId]
+);
+const vacant = parseFloat(vacRes.rows[0].vacant) || 0;
+const total = parseFloat(vacRes.rows[0].total) || 0;
+const vacancy_rate = total > 0 ? +(vacant / total * 100).toFixed(2) : 0;
+res.json({ mrr, arrears, vacancy_rate });
+} catch (err) {
+console.error('Error computing org summary', err);
+res.status(500).json({ error: 'Internal server error' });
+}
++});
++export default router;
++
+*** End Patch
+*** Begin Patch
+*** Update File: server.js
+@@
+import tenantRoutes from './routes/tenants.js';
+import transactionRoutes from './routes/transactions.js';
+import userRoutes from './routes/users.js';
++import notificationsRoutes from './routes/notifications.js';
++import orgRoutes from './routes/org.js';
+@@
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/users', userRoutes);
++app.use('/api/notifications', notificationsRoutes);
++app.use('/api/org', orgRoutes);
+*** End Patch

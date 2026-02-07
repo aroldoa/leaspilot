@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Properties - LeasePilot AI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Inter', sans-serif; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.checkbox-checked { background-color: #0f172a; border-color: #0f172a; background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e"); }
+</style></head>
+<body class="bg-[#F3F5F7] text-slate-900 antialiased selection:bg-slate-200">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="hidden md:flex w-72 flex-col justify-between border-r border-slate-200 bg-white p-6">
+            <div>
+                <a href="index.html" class="flex items-center mb-10">
+                    <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-12">
+                </a>
+
+                <nav class="space-y-1">
+                    <a href="index.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="layout-grid" class="h-5 w-5"></i>
+                        Dashboard
+                    </a>
+                    <a href="properties.html" class="flex items-center gap-3 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition-colors">
+                        <i data-lucide="home" class="h-5 w-5 text-slate-900"></i>
+                        Properties
+                    </a>
+                    <a href="tenants.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="users" class="h-5 w-5"></i>
+                        Tenants
+                    </a>
+                    <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="wallet" class="h-5 w-5"></i>
+                        Financials
+                    </a>
+                    <a href="settings.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="settings" class="h-5 w-5"></i>
+                        Settings
+                    </a>
+                </nav>
+            </div>
+
+            <div>
+                <div class="mb-6 rounded-3xl bg-[#EBC7B6] p-5 relative overflow-hidden">
+                    <div class="relative z-10">
+                        <p class="mb-2 text-lg font-medium tracking-tight text-slate-900">Upgrade to Pro</p>
+                        <p class="mb-4 text-sm text-slate-700">Unlock advanced AI forecasting for your portfolio.</p>
+                        <button class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
+                            View Plans
+                        </button>
+                    </div>
+                    <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/20"></div>
+                </div>
+
+                <div class="flex items-center gap-3 border-t border-slate-100 pt-5">
+                    <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
+                        <div class="flex flex-col flex-1">
+                            <span class="text-sm font-medium" data-user-name>Sarah Jenkins</span>
+                        <span class="text-xs text-slate-500">Portfolio Manager</span>
+                    </div>
+                    </a>
+                    <button onclick="LeasePilot.logout()" class="text-slate-400 hover:text-slate-600" title="Logout">
+                        <i data-lucide="log-out" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto hide-scrollbar">
+            <!-- Header Mobile -->
+            <div class="flex md:hidden items-center justify-between bg-white p-4 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <a href="index.html" class="flex items-center">
+                        <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-10">
+                    </a>
+                </div>
+                <button class="text-slate-500"><i data-lucide="menu" class="h-6 w-6"></i></button>
+            </div>
+
+            <div class="mx-auto max-w-7xl px-6 py-8 md:px-10 md:py-12">
+                
+                <!-- Page Header -->
+                <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <h1 class="text-3xl font-medium tracking-tight text-slate-900">Properties</h1>
+                        <p class="mt-2 text-sm text-slate-500">Manage your portfolio, track occupancy, and optimize performance.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                            <i data-lucide="download" class="h-4 w-4"></i>
+                            Export
+                        </button>
+                        <button onclick="LeasePilot.Modal.open('addPropertyModal')" class="flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors shadow-sm hover:shadow-md">
+                            <i data-lucide="plus" class="h-4 w-4"></i>
+                            Add Property
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filters & Controls -->
+                <div class="mb-8 flex flex-col gap-4 rounded-3xl bg-white p-2 shadow-sm border border-slate-100 md:flex-row md:items-center justify-between">
+                    <div class="flex items-center gap-1 overflow-x-auto p-1 hide-scrollbar">
+                        <button class="whitespace-nowrap rounded-full bg-slate-100 px-4 py-2 text-xs font-medium text-slate-900 transition-colors">
+                            All Properties <span class="ml-1 text-slate-400">24</span>
+                        </button>
+                        <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                            Occupied <span class="ml-1 text-slate-400">20</span>
+                        </button>
+                        <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                            Vacant <span class="ml-1 text-slate-400">3</span>
+                        </button>
+                        <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                            Maintenance <span class="ml-1 text-slate-400">1</span>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 px-3 py-1 md:py-0">
+                        <div class="h-4 w-px bg-slate-200 hidden md:block"></div>
+                        <div class="relative group w-full md:w-auto">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-slate-900 transition-colors"></i>
+                            <input type="text" placeholder="Search address, city..." class="h-10 w-full md:w-64 rounded-full border-none bg-slate-50 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-slate-100 transition-all placeholder:text-slate-400">
+                        </div>
+                        <div class="flex items-center rounded-full bg-slate-50 p-1 border border-slate-100">
+                            <button class="rounded-full bg-white p-1.5 shadow-sm text-slate-900">
+                                <i data-lucide="layout-grid" class="h-4 w-4"></i>
+                            </button>
+                            <button class="rounded-full p-1.5 text-slate-400 hover:text-slate-600">
+                                <i data-lucide="list" class="h-4 w-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Properties Grid -->
+                <div id="propertiesGrid" class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <!-- Add Property Card -->
+                    <button onclick="openPropertyModal()" class="group relative flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-dashed border-slate-200 bg-slate-50 transition-all hover:bg-slate-100 hover:border-slate-300 min-h-[350px]">
+                         <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="plus" class="h-6 w-6 text-slate-900"></i>
+                         </div>
+                         <h3 class="text-sm font-medium text-slate-900">Add New Property</h3>
+                         <p class="mt-1 text-xs text-slate-500">Sync with MLS or add manually</p>
+                    </button>
+
+                </div>
+
+                <!-- Pagination -->
+                <div class="mt-12 flex items-center justify-between border-t border-slate-200 pt-8">
+                     <div class="text-xs text-slate-500">
+                        Showing <span class="font-medium text-slate-900">1-5</span> of <span class="font-medium text-slate-900">24</span> properties
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors" disabled="">
+                            <i data-lucide="chevron-left" class="h-3 w-3"></i> Previous
+                        </button>
+                        <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                            Next <i data-lucide="chevron-right" class="h-3 w-3"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <footer class="mt-12 pt-8 text-center md:text-left">
+                    <p class="text-xs text-slate-400">© 2024 LeasePilot AI Inc.</p>
+                </footer>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Property Modal -->
+    <div id="addPropertyModal" class="modal hidden fixed inset-0 z-50 items-center justify-center modal-backdrop bg-black/50 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+                <h2 id="propertyModalTitle" class="text-xl font-semibold text-slate-900">Add New Property</h2>
+                <button onclick="LeasePilot.Modal.close('addPropertyModal')" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+            <form id="propertyForm" class="p-6 space-y-5">
+                <input type="hidden" id="propertyId" name="id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Property Name</label>
+                        <input type="text" name="name" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Property Type</label>
+                        <select name="type" id="propertyType" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                            <option value="Single Family">Single Family</option>
+                            <option value="Multifamily">Multifamily</option>
+                            <option value="Condo">Condo</option>
+                            <option value="Apartment">Apartment</option>
+                            <option value="Commercial">Commercial</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Address</label>
+                    <input type="text" name="address" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">City</label>
+                        <input type="text" name="city" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">State</label>
+                        <input type="text" name="state" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">ZIP Code</label>
+                        <input type="text" name="zip" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Bedrooms</label>
+                        <input type="number" name="bedrooms" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Bathrooms</label>
+                        <input type="number" name="bathrooms" step="0.5" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Square Feet</label>
+                        <input type="number" name="sqft" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Monthly Rent</label>
+                    <input type="number" name="rent" step="0.01" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                    <select name="status" id="propertyStatus" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                        <option value="vacant">Vacant</option>
+                        <option value="occupied">Occupied</option>
+                        <option value="maintenance">Maintenance</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Image URL</label>
+                    <input type="url" name="image" id="propertyImage" placeholder="https://..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="LeasePilot.Modal.close('addPropertyModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium">Cancel</button>
+                    <button type="submit" id="propertySubmitBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-medium">Add Property</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Wait for LeasePilot to be available
+        (async () => {
+            // Wait for app.js to load and define LeasePilot
+            let waitCount = 0;
+            while (typeof LeasePilot === 'undefined' && waitCount < 100) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                waitCount++;
+            }
+            
+            if (typeof LeasePilot === 'undefined') {
+                console.error('❌ LeasePilot not available after waiting');
+                alert('LeasePilot library failed to load. Please refresh the page.');
+                return;
+            }
+            
+            console.log('✅ LeasePilot loaded successfully');
+            await LeasePilot.checkAuth();
+        })();
+        
+        lucide.createIcons({
+            attrs: {
+                'stroke-width': 1.5
+            }
+        });
+
+        let currentEditingProperty = null;
+
+        // Load and display properties
+        async function loadProperties() {
+            try {
+                console.log('🔍 Starting to load properties...');
+                const properties = await LeasePilot.DataManager.getProperties();
+                console.log('📦 Properties received:', properties);
+                
+                const grid = document.getElementById('propertiesGrid');
+                if (!grid) {
+                    console.error('❌ Properties grid element not found!');
+                    return;
+                }
+                
+                // Store the add button HTML before clearing
+                const addButtonHTML = grid.querySelector('button')?.outerHTML || '';
+                
+                // Clear all content
+                grid.innerHTML = '';
+                
+                // Add property cards
+                if (properties && properties.length > 0) {
+                    console.log(`✅ Adding ${properties.length} properties to grid`);
+                    properties.forEach((property, index) => {
+                        console.log(`  - Adding property ${index + 1}: ${property.name}`);
+                        const card = createPropertyCard(property);
+                        grid.appendChild(card);
+                    });
+                } else {
+                    console.warn('⚠️ No properties found or empty array');
+                }
+                
+                // Re-add the add button at the end
+                if (addButtonHTML) {
+                    grid.insertAdjacentHTML('beforeend', addButtonHTML);
+                } else {
+                    // Create add button if it doesn't exist
+                    const addBtn = document.createElement('button');
+                    addBtn.setAttribute('onclick', 'openPropertyModal()');
+                    addBtn.className = 'group relative flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-dashed border-slate-200 bg-slate-50 transition-all hover:bg-slate-100 hover:border-slate-300 min-h-[350px]';
+                    addBtn.innerHTML = `
+                        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="plus" class="h-6 w-6 text-slate-900"></i>
+                        </div>
+                        <h3 class="text-sm font-medium text-slate-900">Add New Property</h3>
+                        <p class="mt-1 text-xs text-slate-500">Sync with MLS or add manually</p>
+                    `;
+                    grid.appendChild(addBtn);
+                }
+                
+                lucide.createIcons();
+                console.log('✅ Properties loaded successfully');
+            } catch (error) {
+                console.error('❌ Error loading properties:', error);
+                console.error('Error details:', error.message, error.stack);
+                if (typeof LeasePilot !== 'undefined' && LeasePilot.Toast) {
+                    LeasePilot.Toast.show('Failed to load properties: ' + error.message, 'error');
+                } else {
+                    alert('Failed to load properties. Check console for details.');
+                }
+            }
+        }
+
+        // Create property card element
+        function createPropertyCard(property) {
+            const statusColors = {
+                'occupied': { bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500', label: 'Occupied' },
+                'vacant': { bg: 'bg-slate-50', text: 'text-slate-600', dot: 'bg-slate-400', label: 'Vacant' },
+                'maintenance': { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Maintenance' }
+            };
+            const status = statusColors[property.status] || statusColors.vacant;
+            
+            const card = document.createElement('div');
+            card.className = 'group relative flex flex-col overflow-hidden rounded-[2rem] border border-slate-100 bg-white transition-all hover:shadow-lg hover:-translate-y-1';
+            card.innerHTML = `
+                <div class="relative h-48 w-full overflow-hidden">
+                    <a href="property-detail.html?id=${property.id}" class="block h-full w-full cursor-pointer">
+                        <img src="${property.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800&h=500'}" 
+                             class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                             alt="${property.name}">
+                    </a>
+                    <div class="absolute right-4 top-4 z-10">
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-medium ${status.text} backdrop-blur-md shadow-sm">
+                            <span class="h-1.5 w-1.5 rounded-full ${status.dot}"></span>
+                            ${status.label}
+                        </span>
+                    </div>
+                    <div class="absolute left-4 top-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation(); event.preventDefault();">
+                        <label class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white shadow-md border border-slate-100">
+                            <input type="checkbox" class="peer h-full w-full appearance-none rounded-full border border-slate-300 checked:bg-slate-900 checked:border-slate-900 transition-all cursor-pointer" onclick="event.stopPropagation();">
+                            <i data-lucide="check" class="absolute h-3.5 w-3.5 text-white opacity-0 peer-checked:opacity-100"></i>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex flex-1 flex-col p-6">
+                    <div class="mb-4">
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="text-lg font-medium text-slate-900">${property.name}</h3>
+                            <span class="text-sm font-semibold text-slate-900">$${parseFloat(property.rent || 0).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}<span class="font-normal text-slate-400 text-xs">/mo</span></span>
+                        </div>
+                        <p class="text-sm text-slate-500">${property.address || ''}${property.city ? ', ' + property.city : ''}${property.state ? ', ' + property.state : ''}</p>
+                    </div>
+                    <div class="mb-6 flex items-center gap-4 border-b border-slate-50 pb-4 text-xs text-slate-500">
+                        <span class="flex items-center gap-1.5"><i data-lucide="bed-double" class="h-4 w-4 text-slate-400"></i> ${property.bedrooms || 0} Bed</span>
+                        <span class="flex items-center gap-1.5"><i data-lucide="bath" class="h-4 w-4 text-slate-400"></i> ${property.bathrooms || 0} Bath</span>
+                        <span class="flex items-center gap-1.5"><i data-lucide="ruler" class="h-4 w-4 text-slate-400"></i> ${property.sqft || 0} sqft</span>
+                    </div>
+                    <div class="mt-auto flex items-center justify-between">
+                        <a href="property-detail.html?id=${property.id}" class="text-xs text-slate-400 hover:text-slate-600">View Details</a>
+                        <div class="flex gap-2">
+                            <button onclick="editProperty(${property.id})" class="rounded-full bg-slate-50 p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-colors" title="Edit">
+                                <i data-lucide="edit" class="h-4 w-4"></i>
+                            </button>
+                            <button onclick="deleteProperty(${property.id})" class="rounded-full bg-slate-50 p-2 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-colors" title="Delete">
+                                <i data-lucide="trash-2" class="h-4 w-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        // Open modal for add/edit
+        function openPropertyModal(propertyId = null) {
+            currentEditingProperty = propertyId;
+            const form = document.getElementById('propertyForm');
+            const title = document.getElementById('propertyModalTitle');
+            const submitBtn = document.getElementById('propertySubmitBtn');
+            
+            if (propertyId) {
+                title.textContent = 'Edit Property';
+                submitBtn.textContent = 'Update Property';
+                loadPropertyForEdit(propertyId);
+            } else {
+                title.textContent = 'Add New Property';
+                submitBtn.textContent = 'Add Property';
+                form.reset();
+                document.getElementById('propertyId').value = '';
+            }
+            LeasePilot.Modal.open('addPropertyModal');
+        }
+
+        // Load property for editing
+        async function loadPropertyForEdit(id) {
+            try {
+                const property = await LeasePilot.DataManager.getProperty(id);
+                if (property) {
+                    document.getElementById('propertyId').value = property.id;
+                    document.querySelector('input[name="name"]').value = property.name || '';
+                    document.getElementById('propertyType').value = property.type || 'Apartment';
+                    document.querySelector('input[name="address"]').value = property.address || '';
+                    document.querySelector('input[name="city"]').value = property.city || '';
+                    document.querySelector('input[name="state"]').value = property.state || '';
+                    document.querySelector('input[name="zip"]').value = property.zip || '';
+                    document.querySelector('input[name="bedrooms"]').value = property.bedrooms || 0;
+                    document.querySelector('input[name="bathrooms"]').value = property.bathrooms || 0;
+                    document.querySelector('input[name="sqft"]').value = property.sqft || 0;
+                    document.querySelector('input[name="rent"]').value = property.rent || 0;
+                    document.getElementById('propertyImage').value = property.image_url || '';
+                    document.getElementById('propertyStatus').value = property.status || 'vacant';
+                }
+            } catch (error) {
+                console.error('Error loading property:', error);
+                LeasePilot.Toast.show('Failed to load property data.', 'error');
+            }
+        }
+
+        // Edit property
+        async function editProperty(id) {
+            openPropertyModal(id);
+        }
+
+        // Delete property
+        async function deleteProperty(id) {
+            if (confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+                try {
+                    await LeasePilot.DataManager.deleteProperty(id);
+                    LeasePilot.Toast.show('Property deleted successfully!', 'success');
+                    loadProperties();
+                } catch (error) {
+                    LeasePilot.Toast.show('Failed to delete property.', 'error');
+                }
+            }
+        }
+
+        // Property Form Handler
+        document.getElementById('propertyForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const propertyId = formData.get('id');
+            const property = {
+                id: propertyId || undefined,
+                name: formData.get('name'),
+                type: formData.get('type'),
+                address: formData.get('address'),
+                city: formData.get('city'),
+                state: formData.get('state'),
+                zip: formData.get('zip'),
+                bedrooms: parseInt(formData.get('bedrooms')) || 0,
+                bathrooms: parseFloat(formData.get('bathrooms')) || 0,
+                sqft: parseInt(formData.get('sqft')) || 0,
+                rent: parseFloat(formData.get('rent')) || 0,
+                image_url: formData.get('image') || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800&h=500',
+                status: formData.get('status') || 'vacant'
+            };
+            
+            try {
+                await LeasePilot.DataManager.saveProperty(property);
+                LeasePilot.Toast.show(propertyId ? 'Property updated successfully!' : 'Property added successfully!', 'success');
+                LeasePilot.Modal.close('addPropertyModal');
+                e.target.reset();
+                loadProperties();
+            } catch (error) {
+                LeasePilot.Toast.show('Failed to save property. Please try again.', 'error');
+            }
+        });
+
+        // Load properties on page load
+        (async () => {
+            try {
+                console.log('🚀 Initializing properties page...');
+                
+                // Wait for LeasePilot to be available
+                let waitCount = 0;
+                while (typeof LeasePilot === 'undefined' && waitCount < 100) {
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    waitCount++;
+                }
+                
+                if (typeof LeasePilot === 'undefined') {
+                    console.error('❌ LeasePilot not available after waiting');
+                    alert('LeasePilot library failed to load. Please refresh the page.');
+                    return;
+                }
+                
+                console.log('✅ LeasePilot loaded');
+                
+                // Check authentication
+                console.log('🔐 Checking authentication...');
+                const authResult = await LeasePilot.checkAuth();
+                if (!authResult) {
+                    console.error('❌ Authentication failed - redirecting to login');
+                    return;
+                }
+                
+                console.log('✅ Authentication successful');
+                
+                // Check token
+                const token = localStorage.getItem('token');
+                console.log('🎫 Token exists:', !!token);
+                
+                // Load properties
+                console.log('📋 Loading properties...');
+                await loadProperties();
+            } catch (error) {
+                console.error('❌ Error initializing page:', error);
+                console.error('Error stack:', error.stack);
+                alert('Error loading page: ' + error.message);
+            }
+        })();
+    </script>
+
+</body></html>
