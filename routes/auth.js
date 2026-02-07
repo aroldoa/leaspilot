@@ -23,19 +23,19 @@ router.post('/register', async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Create user (organization_id can be set later)
     const result = await pool.query(
       `INSERT INTO users (email, password_hash, name, role)
        VALUES ($1, $2, $3, $4)
-       RETURNING id, email, name, role, created_at`,
+       RETURNING id, email, name, role, organization_id, created_at`,
       [email, passwordHash, name, 'Portfolio Manager']
     );
 
     const user = result.rows[0];
 
-    // Generate token
+    // Generate token (include orgId and role)
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, orgId: user.organization_id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -46,7 +46,8 @@ router.post('/register', async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: user.role,
+        organization_id: user.organization_id
       }
     });
   } catch (error) {
@@ -63,7 +64,7 @@ router.post('/login', async (req, res) => {
 
     // Find user
     const result = await pool.query(
-      'SELECT id, email, password_hash, name, role FROM users WHERE email = $1',
+      'SELECT id, email, password_hash, name, role, organization_id FROM users WHERE email = $1',
       [email]
     );
 
@@ -80,9 +81,9 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Generate token
+    // Generate token (include orgId and role)
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, orgId: user.organization_id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -93,7 +94,8 @@ router.post('/login', async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: user.role,
+        organization_id: user.organization_id
       }
     });
   } catch (error) {
@@ -110,7 +112,7 @@ router.post('/demo', async (req, res) => {
 
     // Check if demo user exists
     let result = await pool.query(
-      'SELECT id, email, name, role FROM users WHERE email = $1',
+      'SELECT id, email, name, role, organization_id FROM users WHERE email = $1',
       [demoEmail]
     );
 
@@ -121,7 +123,7 @@ router.post('/demo', async (req, res) => {
       const createResult = await pool.query(
         `INSERT INTO users (email, password_hash, name, role)
          VALUES ($1, $2, $3, $4)
-         RETURNING id, email, name, role`,
+         RETURNING id, email, name, role, organization_id`,
         [demoEmail, passwordHash, 'Sarah Jenkins', 'Portfolio Manager']
       );
       user = createResult.rows[0];
@@ -129,9 +131,9 @@ router.post('/demo', async (req, res) => {
       user = result.rows[0];
     }
 
-    // Generate token
+    // Generate token (include orgId and role)
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, orgId: user.organization_id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -142,7 +144,8 @@ router.post('/demo', async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: user.role,
+        organization_id: user.organization_id
       }
     });
   } catch (error) {
@@ -164,7 +167,7 @@ router.get('/verify', async (req, res) => {
     const pool = req.app.locals.pool;
 
     const result = await pool.query(
-      'SELECT id, email, name, role FROM users WHERE id = $1',
+      'SELECT id, email, name, role, organization_id FROM users WHERE id = $1',
       [decoded.userId]
     );
 

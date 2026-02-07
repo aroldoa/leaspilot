@@ -9,7 +9,8 @@
     "dev": "node --watch server.js",
     "seed": "node db/seed.js",
     "assign": "node db/assign-to-user.js",
-    "set-password": "node db/set-password.js"
+    "set-password": "node db/set-password.js",
+    "migrate:org": "node db/migrations/001-org-multitenancy.js"
   },
   "keywords": [
     "property-management",
@@ -27,4 +28,3 @@
     "jsonwebtoken": "^9.0.2"
   }
 }
-

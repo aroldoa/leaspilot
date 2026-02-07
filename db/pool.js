@@ -8,12 +8,14 @@ const { Pool } = pg;
 let pool = null;
 
 export function createPool() {
+  if (!process.env.DATABASE_URL) {
+    console.warn('⚠️ DATABASE_URL not set — database disabled (set in Vercel env for production)');
+    return null;
+  }
   if (!pool) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false
-      },
+      ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false },
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 2000,
@@ -32,7 +34,7 @@ export function createPool() {
 }
 
 export function getPool() {
-  if (!pool) {
+  if (!pool && process.env.DATABASE_URL) {
     return createPool();
   }
   return pool;

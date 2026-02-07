@@ -3,7 +3,7 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all tenants for user
+// Get all tenants for the organization (org-scoped)
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const pool = req.app.locals.pool;
@@ -11,9 +11,9 @@ router.get('/', authenticateToken, async (req, res) => {
       `SELECT t.*, p.name as property_name, p.address as property_address
        FROM tenants t
        LEFT JOIN properties p ON t.property_id = p.id
-       WHERE t.user_id = $1
+       WHERE t.organization_id = $1
        ORDER BY t.created_at DESC`,
-      [req.userId]
+      [req.orgId]
     );
     res.json(result.rows);
   } catch (error) {
@@ -22,7 +22,7 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Get single tenant
+// Get single tenant (org-scoped)
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const pool = req.app.locals.pool;
@@ -30,8 +30,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
       `SELECT t.*, p.name as property_name, p.address as property_address
        FROM tenants t
        LEFT JOIN properties p ON t.property_id = p.id
-       WHERE t.id = $1 AND t.user_id = $2`,
-      [req.params.id, req.userId]
+       WHERE t.id = $1 AND t.organization_id = $2`,
+      [req.params.id, req.orgId]
     );
 
     if (result.rows.length === 0) {

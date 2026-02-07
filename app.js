@@ -1,6 +1,9 @@
 // LeasePilot AI - Main Application JavaScript
 
-const API_BASE_URL = 'http://localhost:3000/api';
+// Use same origin in production (Vercel), localhost when developing
+const API_BASE_URL = (typeof window !== 'undefined' && window.location.origin)
+  ? `${window.location.origin}/api`
+  : 'http://localhost:3000/api';
 
 // API Helper Functions
 const API = {
