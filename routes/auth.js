@@ -15,6 +15,17 @@ function setAccessCookie(res, token) {
   });
 }
 
+// Utility - set refresh token cookie
+function setRefreshCookie(res, token) {
+  const isProd = process.env.NODE_ENV === 'production';
+  res.cookie('refresh_token', token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax',
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+  });
+}
+
 // Register
 router.post('/register', async (req, res) => {
   try {
@@ -64,8 +75,9 @@ router.post('/register', async (req, res) => {
       [user.id, refreshToken]
     );
 
-    // Set cookie
+    // Set cookies (access + refresh as httpOnly)
     setAccessCookie(res, accessToken);
+    setRefreshCookie(res, refreshToken);
 
     res.json({
       user: {
@@ -126,8 +138,9 @@ router.post('/login', async (req, res) => {
       [user.id, refreshToken]
     );
 
-    // Set cookie
+    // Set cookies (access + refresh as httpOnly)
     setAccessCookie(res, accessToken);
+    setRefreshCookie(res, refreshToken);
 
     res.json({
       user: {
@@ -190,8 +203,9 @@ router.post('/demo', async (req, res) => {
       [user.id, refreshToken]
     );
 
-    // Set cookie
+    // Set cookies (access + refresh as httpOnly)
     setAccessCookie(res, accessToken);
+    setRefreshCookie(res, refreshToken);
 
     res.json({
       user: {
@@ -207,24 +221,36 @@ router.post('/demo', async (req, res) => {
   }
 });
 
-// Refresh token endpoint
+// Refresh token endpoint (reads refresh cookie, rotates tokens)
 router.post('/refresh', async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies?.refresh_token;
     if (!refreshToken) return res.status(400).json({ error: 'No refresh token provided' });
 
     const pool = req.app.locals.pool;
     const result = await pool.query(
-      'SELECT user_id FROM refresh_tokens WHERE token = $1 AND expires_at > NOW()',
+      'SELECT id, user_id FROM refresh_tokens WHERE token = $1 AND expires_at > NOW()',
       [refreshToken]
     );
 
     if (result.rows.length === 0) return res.status(401).json({ error: 'Invalid refresh token' });
 
-    const userId = result.rows[0].user_id;
+    const tokenRow = result.rows[0];
+    const userId = tokenRow.user_id;
+
+    // Rotate refresh token: delete old, create new
+    await pool.query('DELETE FROM refresh_tokens WHERE id = $1', [tokenRow.id]);
+
+    const newRefreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, { expiresIn: '30d' });
+    await pool.query(
+      `INSERT INTO refresh_tokens (user_id, token, expires_at)
+       VALUES ($1, $2, NOW() + INTERVAL '30 days')`,
+      [userId, newRefreshToken]
+    );
 
     const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
     setAccessCookie(res, accessToken);
+    setRefreshCookie(res, newRefreshToken);
 
     res.json({ ok: true });
   } catch (error) {
@@ -237,14 +263,15 @@ router.post('/refresh', async (req, res) => {
 router.post('/logout', async (req, res) => {
   try {
     const pool = req.app.locals.pool;
-    const { refreshToken } = req.body;
 
+    const refreshToken = req.cookies?.refresh_token;
     if (refreshToken) {
       await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
     }
 
-    // Clear cookie
+    // Clear cookies
     res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
     res.json({ ok: true });
   } catch (error) {
     console.error('Logout error:', error);
@@ -280,6 +307,3 @@ router.get('/verify', async (req, res) => {
 });
 
 export default router;
-
-
-

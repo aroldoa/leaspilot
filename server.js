@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { createPool } from './db/pool.js';
 import { initializeDatabase } from './db/schema.js';
@@ -33,6 +34,9 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// Cookie parser
+app.use(cookieParser());
 
 // Basic rate limiting
 const limiter = rateLimit({
