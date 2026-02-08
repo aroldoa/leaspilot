@@ -119,12 +119,12 @@
                     body: JSON.stringify({ email, password })
                 });
 
-                console.log('📡 Login response status:', response.status);
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.error || (response.status === 503 ? 'Service temporarily unavailable. Please try again in a moment.' : (response.status === 429 ? 'Too many attempts. Please wait 15 minutes.' : `Login failed (${response.status}).`));
 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                    console.error('❌ Login error response:', errorData);
-                    throw new Error(errorData.error || `Login failed with status ${response.status}`);
+                    console.error('❌ Login error:', response.status, errorData);
+                    throw new Error(errorMessage);
                 }
 
                 const data = await response.json();
@@ -139,7 +139,9 @@
                 window.location.href = 'index.html';
             } catch (error) {
                 console.error('❌ Login error:', error);
-                alert(error.message || 'Login failed. Please check your credentials and try again.');
+                const isNetworkError = error.name === 'TypeError' && error.message.includes('fetch');
+                const msg = error.message || (isNetworkError ? 'Network error or server unavailable. Check your connection.' : 'Login failed. Please check your credentials and try again.');
+                alert(msg);
                 
                 // Re-enable button
                 if (submitBtn) {

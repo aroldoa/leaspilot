@@ -58,9 +58,13 @@ const apiLimiter = rateLimit({
 // Stricter limit for auth (login/register) to reduce brute force
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many login attempts. Please try again in 15 minutes.' });
+  },
 });
 app.use('/api/', apiLimiter);
 app.use('/api/auth', authLimiter);

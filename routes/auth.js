@@ -75,8 +75,9 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !EMAIL_REGEX.test(email)) {
+    const rawEmail = (req.body.email || '').toString().trim();
+    const password = (req.body.password ?? '').toString().trim();
+    if (!rawEmail || !EMAIL_REGEX.test(rawEmail)) {
       return res.status(400).json({ error: 'Valid email is required' });
     }
     if (!password) {
@@ -84,10 +85,10 @@ router.post('/login', async (req, res) => {
     }
     const pool = req.app.locals.pool;
 
-    // Find user
+    // Find user (case-insensitive email so Demo@x.com and demo@x.com both work)
     const result = await pool.query(
-      'SELECT id, email, password_hash, name, role FROM users WHERE email = $1',
-      [email]
+      'SELECT id, email, password_hash, name, role FROM users WHERE LOWER(email) = LOWER($1)',
+      [rawEmail]
     );
 
     if (result.rows.length === 0) {
@@ -96,7 +97,7 @@ router.post('/login', async (req, res) => {
 
     const user = result.rows[0];
 
-    // Verify password
+    // Verify password (compare with trimmed password)
     const isValid = await bcrypt.compare(password, user.password_hash);
 
     if (!isValid) {
