@@ -13,7 +13,7 @@ router.get('/', authenticateToken, async (req, res) => {
        LEFT JOIN properties p ON t.property_id = p.id
        WHERE t.user_id = $1
        ORDER BY t.transaction_date DESC, t.created_at DESC`,
-      [req.userId]
+      [req.activeOrg.id]
     );
     res.json(result.rows);
   } catch (error) {
@@ -31,7 +31,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
        FROM transactions t
        LEFT JOIN properties p ON t.property_id = p.id
        WHERE t.id = $1 AND t.user_id = $2`,
-      [req.params.id, req.userId]
+      [req.params.id, req.activeOrg.id]
     );
 
     if (result.rows.length === 0) {
@@ -102,8 +102,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
-      'DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING id',
-      [req.params.id, req.userId]
+      'DELETE FROM transactions WHERE id = $1 AND org_id = $2 RETURNING id',
+      [req.params.id, req.activeOrg.id]
     );
 
     if (result.rows.length === 0) {

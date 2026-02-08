@@ -78,6 +78,10 @@ app.use('/api/tenants', tenantRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/users', userRoutes);
 
+// Global error handler
+import { errorHandler } from './middleware/error.js';
+app.use(errorHandler);
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'LeasePilot AI API is running' });
