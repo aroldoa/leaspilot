@@ -93,11 +93,12 @@ The database schema will be automatically created when you first start the serve
 - Or kill the process using port 3000
 
 ### CORS Issues
-- The server is configured to allow CORS from all origins
-- For production, update CORS settings in `server.js`
+- Allowed origins: **https://app.leasepilotai.com** (production), plus `http://localhost:3000` and `http://127.0.0.1:3000` for local dev.
+- To add more origins, set `ALLOWED_ORIGINS` in `.env` (comma-separated), e.g. `ALLOWED_ORIGINS=https://app.leasepilotai.com,https://staging.example.com`.
 
 ## Production Deployment
 
+- **Production app URL:** https://app.leasepilotai.com
 1. Update `.env` with production values
 2. Change `JWT_SECRET` to a strong random string
 3. Set `NODE_ENV=production`

@@ -14,8 +14,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// CORS: allow production app and localhost (configurable via ALLOWED_ORIGINS)
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
+  : ['https://app.leasepilotai.com', 'http://localhost:3000', 'http://127.0.0.1:3000'];
+app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(express.json());
 app.use(express.static('.'));
 
