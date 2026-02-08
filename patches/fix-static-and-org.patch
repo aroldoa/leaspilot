@@ -2,9 +2,6 @@
 *** Add File: public/index.html
 +
 +
-+
- <!-- The frontend's original HTML/markup should be copied here to preserve UI exactly.
-      This file is a placeholder shell to ensure Vercel serves the static assets from /public. -->
  <h1>LeasePilot</h1>
 +
 *** End Patch
@@ -26,8 +23,6 @@ Properties
 *** End Patch
 *** Begin Patch
 *** Add File: public/app.js
-+// placeholder app.js to ensure /app.js resolves on Vercel preview.
-// Replace with your real app.js contents from repo root (move original here) to preserve UI behavior.
 +console.log("LeasePilot app.js placeholder");
 +
 *** End Patch
@@ -39,7 +34,7 @@ Properties
 +const publicPath = path.join(process.cwd(), 'public');
 +app.use(express.static(publicPath));
 +
-+// If request is API, let routes handle it. Otherwise serve index.html so the SPA and static files resolve on Vercel.
++// If request is API, let routes handle it. Otherwise serve index.html so SPA routes resolve.
 +app.get('*', (req, res) => {
 if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Not found' });
 res.sendFile(path.join(publicPath, 'index.html'));
@@ -51,7 +46,6 @@ res.sendFile(path.join(publicPath, 'index.html'));
 +import { authenticateToken } from '../middleware/auth.js';
 +const router = express.Router();
 +
-+// Get notifications for organization (org-scoped)
 +router.get('/', authenticateToken, async (req, res) => {
 try {
 const pool = req.app.locals.pool;
@@ -67,7 +61,6 @@ console.error('Error fetching notifications:', error);
 res.status(500).json({ error: 'Internal server error' });
 }
 +});
-+// Create notification (org-scoped)
 +router.post('/', authenticateToken, async (req, res) => {
 try {
 const { title, message, type } = req.body;
@@ -93,7 +86,6 @@ res.status(500).json({ error: 'Internal server error' });
 +
 +const router = express.Router();
 +
-+// Org summary: MRR (sum of rent for non-vacant properties), arrears (unpaid income), vacancy %
 +router.get('/summary', authenticateToken, async (req, res) => {
 try {
 const pool = req.app.locals.pool;

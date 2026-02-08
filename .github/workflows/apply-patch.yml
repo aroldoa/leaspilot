@@ -1,0 +1,52 @@
+name: Apply patch and open PR
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+jobs:
+  apply-patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "LeasePilot Bot"
+          git config user.email "noreply@leasepilot.ai"
+
+      - name: Create work branch
+        run: |
+          BRANCH="auto/apply-fix-static-and-org"
+          git checkout -b "$BRANCH"
+
+      - name: Apply patch
+        run: |
+          if [ ! -f patches/fix-static-and-org.patch ]; then
+            echo "Patch file not found: patches/fix-static-and-org.patch" >&2
+            exit 1
+          fi
+          git apply --index patches/fix-static-and-org.patch
+          git add -A
+          git commit -m "chore: apply static-serving fix + org endpoints" || echo "no changes to commit"
+
+      - name: Push branch
+        run: |
+          git push origin HEAD --set-upstream
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: auto/apply-fix-static-and-org
+          base: main
+          title: feat: fix static asset serving + org endpoints
+          body: |
+            This PR applies:
+            - Move static files to public/, serve static from public/ with index fallback
+            - Add notifications endpoints (org-scoped) and /api/org/summary (MRR, arrears, vacancy)
+            - README & .env.example updates
+            - Migration + seed scripts already present; run them on staging as needed
