@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
@@ -17,8 +18,39 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security middleware
-app.use(helmet());
+// Security middleware with per-request CSP nonce
+app.use((req, res, next) => {
+  // generate nonce for inline scripts on this request
+  const nonce = crypto.randomBytes(16).toString('base64');
+  res.locals.cspNonce = nonce;
+  next();
+});
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      "default-src": ["'self'"],
+      "script-src": [
+        "'self'",
+        "https://cdn.tailwindcss.com",
+        "https://unpkg.com",
+        (req, res) => `'nonce-${res.locals.cspNonce}'`
+      ],
+      "style-src": ["'self'", "https://cdn.tailwindcss.com", "'unsafe-inline'"],
+      "img-src": [
+        "'self'",
+        "data:",
+        "https://ik.imagekit.io",
+        "https://images.unsplash.com",
+        "https://hoirqrkdgbmvpwutwuwj.supabase.co"
+      ],
+      "font-src": ["'self'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
+      "connect-src": ["'self'"],
+      "upgrade-insecure-requests": []
+    }
+  }
+}));
 
 // CORS configuration - restrict via ALLOWED_ORIGINS env var (comma-separated)
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',').map(s => s.trim());
