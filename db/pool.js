@@ -24,9 +24,9 @@ export function createPool() {
       ssl: {
         rejectUnauthorized: false
       },
-      max: 20,
+      max: process.env.VERCEL ? 2 : 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: process.env.VERCEL ? 10000 : 2000,
     });
 
     pool.on('error', (err) => {

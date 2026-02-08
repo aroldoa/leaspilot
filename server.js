@@ -1,9 +1,13 @@
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { createPool } from './db/pool.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { initializeDatabase } from './db/schema.js';
 import { requirePool } from './middleware/requirePool.js';
 import authRoutes from './routes/auth.js';
@@ -27,7 +31,10 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   : ['https://app.leasepilotai.com', 'http://localhost:3000', 'http://127.0.0.1:3000'];
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(express.json());
-app.use(express.static('.'));
+// Serve static files from project root (required on Vercel where cwd may not be project root)
+app.use(express.static(__dirname));
+// Explicit fallback for / so root always serves index.html
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // Request logging (verbose only in development to avoid leaking request details in production logs)
 app.use((req, res, next) => {
