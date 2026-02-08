@@ -119,15 +119,14 @@
                     body: JSON.stringify({ email, password })
                 });
 
-                const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.error || (response.status === 503 ? 'Service temporarily unavailable. Please try again in a moment.' : (response.status === 429 ? 'Too many attempts. Please wait 15 minutes.' : `Login failed (${response.status}).`));
+                const data = await response.json().catch(() => ({}));
+                const errorMessage = data.error || (response.status === 503 ? 'Service temporarily unavailable. Please try again in a moment.' : (response.status === 429 ? 'Too many attempts. Please wait 15 minutes.' : `Login failed (${response.status}).`));
 
                 if (!response.ok) {
-                    console.error('❌ Login error:', response.status, errorData);
+                    console.error('❌ Login error:', response.status, data);
                     throw new Error(errorMessage);
                 }
 
-                const data = await response.json();
                 console.log('✅ Login successful:', data.user);
                 
                 localStorage.setItem('token', data.token);
