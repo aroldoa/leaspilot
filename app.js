@@ -73,9 +73,9 @@ async function checkAuth() {
     }
   } catch (error) {
     localStorage.removeItem('user');
-    // Attempt silent token refresh
+    // Attempt silent token refresh (server-side cookies)
     try {
-      await API.post('/auth/refresh', { refreshToken: localStorage.getItem('refreshToken') });
+      await API.post('/auth/refresh');
       const resp = await API.get('/auth/verify');
       if (resp && resp.user) {
         localStorage.setItem('user', JSON.stringify(resp.user));
