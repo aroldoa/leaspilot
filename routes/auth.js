@@ -91,8 +91,11 @@ router.post('/login', async (req, res) => {
       [rawEmail]
     );
 
+    const isDev = process.env.NODE_ENV !== 'production';
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({
+        error: isDev ? 'No account found with this email. Sign up first or use the correct site (local vs production use different databases).' : 'Invalid credentials'
+      });
     }
 
     const user = result.rows[0];
@@ -101,7 +104,9 @@ router.post('/login', async (req, res) => {
     const isValid = await bcrypt.compare(password, user.password_hash);
 
     if (!isValid) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({
+        error: isDev ? 'Wrong password.' : 'Invalid credentials'
+      });
     }
 
     if (!ensureJwtSecret(res)) return;
