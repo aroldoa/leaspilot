@@ -8,7 +8,11 @@ const pool = createPool();
 
 async function assignToUser() {
   try {
-    const email = 'aroldo@investsupreme.com';
+    const email = process.env.ASSIGN_TO_EMAIL || 'aroldo@investsupreme.com';
+    if (!email) {
+      console.error('❌ Set ASSIGN_TO_EMAIL in env (e.g. ASSIGN_TO_EMAIL=you@example.com)');
+      process.exit(1);
+    }
     console.log(`🔄 Assigning all data to ${email}...`);
 
     // Get or create user
