@@ -17,6 +17,7 @@ router.get('/summary', authenticateToken, async (req, res) => {
       [req.orgId]
     );
     const arrears = parseFloat(arrearsRes.rows[0].arrears) || 0;
+
     const vacRes = await pool.query(
       `SELECT
          (SELECT COUNT(*) FROM properties WHERE organization_id = $1 AND status = 'vacant')::float AS vacant,
@@ -26,6 +27,7 @@ router.get('/summary', authenticateToken, async (req, res) => {
     const vacant = parseFloat(vacRes.rows[0].vacant) || 0;
     const total = parseFloat(vacRes.rows[0].total) || 0;
     const vacancy_rate = total > 0 ? +(vacant / total * 100).toFixed(2) : 0;
+
     res.json({ mrr, arrears, vacancy_rate });
   } catch (err) {
     console.error('Error computing org summary', err);
