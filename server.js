@@ -67,6 +67,10 @@ initializeDatabase(pool).then(() => {
 // Make pool available to routes
 app.locals.pool = pool;
 
+// Authentication middleware (attach req.user and req.activeOrg)
+import { authMiddleware } from './middleware/auth.js';
+app.use('/api', authMiddleware);
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertyRoutes);
