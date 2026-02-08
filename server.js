@@ -99,12 +99,14 @@ initializeDatabase(pool).then(() => {
 // Make pool available to routes
 app.locals.pool = pool;
 
-// Authentication middleware (attach req.user and req.activeOrg)
+// Routes
+// Mount auth routes first (public): register/login/refresh/demo/logout/verify
+app.use('/api/auth', authRoutes);
+
+// Authentication middleware (attach req.user and req.activeOrg) for the rest of /api
 import { authMiddleware } from './middleware/auth.js';
 app.use('/api', authMiddleware);
 
-// Routes
-app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/transactions', transactionRoutes);
