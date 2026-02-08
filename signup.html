@@ -132,18 +132,23 @@
                 const response = await fetch('http://localhost:3000/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ email, password, name, company })
                 });
 
                 if (!response.ok) {
-                    const error = await response.json();
+                    const error = await response.json().catch(() => ({}));
                     throw new Error(error.error || 'Registration failed');
                 }
 
-                const data = await response.json();
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                window.location.href = 'index.html';
+                // Server sets httpOnly cookies; verify to get user info
+                const data = await (await fetch('http://localhost:3000/api/auth/verify', { credentials: 'include' })).json();
+                if (data.user) {
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = 'index.html';
+                } else {
+                    throw new Error('Registration succeeded but verification failed');
+                }
             } catch (error) {
                 alert(error.message || 'Registration failed. Please try again.');
                 console.error('Signup error:', error);
