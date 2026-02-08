@@ -5,21 +5,17 @@ const API_BASE_URL = 'http://localhost:3000/api';
 // API Helper Functions
 const API = {
   async request(endpoint, options = {}) {
-    const token = localStorage.getItem('token');
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers
     };
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
     try {
       console.log(`🌐 API Request: ${options.method || 'GET'} ${API_BASE_URL}${endpoint}`);
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
-        headers
+        headers,
+        credentials: 'include' // include httpOnly cookies for auth
       });
 
       console.log(`📡 Response status: ${response.status} ${response.statusText}`);
@@ -30,7 +26,7 @@ const API = {
         throw new Error(errorData.error || `Request failed with status ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
       console.log(`✅ API Success:`, data);
       return data;
     } catch (error) {
@@ -69,21 +65,26 @@ async function checkAuth() {
     return true;
   }
 
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = 'login.html';
-    return false;
-  }
-
   try {
     const response = await API.get('/auth/verify');
-    if (response.user) {
+    if (response && response.user) {
       localStorage.setItem('user', JSON.stringify(response.user));
       return true;
     }
   } catch (error) {
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // Attempt silent token refresh
+    try {
+      await API.post('/auth/refresh', { refreshToken: localStorage.getItem('refreshToken') });
+      const resp = await API.get('/auth/verify');
+      if (resp && resp.user) {
+        localStorage.setItem('user', JSON.stringify(resp.user));
+        return true;
+      }
+    } catch (err) {
+      // No valid session
+    }
+
     window.location.href = 'login.html';
     return false;
   }
@@ -96,8 +97,14 @@ function getCurrentUser() {
 }
 
 // Logout
-function logout() {
-  localStorage.removeItem('token');
+async function logout() {
+  // Attempt server logout
+  try {
+    await API.post('/auth/logout', { refreshToken: localStorage.getItem('refreshToken') });
+  } catch (e) {
+    // ignore
+  }
+  localStorage.removeItem('refreshToken');
   localStorage.removeItem('user');
   window.location.href = 'login.html';
 }
