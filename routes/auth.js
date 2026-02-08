@@ -26,10 +26,18 @@ function setRefreshCookie(res, token) {
   });
 }
 
+import { registerSchema, loginSchema } from './auth.validation.js';
+
 // Register
 router.post('/register', async (req, res) => {
   try {
     const { email, password, name, company } = req.body;
+    // Validate input
+    try {
+      registerSchema.parse({ email, password, name });
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid input', details: e.errors });
+    }
     const pool = req.app.locals.pool;
 
     // Check if user exists
@@ -97,6 +105,11 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    try {
+      loginSchema.parse({ email, password });
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid input', details: e.errors });
+    }
     const pool = req.app.locals.pool;
 
     // Find user
