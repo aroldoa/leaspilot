@@ -95,6 +95,68 @@ export async function initializeDatabase(pool) {
       )
     `);
 
+    // ---- Multi-tenant support: organizations and memberships ----
+    // Create organizations table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS organizations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create user_organizations membership table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_organizations (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
+        role VARCHAR(50) DEFAULT 'member',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, org_id)
+      )
+    `);
+
+    // Add org_id to resources (if not exists)
+    await pool.query(`
+      ALTER TABLE IF EXISTS properties ADD COLUMN IF NOT EXISTS org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE;
+    `);
+    await pool.query(`
+      ALTER TABLE IF EXISTS tenants ADD COLUMN IF NOT EXISTS org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE;
+    `);
+    await pool.query(`
+      ALTER TABLE IF EXISTS transactions ADD COLUMN IF NOT EXISTS org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE;
+    `);
+    await pool.query(`
+      ALTER TABLE IF EXISTS notifications ADD COLUMN IF NOT EXISTS org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE;
+    `);
+
+    // Ensure existing data is assigned to a default organization if none exist
+    const usersRes = await pool.query('SELECT id FROM users LIMIT 1');
+    if (usersRes.rows.length > 0) {
+      const orgsRes = await pool.query('SELECT id FROM organizations LIMIT 1');
+      let orgId;
+      if (orgsRes.rows.length === 0) {
+        const createOrg = await pool.query(`INSERT INTO organizations (name) VALUES ($1) RETURNING id`, ['Default Organization']);
+        orgId = createOrg.rows[0].id;
+      } else {
+        orgId = orgsRes.rows[0].id;
+      }
+
+      // Associate existing users to default org if not already
+      await pool.query(`
+        INSERT INTO user_organizations (user_id, org_id, role)
+        SELECT id, $1, 'owner' FROM users
+        WHERE id NOT IN (SELECT user_id FROM user_organizations)
+      `, [orgId]);
+
+      // Assign existing resources to default org where null
+      await pool.query(`UPDATE properties SET org_id = $1 WHERE org_id IS NULL`, [orgId]);
+      await pool.query(`UPDATE tenants SET org_id = $1 WHERE org_id IS NULL`, [orgId]);
+      await pool.query(`UPDATE transactions SET org_id = $1 WHERE org_id IS NULL`, [orgId]);
+      await pool.query(`UPDATE notifications SET org_id = $1 WHERE org_id IS NULL`, [orgId]);
+    }
+
     // Create indexes for better performance
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_properties_user_id ON properties(user_id)
