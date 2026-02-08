@@ -7,7 +7,17 @@ const { Pool } = pg;
 
 let pool = null;
 
+function isPlaceholderUrl(url) {
+  if (!url || typeof url !== 'string') return true;
+  const u = url.toLowerCase();
+  return u.includes('changeme') || u.includes('your-') || u.includes('password@host') || u.includes(':password@');
+}
+
 export function createPool() {
+  const url = process.env.DATABASE_URL;
+  if (!url || isPlaceholderUrl(url)) {
+    return null;
+  }
   if (!pool) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,

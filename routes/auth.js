@@ -4,10 +4,27 @@ import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+
+function ensureJwtSecret(res) {
+  if (!process.env.JWT_SECRET) {
+    res.status(500).json({ error: 'Server misconfiguration' });
+    return false;
+  }
+  return true;
+}
+
 // Register
 router.post('/register', async (req, res) => {
   try {
     const { email, password, name, company } = req.body;
+    if (!email || !EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ error: 'Valid email is required' });
+    }
+    if (!password || password.length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
     const pool = req.app.locals.pool;
 
     // Check if user exists
@@ -33,7 +50,7 @@ router.post('/register', async (req, res) => {
 
     const user = result.rows[0];
 
-    // Generate token
+    if (!ensureJwtSecret(res)) return;
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
@@ -59,6 +76,12 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ error: 'Valid email is required' });
+    }
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
     const pool = req.app.locals.pool;
 
     // Find user
@@ -80,7 +103,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Generate token
+    if (!ensureJwtSecret(res)) return;
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
@@ -129,7 +152,7 @@ router.post('/demo', async (req, res) => {
       user = result.rows[0];
     }
 
-    // Generate token
+    if (!ensureJwtSecret(res)) return;
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
@@ -159,7 +182,9 @@ router.get('/verify', async (req, res) => {
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
-
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ error: 'Server misconfiguration' });
+    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const pool = req.app.locals.pool;
 

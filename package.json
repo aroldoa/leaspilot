@@ -11,11 +11,7 @@
     "assign": "node db/assign-to-user.js",
     "set-password": "node db/set-password.js"
   },
-  "keywords": [
-    "property-management",
-    "saas",
-    "real-estate"
-  ],
+  "keywords": ["property-management", "saas", "real-estate"],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -24,7 +20,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5"
   }
 }
-

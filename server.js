@@ -1,8 +1,11 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { createPool } from './db/pool.js';
 import { initializeDatabase } from './db/schema.js';
+import { requirePool } from './middleware/requirePool.js';
 import authRoutes from './routes/auth.js';
 import propertyRoutes from './routes/properties.js';
 import tenantRoutes from './routes/tenants.js';
@@ -13,6 +16,10 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Security headers (CSP disabled to avoid breaking static HTML/scripts)
+app.use(helmet({ contentSecurityPolicy: false }));
 
 // CORS: allow production app and localhost (configurable via ALLOWED_ORIGINS)
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
@@ -22,36 +29,95 @@ app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(express.json());
 app.use(express.static('.'));
 
-// Initialize database connection
-const pool = createPool();
-
-// Initialize database schema
-initializeDatabase(pool).then(() => {
-  console.log('✅ Database initialized successfully');
-}).catch(err => {
-  console.error('❌ Database initialization failed:', err);
+// Request logging (verbose only in development to avoid leaking request details in production logs)
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    if (!isProduction) {
+      const ms = Date.now() - start;
+      console.log(`${req.method} ${req.originalUrl} ${res.statusCode} ${ms}ms`);
+    }
+  });
+  next();
 });
 
-// Make pool available to routes
+// General API rate limit (100 req/15 min per IP)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+// Stricter limit for auth (login/register) to reduce brute force
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', apiLimiter);
+app.use('/api/auth', authLimiter);
+
+// Initialize database connection (null when DATABASE_URL is missing)
+const pool = createPool();
 app.locals.pool = pool;
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/properties', propertyRoutes);
-app.use('/api/tenants', tenantRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/users', userRoutes);
+if (pool) {
+  initializeDatabase(pool).then(() => {
+    console.log('✅ Database initialized successfully');
+  }).catch(err => {
+    console.error('❌ Database initialization failed:', err);
+  });
+} else {
+  console.warn('⚠️ DATABASE_URL not set; API will return 503 for database-dependent routes');
+}
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'LeasePilot AI API is running' });
+// Health check (no DB required; reports DB status)
+app.get('/api/health', async (req, res) => {
+  const payload = { status: 'ok', message: 'LeasePilot AI API is running' };
+  if (!pool) {
+    payload.db = 'unavailable';
+    return res.json(payload);
+  }
+  try {
+    await pool.query('SELECT 1');
+    payload.db = 'connected';
+  } catch (err) {
+    payload.db = 'error';
+    payload.status = 'degraded';
+  }
+  res.json(payload);
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 API available at http://localhost:${PORT}/api`);
+// API routes (require DB)
+app.use('/api/auth', requirePool, authRoutes);
+app.use('/api/properties', requirePool, propertyRoutes);
+app.use('/api/tenants', requirePool, tenantRoutes);
+app.use('/api/transactions', requirePool, transactionRoutes);
+app.use('/api/users', requirePool, userRoutes);
+
+// 404 for unknown API routes
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'Not found' });
 });
 
+// Central error handler (no stack trace in production)
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({
+    error: isProduction ? 'Internal server error' : err.message,
+    ...(isProduction ? {} : { stack: err.stack }),
+  });
+});
+
+// Start server only when not in Vercel serverless
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📊 API available at http://localhost:${PORT}/api`);
+  });
+}
+
+export default app;
 
 
