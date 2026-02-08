@@ -4,6 +4,17 @@ import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
+// Utility - set access token cookie
+function setAccessCookie(res, token) {
+  const isProd = process.env.NODE_ENV === 'production';
+  res.cookie('access_token', token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax',
+    maxAge: 15 * 60 * 1000 // 15 minutes
+  });
+}
+
 // Register
 router.post('/register', async (req, res) => {
   try {
@@ -21,7 +32,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
 
     // Create user
     const result = await pool.query(
@@ -33,15 +44,30 @@ router.post('/register', async (req, res) => {
 
     const user = result.rows[0];
 
-    // Generate token
-    const token = jwt.sign(
+    // Generate tokens
+    const accessToken = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '15m' }
     );
 
+    const refreshToken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    // Store refresh token in DB
+    await pool.query(
+      `INSERT INTO refresh_tokens (user_id, token, expires_at)
+       VALUES ($1, $2, NOW() + INTERVAL '30 days')`,
+      [user.id, refreshToken]
+    );
+
+    // Set cookie
+    setAccessCookie(res, accessToken);
+
     res.json({
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -80,15 +106,30 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Generate token
-    const token = jwt.sign(
+    // Generate tokens
+    const accessToken = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '15m' }
     );
 
+    const refreshToken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    // Store refresh token in DB
+    await pool.query(
+      `INSERT INTO refresh_tokens (user_id, token, expires_at)
+       VALUES ($1, $2, NOW() + INTERVAL '30 days')`,
+      [user.id, refreshToken]
+    );
+
+    // Set cookie
+    setAccessCookie(res, accessToken);
+
     res.json({
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -117,7 +158,7 @@ router.post('/demo', async (req, res) => {
     let user;
     if (result.rows.length === 0) {
       // Create demo user
-      const passwordHash = await bcrypt.hash('demo123', 10);
+      const passwordHash = await bcrypt.hash('demo123', 12);
       const createResult = await pool.query(
         `INSERT INTO users (email, password_hash, name, role)
          VALUES ($1, $2, $3, $4)
@@ -129,15 +170,30 @@ router.post('/demo', async (req, res) => {
       user = result.rows[0];
     }
 
-    // Generate token
-    const token = jwt.sign(
+    // Generate tokens
+    const accessToken = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '15m' }
     );
 
+    const refreshToken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    // Store refresh token in DB (ignore errors if exists)
+    await pool.query(
+      `INSERT INTO refresh_tokens (user_id, token, expires_at)
+       VALUES ($1, $2, NOW() + INTERVAL '30 days') ON CONFLICT DO NOTHING`,
+      [user.id, refreshToken]
+    );
+
+    // Set cookie
+    setAccessCookie(res, accessToken);
+
     res.json({
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -151,10 +207,55 @@ router.post('/demo', async (req, res) => {
   }
 });
 
-// Verify token
+// Refresh token endpoint
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return res.status(400).json({ error: 'No refresh token provided' });
+
+    const pool = req.app.locals.pool;
+    const result = await pool.query(
+      'SELECT user_id FROM refresh_tokens WHERE token = $1 AND expires_at > NOW()',
+      [refreshToken]
+    );
+
+    if (result.rows.length === 0) return res.status(401).json({ error: 'Invalid refresh token' });
+
+    const userId = result.rows[0].user_id;
+
+    const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    setAccessCookie(res, accessToken);
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Refresh error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Logout
+router.post('/logout', async (req, res) => {
+  try {
+    const pool = req.app.locals.pool;
+    const { refreshToken } = req.body;
+
+    if (refreshToken) {
+      await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
+    }
+
+    // Clear cookie
+    res.clearCookie('access_token');
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Verify token (reads cookie)
 router.get('/verify', async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    const token = req.cookies?.access_token;
 
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
