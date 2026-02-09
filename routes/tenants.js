@@ -48,9 +48,24 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // Create tenant
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const {
-      first_name, last_name, email, phone, property_id, unit, status, lease_start, lease_end
-    } = req.body;
+    const raw = req.body || {};
+    const first_name = (raw.first_name || '').toString().trim();
+    const last_name = (raw.last_name || '').toString().trim();
+    const email = (raw.email || '').toString().trim() || null;
+    const phone = (raw.phone || '').toString().trim() || null;
+    let property_id = null;
+    if (raw.property_id !== '' && raw.property_id != null && raw.property_id !== undefined) {
+      const n = Number(raw.property_id);
+      property_id = Number.isInteger(n) ? n : null;
+    }
+    const unit = (raw.unit || '').toString().trim() || null;
+    const status = (raw.status || 'active').toString();
+    const lease_start = raw.lease_start || null;
+    const lease_end = raw.lease_end || null;
+
+    if (!first_name || !last_name) {
+      return res.status(400).json({ error: 'First name and last name are required' });
+    }
 
     const pool = req.app.locals.pool;
     const result = await pool.query(
@@ -58,10 +73,12 @@ router.post('/', authenticateToken, async (req, res) => {
        (user_id, first_name, last_name, email, phone, property_id, unit, status, lease_start, lease_end)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [req.userId, first_name, last_name, email, phone, property_id || null, unit, status || 'active', lease_start || null, lease_end || null]
+      [req.userId, first_name, last_name, email, phone, property_id, unit, status, lease_start, lease_end]
     );
 
-    res.status(201).json(result.rows[0]);
+    const row = result.rows[0];
+    console.log('Tenant created:', row?.id, first_name, last_name);
+    res.status(201).json(row);
   } catch (error) {
     console.error('Error creating tenant:', error);
     res.status(500).json({ error: 'Internal server error' });

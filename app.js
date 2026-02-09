@@ -30,16 +30,18 @@ const API = {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('❌ API Error:', errorData);
-        throw new Error(errorData.error || `Request failed with status ${response.status}`);
+        const err = new Error(errorData.error || `Request failed with status ${response.status}`);
+        err.status = response.status;
+        throw err;
       }
 
       const data = await response.json();
       console.log(`✅ API Success:`, data);
       return data;
-    } catch (error) {
-      console.error('❌ API Error:', error);
-      throw error;
-    }
+  } catch (error) {
+    console.error('❌ API Error:', error);
+    throw error;
+  }
   },
 
   get(endpoint) {
@@ -85,10 +87,19 @@ async function checkAuth() {
       return true;
     }
   } catch (error) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = 'login.html';
-    return false;
+    // Only clear session and redirect on explicit auth failure (401/403).
+    // Network errors, 5xx, 503, 429 etc. do not invalidate the token.
+    const status = error && error.status;
+    if (status === 401 || status === 403) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'login.html';
+      return false;
+    }
+    if (typeof window !== 'undefined' && window.LeasePilot && window.LeasePilot.Toast && window.LeasePilot.Toast.show) {
+      window.LeasePilot.Toast.show('Could not verify session. You can keep using the app or refresh to try again.', 'error');
+    }
+    return true;
   }
 }
 
@@ -180,14 +191,14 @@ const DataManager = {
   
   async saveTenant(tenant) {
     try {
-      // Convert to API format
+      const rawId = tenant.propertyId ?? tenant.property_id;
       const apiTenant = {
-        first_name: tenant.firstName || tenant.first_name,
-        last_name: tenant.lastName || tenant.last_name,
-        email: tenant.email,
-        phone: tenant.phone,
-        property_id: tenant.propertyId || tenant.property_id || null,
-        unit: tenant.unit,
+        first_name: (tenant.firstName ?? tenant.first_name ?? '').toString().trim(),
+        last_name: (tenant.lastName ?? tenant.last_name ?? '').toString().trim(),
+        email: (tenant.email ?? '').toString().trim() || null,
+        phone: (tenant.phone ?? '').toString().trim() || null,
+        property_id: (rawId === '' || rawId == null) ? null : rawId,
+        unit: (tenant.unit ?? '').toString().trim() || null,
         status: tenant.status || 'active',
         lease_start: tenant.lease_start || null,
         lease_end: tenant.lease_end || null

@@ -100,7 +100,7 @@ body { font-family: 'Inter', sans-serif; }
                             <i data-lucide="download" class="h-4 w-4"></i>
                             Export
                         </button>
-                        <button onclick="LeasePilot.Modal.open('addTenantModal')" class="flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors shadow-sm hover:shadow-md">
+                        <button onclick="resetAddMode(); LeasePilot.Modal.open('addTenantModal')" class="flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors shadow-sm hover:shadow-md">
                             <i data-lucide="plus" class="h-4 w-4"></i>
                             Add Tenant
                         </button>
@@ -241,12 +241,13 @@ body { font-family: 'Inter', sans-serif; }
     <div id="addTenantModal" class="modal hidden fixed inset-0 z-50 items-center justify-center modal-backdrop bg-black/50 backdrop-blur-sm">
         <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b border-slate-200 flex items-center justify-between">
-                <h2 class="text-xl font-semibold text-slate-900">Add New Tenant</h2>
+                <h2 id="tenantModalTitle" class="text-xl font-semibold text-slate-900">Add New Tenant</h2>
                 <button onclick="LeasePilot.Modal.close('addTenantModal')" class="text-slate-400 hover:text-slate-600">
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
             </div>
-            <form id="tenantForm" class="p-6 space-y-5">
+            <form id="tenantForm" class="p-6 space-y-5" method="post" action="#" novalidate>
+                <input type="hidden" name="tenantId" id="tenantId" value="">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-2">First Name</label>
@@ -275,18 +276,35 @@ body { font-family: 'Inter', sans-serif; }
                     <label class="block text-sm font-medium text-slate-700 mb-2">Unit</label>
                     <input type="text" name="unit" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
                 </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Lease start</label>
+                        <input type="date" name="leaseStart" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Lease end</label>
+                        <input type="date" name="leaseEnd" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                    <select name="status" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                        <option value="active">Active</option>
+                        <option value="pending">Pending</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
                 <div class="flex gap-3 pt-4">
                     <button type="button" onclick="LeasePilot.Modal.close('addTenantModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium">Cancel</button>
-                    <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-medium">Add Tenant</button>
+                    <button type="submit" id="tenantSubmitBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-medium">Add Tenant</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script src="app.js"></script>
     <script>
-        // Load properties for dropdown
-        async function loadProperties() {
+        // Load properties for dropdown (optionally select current value)
+        async function loadProperties(selectPropertyId) {
             try {
                 const properties = await LeasePilot.DataManager.getProperties();
                 const propertySelect = document.querySelector('#tenantForm select[name="propertyId"]');
@@ -296,6 +314,7 @@ body { font-family: 'Inter', sans-serif; }
                         const option = document.createElement('option');
                         option.value = prop.id;
                         option.textContent = prop.name || prop.address;
+                        if (selectPropertyId != null && prop.id == selectPropertyId) option.selected = true;
                         propertySelect.appendChild(option);
                     });
                 }
@@ -304,11 +323,56 @@ body { font-family: 'Inter', sans-serif; }
             }
         }
 
+        function setTenantFormMode(isEdit) {
+            const title = document.getElementById('tenantModalTitle');
+            const btn = document.getElementById('tenantSubmitBtn');
+            if (title) title.textContent = isEdit ? 'Edit Tenant' : 'Add New Tenant';
+            if (btn) btn.textContent = isEdit ? 'Save changes' : 'Add Tenant';
+        }
+
+        async function openEditTenantModal(tenant) {
+            if (!tenant || !tenant.id) return;
+            document.getElementById('tenantId').value = tenant.id;
+            const form = document.getElementById('tenantForm');
+            if (form) {
+                form.querySelector('[name="firstName"]').value = tenant.first_name || '';
+                form.querySelector('[name="lastName"]').value = tenant.last_name || '';
+                form.querySelector('[name="email"]').value = tenant.email || '';
+                form.querySelector('[name="phone"]').value = tenant.phone || '';
+                form.querySelector('[name="unit"]').value = tenant.unit || '';
+                form.querySelector('[name="leaseStart"]').value = tenant.lease_start ? tenant.lease_start.toString().slice(0, 10) : '';
+                form.querySelector('[name="leaseEnd"]').value = tenant.lease_end ? tenant.lease_end.toString().slice(0, 10) : '';
+                const statusSelect = form.querySelector('[name="status"]');
+                if (statusSelect) statusSelect.value = tenant.status || 'active';
+            }
+            await loadProperties(tenant.property_id);
+            setTenantFormMode(true);
+            LeasePilot.Modal.open('addTenantModal');
+        }
+
+        function resetAddMode() {
+            document.getElementById('tenantId').value = '';
+            setTenantFormMode(false);
+            document.getElementById('tenantForm')?.reset();
+            document.getElementById('tenantId').value = '';
+        }
+
+        let loadedTenants = [];
+
+        async function openEditTenantModalById(id) {
+            let tenant = loadedTenants.find(t => t.id == id);
+            if (!tenant) {
+                try { tenant = await LeasePilot.DataManager.getTenant(id); } catch (e) { console.error(e); }
+            }
+            if (tenant) await openEditTenantModal(tenant);
+        }
+
         // Load tenants dynamically
         async function loadTenants() {
             try {
                 console.log('🔍 Starting to load tenants...');
                 const tenants = await LeasePilot.DataManager.getTenants();
+                loadedTenants = tenants || [];
                 console.log('📦 Tenants received:', tenants);
                 const tbody = document.getElementById('tenantsTableBody');
                 tbody.innerHTML = '';
@@ -376,6 +440,9 @@ body { font-family: 'Inter', sans-serif; }
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-right" onclick="event.stopPropagation();">
+                                <button type="button" onclick="event.stopPropagation(); openEditTenantModalById(${tenant.id})" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-all inline-block" title="Edit tenant">
+                                    <i data-lucide="pencil" class="h-4 w-4"></i>
+                                </button>
                                 <a href="tenant-detail.html?id=${tenant.id}" class="rounded-full p-2 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all inline-block">
                                     <i data-lucide="chevron-right" class="h-4 w-4"></i>
                                 </a>
@@ -400,7 +467,58 @@ body { font-family: 'Inter', sans-serif; }
             }
         }
 
-        // Wait for LeasePilot to be available and initialize
+        // Wait for DOM and LeasePilot, then initialize
+        function initTenantsPage() {
+            const form = document.getElementById('tenantForm');
+            if (!form) {
+                console.error('tenantForm not found');
+                return;
+            }
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const formData = new FormData(e.target);
+                const tenantIdVal = (formData.get('tenantId') || '').toString().trim();
+                const leaseStartVal = (formData.get('leaseStart') || '').toString().trim();
+                const leaseEndVal = (formData.get('leaseEnd') || '').toString().trim();
+                const tenant = {
+                    firstName: (formData.get('firstName') || '').toString().trim(),
+                    lastName: (formData.get('lastName') || '').toString().trim(),
+                    email: (formData.get('email') || '').toString().trim(),
+                    phone: (formData.get('phone') || '').toString().trim() || null,
+                    propertyId: formData.get('propertyId') || null,
+                    unit: (formData.get('unit') || '').toString().trim() || null,
+                    status: (formData.get('status') || 'active').toString(),
+                    lease_start: leaseStartVal || null,
+                    lease_end: leaseEndVal || null
+                };
+                if (tenantIdVal) tenant.id = parseInt(tenantIdVal, 10);
+                if (!tenant.firstName || !tenant.lastName || !tenant.email) {
+                    if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Please fill in first name, last name, and email.', 'error');
+                    return;
+                }
+                if (typeof LeasePilot === 'undefined' || !LeasePilot.DataManager || !LeasePilot.DataManager.saveTenant) {
+                    console.error('LeasePilot.DataManager.saveTenant not available');
+                    if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('App not ready. Refresh the page and try again.', 'error');
+                    return;
+                }
+                try {
+                    await LeasePilot.DataManager.saveTenant(tenant);
+                    if (LeasePilot.Toast) LeasePilot.Toast.show(tenant.id ? 'Tenant updated successfully!' : 'Tenant added successfully!', 'success');
+                    if (LeasePilot.Modal) LeasePilot.Modal.close('addTenantModal');
+                    resetAddMode();
+                    if (typeof loadTenants === 'function') await loadTenants();
+                    if (tenantIdVal && window.history && window.history.replaceState) {
+                        window.history.replaceState({}, '', window.location.pathname || 'tenants.html');
+                    }
+                } catch (err) {
+                    const msg = (err && err.message) ? err.message : 'Failed to save tenant. Please try again.';
+                    if (LeasePilot.Toast) LeasePilot.Toast.show(msg, 'error');
+                    console.error('Save tenant error:', err);
+                }
+            });
+        }
+
         (async () => {
             try {
                 let attempts = 0;
@@ -408,62 +526,25 @@ body { font-family: 'Inter', sans-serif; }
                     await new Promise(resolve => setTimeout(resolve, 50));
                     attempts++;
                 }
-                
                 if (typeof LeasePilot === 'undefined') {
                     throw new Error('LeasePilot library failed to load.');
                 }
-                
-                console.log('✅ LeasePilot loaded successfully');
                 await LeasePilot.checkAuth();
-                console.log('✅ Authentication verified');
-                
-                // Load data after authentication
                 await loadProperties();
                 await loadTenants();
+                initTenantsPage();
+                const params = new URLSearchParams(window.location.search);
+                const editId = params.get('edit');
+                if (editId) {
+                    await openEditTenantModalById(editId);
+                }
             } catch (error) {
                 console.error('❌ Error initializing tenants page:', error);
                 alert('Error loading page: ' + error.message);
             }
         })();
-        
-        lucide.createIcons({
-            attrs: {
-                'stroke-width': 1.5
-            }
-        });
 
-        // Add Tenant Button
-        document.querySelector('button:has-text("Add Tenant"), a:has-text("Add Tenant")')?.addEventListener('click', function(e) {
-            if (this.textContent.includes('Add Tenant')) {
-                e.preventDefault();
-                LeasePilot.Modal.open('addTenantModal');
-            }
-        });
-
-        // Tenant Form Handler
-        document.getElementById('tenantForm')?.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const tenant = {
-                firstName: formData.get('firstName'),
-                lastName: formData.get('lastName'),
-                email: formData.get('email'),
-                phone: formData.get('phone'),
-                propertyId: formData.get('propertyId'),
-                unit: formData.get('unit'),
-                status: 'active'
-            };
-            
-            try {
-                await LeasePilot.DataManager.saveTenant(tenant);
-                LeasePilot.Toast.show('Tenant added successfully!', 'success');
-                LeasePilot.Modal.close('addTenantModal');
-                e.target.reset();
-                setTimeout(() => location.reload(), 1000);
-            } catch (error) {
-                LeasePilot.Toast.show('Failed to add tenant. Please try again.', 'error');
-            }
-        });
+        lucide.createIcons({ attrs: { 'stroke-width': 1.5 } });
     </script>
 
 </body></html>

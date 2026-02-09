@@ -6,8 +6,6 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { createPool } from './db/pool.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { initializeDatabase } from './db/schema.js';
 import { requirePool } from './middleware/requirePool.js';
 import authRoutes from './routes/auth.js';
@@ -17,6 +15,8 @@ import transactionRoutes from './routes/transactions.js';
 import userRoutes from './routes/users.js';
 
 dotenv.config();
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -48,26 +48,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// General API rate limit (100 req/15 min per IP)
+// General API rate limit (100 req/15 min per IP). Skip /api/auth so login is never blocked.
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
 });
-// Stricter limit for auth (login/register) to reduce brute force
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
-  handler: (req, res) => {
-    res.status(429).json({ error: 'Too many login attempts. Please try again in 15 minutes.' });
-  },
+app.use('/api/', (req, res, next) => {
+  if (req.path.startsWith('auth') || req.path.startsWith('/auth')) return next();
+  apiLimiter(req, res, next);
 });
-app.use('/api/', apiLimiter);
-app.use('/api/auth', authLimiter);
 
 // Initialize database connection (null when DATABASE_URL is missing)
 const pool = createPool();
@@ -123,11 +114,25 @@ app.use((err, req, res, next) => {
 
 // Start server only when not in Vercel serverless
 if (process.env.VERCEL !== '1') {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📊 API available at http://localhost:${PORT}/api`);
-  });
+  try {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`📊 API available at http://localhost:${PORT}/api`);
+    });
+  } catch (err) {
+    console.error('❌ Server failed to start:', err);
+    process.exit(1);
+  }
 }
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled rejection at:', promise, 'reason:', reason);
+});
 
 export default app;
 
