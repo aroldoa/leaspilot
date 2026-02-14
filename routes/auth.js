@@ -52,7 +52,7 @@ router.post('/register', async (req, res) => {
 
     if (!ensureJwtSecret(res)) return;
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, role: user.role || 'Portfolio Manager' },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -111,7 +111,7 @@ router.post('/login', async (req, res) => {
 
     if (!ensureJwtSecret(res)) return;
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, role: user.role || 'Portfolio Manager' },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -160,7 +160,7 @@ router.post('/demo', async (req, res) => {
 
     if (!ensureJwtSecret(res)) return;
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, role: user.role || 'Portfolio Manager' },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );

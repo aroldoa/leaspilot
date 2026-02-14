@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance - Tenant Portal | LeasePilot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../app.js"></script>
+  <script src="notifications.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-[#F3F5F7] text-slate-900 antialiased">
+  <div class="min-h-screen">
+    <header class="bg-white border-b border-slate-200">
+      <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="dashboard.html" class="flex items-center gap-2">
+          <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot" class="h-9">
+        </a>
+        <nav class="flex items-center gap-1">
+          <a href="dashboard.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Dashboard</a>
+          <a href="payments.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Payments</a>
+          <a href="maintenance.html" class="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900">Maintenance</a>
+          <a href="documents.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Documents</a>
+          <a href="messages.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 inline-flex items-center gap-1.5">Messages <span id="tenantNavMessagesBadge" class="hidden inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold">0</span></a>
+          <a href="profile.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Profile</a>
+          <a href="messages.html" class="relative rounded-full p-2.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700" title="Notifications"><i data-lucide="bell" class="h-5 w-5"></i><span id="tenantNotificationsBadge" class="hidden absolute top-0 right-0 min-w-[1.25rem] h-5 px-1 rounded-full bg-red-500 text-white text-xs font-semibold inline-flex items-center justify-center">0</span></a>
+          <button onclick="LeasePilot.logout()" class="rounded-full p-2 text-slate-400 hover:text-slate-600" title="Sign out"><i data-lucide="log-out" class="h-4 w-4"></i></button>
+        </nav>
+      </div>
+    </header>
+    <main class="max-w-5xl mx-auto px-4 py-8">
+      <h1 class="text-2xl font-semibold text-slate-900 mb-6">Maintenance</h1>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <h2 class="text-lg font-medium text-slate-900 mb-4">New request</h2>
+          <form id="form" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+              <input type="text" name="subject" required class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-100 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+              <textarea name="description" rows="4" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-100 outline-none"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Photos of the issue (optional)</label>
+              <input type="file" name="photos" accept="image/jpeg,image/png,image/gif,image/webp" multiple class="w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-slate-700 file:font-medium hover:file:bg-slate-200">
+              <p class="text-xs text-slate-500 mt-1">Up to 6 photos, 5MB each. JPEG, PNG, GIF, or WebP.</p>
+            </div>
+            <button type="submit" id="submitBtn" class="rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-slate-800 disabled:opacity-50">Submit</button>
+          </form>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <h2 class="text-lg font-medium text-slate-900 mb-4">Your requests</h2>
+          <div id="list" class="space-y-3 text-sm">Loading...</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Request detail modal -->
+    <div id="detailModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50" onclick="if (event.target === this) closeDetailModal()">
+      <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div id="detailModalHeader" class="sticky top-0 z-10 bg-white border-b border-slate-100 px-8 py-5 flex items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0">
+            <h3 class="text-xl font-semibold text-slate-900 truncate">Request details</h3>
+            <span id="detailModalStatusPill" class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium hidden"></span>
+          </div>
+          <button type="button" onclick="closeDetailModal()" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 shrink-0"><i data-lucide="x" class="h-5 w-5"></i></button>
+        </div>
+        <div id="detailContent" class="p-8 text-base"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function() {
+      var maintenanceRequests = [];
+      function esc(s) { return (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function statusClass(s, isAssigned) {
+        if (isAssigned) return 'bg-violet-100 text-violet-800';
+        var v = (s || '').toLowerCase().replace(/_/g, ' ');
+        if (v === 'completed' || v === 'closed') return 'bg-emerald-100 text-emerald-800';
+        if (v === 'in progress' || v === 'in_progress') return 'bg-blue-100 text-blue-800';
+        if (v === 'waiting vendor' || v === 'waiting_vendor') return 'bg-amber-100 text-amber-800';
+        if (v === 'assigned') return 'bg-violet-100 text-violet-800';
+        return 'bg-slate-100 text-slate-700';
+      }
+      function openDetailModal(id) {
+        var r = maintenanceRequests.find(function(m) { return m.id === id; });
+        if (!r) return;
+        var created = r.created_at ? new Date(r.created_at).toLocaleString() : '—';
+        var updated = r.updated_at ? new Date(r.updated_at).toLocaleString() : '—';
+        var isAssigned = (r.status && String(r.status).toLowerCase() === 'assigned') || !!(r.assigned_contractor_id != null && r.assigned_contractor_id !== '' && r.assigned_contractor_id !== 0) || !!(r.contractor_name && r.contractor_name.trim());
+        var rawStatus = (r.status || 'open').toLowerCase().replace(/_/g, ' ');
+        var status = isAssigned ? 'Assigned' : ((r.status || 'open').replace(/_/g, ' '));
+        var priority = (r.priority || 'normal').replace(/_/g, ' ');
+        var issueType = (r.issue_type || 'other').replace(/_/g, ' ');
+        var steps = [
+          { key: 'submitted', label: 'Submitted', done: true },
+          { key: 'assigned', label: 'Assigned', done: isAssigned || rawStatus === 'in progress' || rawStatus === 'waiting vendor' || rawStatus === 'completed' },
+          { key: 'in_progress', label: 'In progress', done: rawStatus === 'in progress' || rawStatus === 'waiting vendor' || rawStatus === 'completed' },
+          { key: 'completed', label: 'Completed', done: rawStatus === 'completed' }
+        ];
+        var currentStep = rawStatus === 'completed' ? 4 : (rawStatus === 'in progress' || rawStatus === 'waiting vendor') ? 3 : isAssigned ? 2 : 1;
+        var stepParts = [];
+        for (var i = 0; i < steps.length; i++) {
+          var stepNum = i + 1;
+          var isDone = stepNum <= currentStep;
+          var isCurrent = stepNum === currentStep;
+          var circleContent = (rawStatus === 'completed' && stepNum === 4) ? '&#10003;' : stepNum;
+          if (i > 0) stepParts.push('<div class="flex-1 h-0.5 mt-3 self-center min-w-[20px] rounded ' + (steps[i-1].done ? 'bg-slate-900' : 'bg-slate-200') + '"></div>');
+          stepParts.push('<div class="flex flex-col items-center shrink-0"><div class="flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ' + (isDone ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-500') + '">' + circleContent + '</div><span class="mt-2 text-xs font-medium max-w-[72px] text-center ' + (isCurrent ? 'text-slate-900' : isDone ? 'text-slate-600' : 'text-slate-400') + '">' + steps[i].label + '</span></div>');
+        }
+        var stepsHtml = '<div class="flex items-start justify-between mb-6">' + stepParts.join('') + '</div>';
+        var expectHtml = '';
+        if (rawStatus === 'completed') {
+          expectHtml = '<div class="rounded-xl bg-emerald-50 border border-emerald-100 p-4"><p class="font-medium text-emerald-900">Request completed</p><p class="text-sm text-emerald-700 mt-0.5">Last updated ' + updated + '.</p></div>';
+        } else if (rawStatus === 'in progress' || rawStatus === 'waiting vendor') {
+          expectHtml = '<div class="rounded-xl bg-blue-50 border border-blue-100 p-4"><p class="font-medium text-blue-900">Work in progress</p><p class="text-sm text-blue-700 mt-0.5">Typically completed within 3–5 business days. Last updated ' + updated + '.</p></div>';
+        } else if (isAssigned) {
+          expectHtml = '<div class="rounded-xl bg-violet-50 border border-violet-100 p-4"><p class="font-medium text-violet-900">Contractor assigned</p><p class="text-sm text-violet-700 mt-0.5">You can expect work to be scheduled soon. Usually completed within 5–7 business days.</p></div>';
+        } else {
+          expectHtml = '<div class="rounded-xl bg-slate-50 border border-slate-100 p-4"><p class="font-medium text-slate-900">We received your request</p><p class="text-sm text-slate-600 mt-0.5">A contractor will be assigned shortly. You’ll see updates here.</p></div>';
+        }
+        var photosGridHtml = '';
+        if (r.photo_urls) {
+          try {
+            var urls = typeof r.photo_urls === 'string' ? JSON.parse(r.photo_urls) : r.photo_urls;
+            if (Array.isArray(urls) && urls.length) {
+              var base = window.location.origin || '';
+              photosGridHtml = '<div class="flex flex-wrap gap-2">' + urls.map(function(u) {
+                var src = u.startsWith('http') ? u : (base + (u.startsWith('/') ? u : '/' + u));
+                return '<a href="' + src + '" target="_blank" rel="noopener"><img src="' + src + '" alt="Photo" class="h-24 w-24 rounded-xl object-cover border border-slate-200 hover:opacity-90 transition"></a>';
+              }).join('') + '</div>';
+            }
+          } catch (e) {}
+        }
+        var contractorHtml = '';
+        var assignedName = (r.contractor_name && r.contractor_name.trim()) ? r.contractor_name : (r.description && r.description.includes('[Assigned to:') ? ((r.description.match(/\[Assigned to: ([^\]]+)\]/) || [])[1] || '').trim() : '');
+        if (isAssigned && (assignedName || r.contractor_company || r.contractor_phone || r.contractor_email || r.assigned_contractor_id)) {
+          var name = esc(assignedName || 'Contractor');
+          var company = r.contractor_company ? '<p class="text-slate-600 text-sm mt-0.5">' + esc(r.contractor_company) + '</p>' : '';
+          var phone = r.contractor_phone ? '<p class="mt-1.5"><a href="tel:' + esc(r.contractor_phone.replace(/\s/g, '')) + '" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-800 hover:text-slate-900"><i data-lucide="phone" class="h-4 w-4"></i>' + esc(r.contractor_phone) + '</a></p>' : '';
+          var email = r.contractor_email ? '<p class="mt-1"><a href="mailto:' + esc(r.contractor_email) + '" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-800 hover:text-slate-900"><i data-lucide="mail" class="h-4 w-4"></i>' + esc(r.contractor_email) + '</a></p>' : '';
+          contractorHtml = '<div class="rounded-xl bg-slate-50 border border-slate-100 p-5"><p class="text-slate-500 text-xs uppercase tracking-wide font-medium mb-2">Contact contractor</p><p class="font-semibold text-slate-900 text-lg">' + name + '</p>' + company + '<div class="mt-2 flex flex-wrap gap-4">' + phone + email + '</div></div>';
+        }
+        var content = document.getElementById('detailContent');
+        var pill = document.getElementById('detailModalStatusPill');
+        if (pill) {
+          pill.textContent = status;
+          pill.className = 'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ' + statusClass(r.status, isAssigned);
+          pill.classList.remove('hidden');
+        }
+        var descText = r.description ? String(r.description).replace(/\s*\[Assigned to:[^\]]+\]\s*$/, '').trim() : '';
+        var descriptionBlock = descText ? '<div class="rounded-xl border border-slate-100 bg-slate-50/50 p-5"><h4 class="text-slate-500 text-xs uppercase tracking-wide font-medium mb-2">What you reported</h4><p class="text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">' + esc(descText) + '</p></div>' : '';
+        var detailsRows = '<div class="flex justify-between py-2.5 border-b border-slate-100 last:border-0"><span class="text-slate-500 text-sm">Priority</span><span class="text-slate-900 font-medium text-sm">' + priority + '</span></div>' +
+          '<div class="flex justify-between py-2.5 border-b border-slate-100 last:border-0"><span class="text-slate-500 text-sm">Issue type</span><span class="text-slate-900 font-medium text-sm">' + issueType + '</span></div>' +
+          '<div class="flex justify-between py-2.5 border-b border-slate-100 last:border-0"><span class="text-slate-500 text-sm">Submitted</span><span class="text-slate-600 text-sm">' + created + '</span></div>' +
+          '<div class="flex justify-between py-2.5 border-b border-slate-100 last:border-0"><span class="text-slate-500 text-sm">Last updated</span><span class="text-slate-600 text-sm">' + updated + '</span></div>';
+        content.innerHTML = '<div class="space-y-6">' +
+          '<section class="pb-5 border-b border-slate-100">' +
+            '<h2 class="text-slate-900 font-semibold text-lg mb-1">' + esc(r.subject || 'Maintenance request') + '</h2>' +
+            '<p class="text-slate-500 text-sm">' + priority + ' · ' + issueType + ' · Submitted ' + created + '</p>' +
+          '</section>' +
+          '<section><h3 class="text-slate-700 font-medium text-sm mb-3">Progress</h3><div class="space-y-4">' + stepsHtml + '<div class="mt-4">' + expectHtml + '</div></div></section>' +
+          (descriptionBlock ? '<section><h3 class="text-slate-700 font-medium text-sm mb-3">Your request</h3>' + descriptionBlock + '</section>' : '') +
+          '<section><h3 class="text-slate-700 font-medium text-sm mb-3">Details</h3><div class="rounded-xl border border-slate-100 bg-slate-50/50 p-4">' + detailsRows + '</div></section>' +
+          (contractorHtml ? '<section><h3 class="text-slate-700 font-medium text-sm mb-3">Contact</h3>' + contractorHtml + '</section>' : '') +
+          (photosGridHtml ? '<section><h3 class="text-slate-700 font-medium text-sm mb-3">Photos</h3>' + photosGridHtml + '</section>' : '') +
+          '</div>';
+        document.getElementById('detailModal').classList.remove('hidden');
+        document.getElementById('detailModal').classList.add('flex');
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+      }
+      function closeDetailModal() {
+        var modal = document.getElementById('detailModal');
+        var pill = document.getElementById('detailModalStatusPill');
+        if (pill) pill.classList.add('hidden');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+      window.closeDetailModal = closeDetailModal;
+      async function load() {
+        try {
+          var list = await LeasePilot.API.get('/tenant/maintenance?t=' + Date.now());
+          maintenanceRequests = list || [];
+          var el = document.getElementById('list');
+          if (!maintenanceRequests.length) el.innerHTML = '<p class="text-slate-400">No requests yet.</p>';
+          else {
+            el.innerHTML = maintenanceRequests.map(function(m) {
+              var d = m.created_at ? new Date(m.created_at).toLocaleDateString() : '';
+              var isAssigned = (m.status && String(m.status).toLowerCase() === 'assigned') || !!(m.assigned_contractor_id != null && m.assigned_contractor_id !== '' && m.assigned_contractor_id !== 0) || !!(m.contractor_name && m.contractor_name.trim());
+              var status = isAssigned ? 'Assigned' : ((m.status || 'open').replace(/_/g, ' '));
+              var sc = statusClass(m.status, isAssigned);
+              var sub = status + ' · ' + d;
+              if (isAssigned && m.contractor_name) sub += ' · ' + esc(m.contractor_name);
+              return '<div class="request-row flex items-center justify-between gap-3 py-3 border-b border-slate-100 last:border-0 cursor-pointer hover:bg-slate-50 rounded-lg px-2 -mx-2 transition" data-id="' + m.id + '" role="button" tabindex="0">' +
+                '<div class="min-w-0 flex-1"><p class="font-medium text-slate-800 truncate">' + esc(m.subject || 'Request') + '</p><p class="text-slate-500 text-xs">' + sub + '</p></div>' +
+                '<div class="shrink-0 flex items-center gap-2"><span class="rounded-full px-2 py-0.5 text-xs font-medium ' + sc + '">' + status + '</span><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div></div>';
+            }).join('');
+            el.querySelectorAll('.request-row').forEach(function(row) {
+              var id = parseInt(row.getAttribute('data-id'), 10);
+              row.addEventListener('click', function() { openDetailModal(id); });
+              row.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetailModal(id); } });
+            });
+            lucide.createIcons();
+          }
+        } catch (e) { document.getElementById('list').innerHTML = '<p class="text-slate-400">Unable to load.</p>'; }
+      }
+      (async function() {
+        var wait = 0;
+        while (typeof LeasePilot === 'undefined' && wait < 100) { await new Promise(function(r) { setTimeout(r, 50); }); wait++; }
+        if (typeof LeasePilot === 'undefined') return;
+        await LeasePilot.checkAuth();
+        lucide.createIcons();
+        await load();
+      document.getElementById('form').onsubmit = async function(e) {
+        e.preventDefault();
+        var form = e.target;
+        var fd = new FormData(form);
+        var submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        try {
+          var token = localStorage.getItem('token');
+          var base = (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http'))
+            ? window.location.origin + '/api'
+            : 'http://localhost:3000/api';
+          var res = await fetch(base + '/tenant/maintenance', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token },
+            body: fd
+          });
+          if (!res.ok) {
+            var data = await res.json().catch(function() { return {}; });
+            throw new Error(data.error || res.statusText || 'Request failed');
+          }
+          if (window.LeasePilot && window.LeasePilot.Toast) LeasePilot.Toast.show('Request submitted.', 'success');
+          form.reset();
+          await load();
+        } catch (err) {
+          if (window.LeasePilot && window.LeasePilot.Toast) LeasePilot.Toast.show(err.message || 'Failed.', 'error');
+        } finally {
+          submitBtn.disabled = false;
+        }
+      };
+    })();
+  })();
+  </script>
+</body>
+</html>

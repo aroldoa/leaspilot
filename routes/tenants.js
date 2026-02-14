@@ -1,10 +1,14 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import bcrypt from 'bcryptjs';
+import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
 
+// All routes below require manager role (except invite which has its own requireRole)
 // Get all tenants for user
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
@@ -22,8 +26,64 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+// Invite tenant to portal (manager only): create Tenant user and link to tenant record
+router.post('/:id/invite', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    const emailStr = (email || '').toString().trim();
+    if (!emailStr || !EMAIL_REGEX.test(emailStr)) {
+      return res.status(400).json({ error: 'Valid email is required' });
+    }
+    if (!password || String(password).length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+    const pool = req.app.locals.pool;
+    const tenantResult = await pool.query(
+      'SELECT id, first_name, last_name, email, portal_user_id FROM tenants WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.userId]
+    );
+    if (tenantResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+    const tenant = tenantResult.rows[0];
+    if (tenant.portal_user_id) {
+      return res.status(400).json({ error: 'This tenant already has a portal account' });
+    }
+    let userResult = await pool.query('SELECT id, role FROM users WHERE LOWER(email) = LOWER($1)', [emailStr]);
+    let portalUser;
+    if (userResult.rows.length > 0) {
+      const existing = userResult.rows[0];
+      if (existing.role && existing.role.toLowerCase() === 'tenant') {
+        await pool.query('UPDATE tenants SET portal_user_id = $1 WHERE id = $2 AND user_id = $3', [existing.id, tenant.id, req.userId]);
+        const u = await pool.query('SELECT id, email, name, role FROM users WHERE id = $1', [existing.id]);
+        return res.json({ message: 'Tenant account already existed; linked to this tenant.', user: u.rows[0] });
+      }
+      return res.status(400).json({ error: 'A non-tenant account already exists with this email' });
+    }
+    const passwordHash = await bcrypt.hash(String(password), 10);
+    const name = [tenant.first_name, tenant.last_name].filter(Boolean).join(' ') || emailStr;
+    const insertUser = await pool.query(
+      `INSERT INTO users (email, password_hash, name, role) VALUES ($1, $2, $3, 'Tenant')
+       RETURNING id, email, name, role`,
+      [emailStr, passwordHash, name]
+    );
+    portalUser = insertUser.rows[0];
+    await pool.query(
+      'UPDATE tenants SET portal_user_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3',
+      [portalUser.id, tenant.id, req.userId]
+    );
+    res.status(201).json({
+      message: 'Tenant invited. They can sign in with this email and password.',
+      user: portalUser
+    });
+  } catch (error) {
+    console.error('Invite tenant error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get single tenant
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
@@ -46,7 +106,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // Create tenant
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const raw = req.body || {};
     const first_name = (raw.first_name || '').toString().trim();
@@ -86,7 +146,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // Update tenant
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const {
       first_name, last_name, email, phone, property_id, unit, status, lease_start, lease_end
@@ -115,7 +175,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 });
 
 // Delete tenant
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(

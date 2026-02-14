@@ -1,10 +1,10 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all transactions for user
-router.get('/', authenticateToken, async (req, res) => {
+// Get all transactions for user (manager only)
+router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
@@ -23,7 +23,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // Get single transaction
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
@@ -46,7 +46,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // Create transaction
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const {
       type, description, amount, category, property_id, transaction_date, status
@@ -69,7 +69,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // Update transaction
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const {
       type, description, amount, category, property_id, transaction_date, status
@@ -98,7 +98,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 });
 
 // Delete transaction
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(

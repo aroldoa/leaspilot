@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - Tenant Portal | LeasePilot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../app.js"></script>
+  <script src="notifications.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-[#F3F5F7] text-slate-900 antialiased">
+  <div class="min-h-screen">
+    <header class="bg-white border-b border-slate-200">
+      <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="dashboard.html" class="flex items-center gap-2">
+          <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot" class="h-9">
+        </a>
+        <nav class="flex items-center gap-1">
+          <a href="dashboard.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Dashboard</a>
+          <a href="payments.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Payments</a>
+          <a href="maintenance.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Maintenance</a>
+          <a href="documents.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Documents</a>
+          <a href="messages.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 inline-flex items-center gap-1.5">Messages <span id="tenantNavMessagesBadge" class="hidden inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold">0</span></a>
+          <a href="profile.html" class="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900">Profile</a>
+          <a href="messages.html" class="relative rounded-full p-2.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700" title="Notifications"><i data-lucide="bell" class="h-5 w-5"></i><span id="tenantNotificationsBadge" class="hidden absolute top-0 right-0 min-w-[1.25rem] h-5 px-1 rounded-full bg-red-500 text-white text-xs font-semibold inline-flex items-center justify-center">0</span></a>
+          <button onclick="LeasePilot.logout()" class="rounded-full p-2 text-slate-400 hover:text-slate-600" title="Sign out"><i data-lucide="log-out" class="h-4 w-4"></i></button>
+        </nav>
+      </div>
+    </header>
+    <main class="max-w-5xl mx-auto px-4 py-8">
+      <div class="mb-8">
+        <a href="dashboard.html" class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 mb-4">
+          <i data-lucide="arrow-left" class="h-4 w-4"></i> Back to dashboard
+        </a>
+        <h1 class="text-2xl font-semibold text-slate-900">Profile</h1>
+        <p class="text-slate-500 mt-1">Your account and lease information</p>
+      </div>
+
+      <div id="profileLoading" class="bg-white rounded-2xl border border-slate-100 p-8 shadow-sm max-w-2xl">
+        <p class="text-slate-400">Loading...</p>
+      </div>
+
+      <div id="profileLoaded" class="hidden max-w-2xl space-y-6">
+        <!-- Profile header with avatar -->
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <div class="flex items-center gap-4">
+            <div class="relative shrink-0">
+              <div id="profileAvatarWrap" class="h-20 w-20 rounded-full overflow-hidden bg-slate-900 flex items-center justify-center text-2xl font-semibold text-white ring-2 ring-white shadow">
+                <img id="profileAvatarImg" class="hidden h-full w-full object-cover" alt="Profile" src="">
+                <span id="profileAvatarInitials">—</span>
+              </div>
+              <label class="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-slate-800 text-white shadow hover:bg-slate-700 transition" title="Replace photo">
+                <i data-lucide="camera" class="h-4 w-4"></i>
+                <input type="file" id="profilePhotoInput" accept="image/jpeg,image/png,image/gif,image/webp" class="sr-only">
+              </label>
+            </div>
+            <div class="min-w-0 flex-1">
+              <h2 id="profileName" class="text-lg font-semibold text-slate-900 truncate">—</h2>
+              <p id="profileEmail" class="text-sm text-slate-500 truncate">—</p>
+              <p id="profilePhotoHint" class="text-xs text-slate-500 mt-1">JPG, PNG, GIF or WebP, max 2MB</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personal & contact -->
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100">
+            <h3 class="text-sm font-medium text-slate-900">Personal information</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Your contact details</p>
+          </div>
+          <div class="px-6 py-4">
+            <div id="profilePersonalRows" class="space-y-0"></div>
+          </div>
+        </div>
+
+        <!-- Lease & property -->
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100">
+            <h3 class="text-sm font-medium text-slate-900">Lease & property</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Your current lease and address</p>
+          </div>
+          <div class="px-6 py-4">
+            <div id="profileLeaseRows" class="space-y-0"></div>
+          </div>
+        </div>
+
+        <!-- Help note -->
+        <div class="rounded-xl bg-slate-50 border border-slate-100 p-4 flex gap-3">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-600"><i data-lucide="info" class="h-4 w-4"></i></span>
+          <div>
+            <p class="text-sm font-medium text-slate-700">Need to update something?</p>
+            <p class="text-sm text-slate-600 mt-0.5">To change your name, email, or lease details, contact your property manager.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="profileError" class="hidden bg-white rounded-2xl border border-slate-100 p-8 shadow-sm max-w-2xl">
+        <p class="text-slate-500">Unable to load profile. Try refreshing the page.</p>
+      </div>
+    </main>
+  </div>
+  <script>
+    function esc(s) { return (s == null || s === '') ? '' : String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function row(icon, label, value) {
+      if (value == null || String(value).trim() === '') value = '—';
+      return '<div class="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0 last:pb-0">' +
+        '<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 mt-0.5">' + icon + '</span>' +
+        '<div class="min-w-0 flex-1"><p class="text-xs font-medium text-slate-500 uppercase tracking-wide">' + esc(label) + '</p><p class="text-slate-900 mt-0.5">' + esc(value) + '</p></div></div>';
+    }
+    (async () => {
+      let wait = 0;
+      while (typeof LeasePilot === 'undefined' && wait < 100) { await new Promise(r => setTimeout(r, 50)); wait++; }
+      if (typeof LeasePilot === 'undefined') return;
+      await LeasePilot.checkAuth();
+      lucide.createIcons();
+      var loadingEl = document.getElementById('profileLoading');
+      var loadedEl = document.getElementById('profileLoaded');
+      var errorEl = document.getElementById('profileError');
+      try {
+        var data = await LeasePilot.API.get('/tenant/profile');
+        var u = data.user || {};
+        var t = data.tenant || {};
+        var name = (u.name && String(u.name).trim()) || [t.first_name, t.last_name].filter(Boolean).join(' ').trim() || '—';
+        var email = (u.email || t.email || '').trim() || '—';
+        var initials = name !== '—' ? name.split(/\s+/).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase() : '?';
+        var avatarUrl = (u.avatar_url || '').trim();
+        var imgEl = document.getElementById('profileAvatarImg');
+        var initialsEl = document.getElementById('profileAvatarInitials');
+        if (avatarUrl) {
+          var src = avatarUrl.startsWith('http') ? avatarUrl : (window.location.origin || '') + (avatarUrl.startsWith('/') ? avatarUrl : '/' + avatarUrl);
+          imgEl.src = src;
+          imgEl.classList.remove('hidden');
+          initialsEl.classList.add('hidden');
+        } else {
+          imgEl.classList.add('hidden');
+          initialsEl.classList.remove('hidden');
+          initialsEl.textContent = initials;
+        }
+        document.getElementById('profileName').textContent = name;
+        document.getElementById('profileEmail').textContent = email;
+        var personalHtml = row('<i data-lucide="user" class="h-4 w-4"></i>', 'Name', name) +
+          row('<i data-lucide="mail" class="h-4 w-4"></i>', 'Email', (u.email || t.email || '').trim() || '—') +
+          row('<i data-lucide="phone" class="h-4 w-4"></i>', 'Phone', (t.phone || '').trim() || '—');
+        document.getElementById('profilePersonalRows').innerHTML = personalHtml;
+        var addrParts = [t.property_address || t.propertyAddress, t.property_city || t.propertyCity, t.property_state || t.propertyState, t.property_zip || t.propertyZip].filter(function (v) { return v != null && String(v).trim() !== ''; });
+        var fullAddress = addrParts.length ? addrParts.join(', ') : '—';
+        var propName = (t.property_name || t.propertyName || '').trim() || '—';
+        var unit = (t.unit || '').trim() ? 'Unit ' + t.unit : '—';
+        var leaseStart = t.lease_start ? new Date(t.lease_start).toLocaleDateString() : '';
+        var leaseEnd = t.lease_end ? new Date(t.lease_end).toLocaleDateString() : '';
+        var leaseDates = (leaseStart && leaseEnd) ? leaseStart + ' – ' + leaseEnd : (leaseStart || leaseEnd || '—');
+        var rentRaw = t.property_rent ?? t.propertyRent;
+        var rent = (rentRaw != null && rentRaw !== '') ? '$' + Number(parseFloat(rentRaw)).toFixed(2) : '—';
+        var leaseHtml = row('<i data-lucide="home" class="h-4 w-4"></i>', 'Property', propName) +
+          row('<i data-lucide="map-pin" class="h-4 w-4"></i>', 'Address', fullAddress) +
+          row('<i data-lucide="layout-grid" class="h-4 w-4"></i>', 'Unit', unit) +
+          row('<i data-lucide="calendar" class="h-4 w-4"></i>', 'Lease period', leaseDates) +
+          row('<i data-lucide="wallet" class="h-4 w-4"></i>', 'Monthly rent', rent);
+        document.getElementById('profileLeaseRows').innerHTML = leaseHtml;
+        loadingEl.classList.add('hidden');
+        loadedEl.classList.remove('hidden');
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+      } catch (e) {
+        loadingEl.classList.add('hidden');
+        errorEl.classList.remove('hidden');
+      }
+
+      function setAvatarFromUrl(url) {
+        var imgEl = document.getElementById('profileAvatarImg');
+        var initialsEl = document.getElementById('profileAvatarInitials');
+        if (!imgEl || !initialsEl) return;
+        if (url) {
+          var src = url.startsWith('http') ? url : (window.location.origin || '') + (url.startsWith('/') ? url : '/' + url);
+          imgEl.src = src + (url.indexOf('?') >= 0 ? '' : '?t=' + Date.now());
+          imgEl.classList.remove('hidden');
+          initialsEl.classList.add('hidden');
+        } else {
+          imgEl.classList.add('hidden');
+          initialsEl.classList.remove('hidden');
+          var nameEl = document.getElementById('profileName');
+          var name = (nameEl && nameEl.textContent) ? nameEl.textContent : '';
+          initialsEl.textContent = name !== '—' ? name.split(/\s+/).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase() : '?';
+        }
+      }
+
+      var photoInput = document.getElementById('profilePhotoInput');
+      if (photoInput) {
+        photoInput.addEventListener('change', function () {
+          var file = this.files && this.files[0];
+          if (!file) return;
+          if (!file.type.match(/^image\/(jpeg|png|gif|webp)$/)) {
+            if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Please choose a JPG, PNG, GIF or WebP image.', 'error');
+            else alert('Please choose a JPG, PNG, GIF or WebP image.');
+            this.value = '';
+            return;
+          }
+          if (file.size > 2 * 1024 * 1024) {
+            if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Image must be 2MB or smaller.', 'error');
+            else alert('Image must be 2MB or smaller.');
+            this.value = '';
+            return;
+          }
+          if (typeof LeasePilot === 'undefined' || !LeasePilot.API || !LeasePilot.API.uploadAvatar) {
+            if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Upload not available.', 'error');
+            this.value = '';
+            return;
+          }
+          LeasePilot.API.uploadAvatar(file).then(function (user) {
+            var url = user && (user.avatar_url || user.avatarUrl);
+            if (url) setAvatarFromUrl(url);
+            if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Photo updated.', 'success');
+            if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+          }).catch(function (err) {
+            if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show(err.message || 'Upload failed.', 'error');
+            else alert(err.message || 'Upload failed.');
+          }).finally(function () { photoInput.value = ''; });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

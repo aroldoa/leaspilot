@@ -61,7 +61,7 @@
                         <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-200">
                         <span class="text-sm text-slate-600">Remember me</span>
                     </label>
-                    <a href="#" class="text-sm font-medium text-slate-900 hover:text-slate-700">Forgot password?</a>
+                    <a href="forgot-password.html" class="text-sm font-medium text-slate-900 hover:text-slate-700">Forgot password?</a>
                 </div>
 
                 <button type="submit" id="loginSubmitBtn"
@@ -133,9 +133,10 @@
                 localStorage.setItem('user', JSON.stringify(data.user));
                 
                 console.log('💾 Token and user saved to localStorage');
-                console.log('🔄 Redirecting to index.html...');
-                
-                window.location.href = 'index.html';
+                const role = (data.user && (data.user.role || '').toLowerCase()) || '';
+                const redirectUrl = role === 'tenant' ? 'tenant/dashboard.html' : (role === 'contractor' ? 'contractor/messages.html' : 'index.html');
+                console.log('🔄 Redirecting to', redirectUrl, '...');
+                window.location.href = redirectUrl;
             } catch (error) {
                 console.error('❌ Login error:', error);
                 const isNetworkError = error.name === 'TypeError' && error.message.includes('fetch');
@@ -163,8 +164,10 @@
                     if (response.ok) {
                         const data = await response.json();
                         if (data.user) {
-                            console.log('✅ Already logged in, redirecting...');
-                            window.location.href = 'index.html';
+                            const role = (data.user.role || '').toLowerCase();
+                            const redirectUrl = role === 'tenant' ? 'tenant/dashboard.html' : (role === 'contractor' ? 'contractor/messages.html' : 'index.html');
+                            console.log('✅ Already logged in, redirecting to', redirectUrl);
+                            window.location.href = redirectUrl;
                         }
                     } else {
                         // Token invalid, clear it

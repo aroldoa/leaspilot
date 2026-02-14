@@ -37,6 +37,18 @@ body { font-family: 'Inter', sans-serif; }
                         <i data-lucide="users" class="h-5 w-5 text-slate-900"></i>
                         Tenants
                     </a>
+                    <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="wrench" class="h-5 w-5"></i>
+                        Maintenance
+                    </a>
+                    <a href="contractors.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="hard-hat" class="h-5 w-5"></i>
+                        Contractors
+                    </a>
+                    <a href="messages.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="message-square" class="h-5 w-5"></i>
+                        Messages
+                    </a>
                     <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
                         <i data-lucide="wallet" class="h-5 w-5"></i>
                         Financials
@@ -115,8 +127,8 @@ body { font-family: 'Inter', sans-serif; }
                             <i data-lucide="users" class="h-4 w-4 text-slate-400"></i>
                          </div>
                          <div class="mt-4">
-                            <span class="text-2xl font-medium text-slate-900 tracking-tight">124</span>
-                            <span class="text-xs text-green-600 ml-2 font-medium">+12%</span>
+                            <span id="kpiTotalTenants" class="text-2xl font-medium text-slate-900 tracking-tight">0</span>
+                            <span id="kpiTotalChange" class="text-xs text-green-600 ml-2 font-medium"></span>
                          </div>
                      </div>
                      <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
@@ -125,8 +137,8 @@ body { font-family: 'Inter', sans-serif; }
                             <i data-lucide="percent" class="h-4 w-4 text-slate-400"></i>
                          </div>
                          <div class="mt-4">
-                            <span class="text-2xl font-medium text-slate-900 tracking-tight">94%</span>
-                            <span class="text-xs text-slate-400 ml-2">Stable</span>
+                            <span id="kpiOccupancy" class="text-2xl font-medium text-slate-900 tracking-tight">0%</span>
+                            <span id="kpiOccupancyLabel" class="text-xs text-slate-400 ml-2">Stable</span>
                          </div>
                      </div>
                      <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
@@ -135,8 +147,8 @@ body { font-family: 'Inter', sans-serif; }
                             <i data-lucide="file-text" class="h-4 w-4 text-slate-400"></i>
                          </div>
                          <div class="mt-4">
-                            <span class="text-2xl font-medium text-slate-900 tracking-tight">8</span>
-                            <span class="text-xs text-blue-600 ml-2 font-medium">Reviewing</span>
+                            <span id="kpiPendingApps" class="text-2xl font-medium text-slate-900 tracking-tight">0</span>
+                            <button type="button" id="kpiPendingLink" class="text-xs text-blue-600 ml-2 font-medium hover:underline">Reviewing</button>
                          </div>
                      </div>
                      <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
@@ -145,8 +157,8 @@ body { font-family: 'Inter', sans-serif; }
                             <i data-lucide="alert-triangle" class="h-4 w-4 text-amber-500"></i>
                          </div>
                          <div class="mt-4 relative z-10">
-                            <span class="text-2xl font-medium text-slate-900 tracking-tight">2</span>
-                            <span class="text-xs text-slate-500 ml-2">At risk of churn</span>
+                            <span id="kpiAiRisk" class="text-2xl font-medium text-slate-900 tracking-tight">0</span>
+                            <span id="kpiAiRiskLabel" class="text-xs text-slate-500 ml-2">At risk of churn</span>
                          </div>
                          <div class="absolute -right-4 -bottom-4 h-16 w-16 rounded-full bg-amber-50"></div>
                      </div>
@@ -155,16 +167,16 @@ body { font-family: 'Inter', sans-serif; }
                 <!-- Filters & Controls -->
                 <div class="mb-4 flex flex-col gap-4 rounded-3xl bg-white p-2 shadow-sm border border-slate-100 md:flex-row md:items-center justify-between">
                     <div class="flex items-center gap-1 overflow-x-auto p-1 hide-scrollbar">
-                        <button class="whitespace-nowrap rounded-full bg-slate-100 px-4 py-2 text-xs font-medium text-slate-900 transition-colors">
-                            All Tenants
+                        <button type="button" data-category="all" class="tenant-filter-tab whitespace-nowrap rounded-full bg-slate-100 px-4 py-2 text-xs font-medium text-slate-900 transition-colors">
+                            All Tenants <span id="allTenantsCount" class="ml-1 text-slate-400">0</span>
                         </button>
-                        <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-                            Active Leases
+                        <button type="button" data-category="active" class="tenant-filter-tab whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                            Active Leases <span id="activeLeasesCount" class="ml-1 text-slate-400">0</span>
                         </button>
-                        <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-                            Applicants <span class="ml-1 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-blue-100 px-1 text-[10px] text-blue-700">8</span>
+                        <button type="button" data-category="pending" class="tenant-filter-tab whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                            Applicants <span id="applicantsBadge" class="ml-1 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-blue-100 px-1 text-[10px] text-blue-700">0</span>
                         </button>
-                        <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <button type="button" data-category="past" class="tenant-filter-tab whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
                             Past
                         </button>
                     </div>
@@ -173,21 +185,21 @@ body { font-family: 'Inter', sans-serif; }
                         <div class="h-4 w-px bg-slate-200 hidden md:block"></div>
                         <div class="relative group w-full md:w-auto">
                             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-slate-900 transition-colors"></i>
-                            <input type="text" placeholder="Search tenants..." class="h-10 w-full md:w-64 rounded-full border-none bg-slate-50 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-slate-100 transition-all placeholder:text-slate-400">
+                            <input type="text" id="tenantSearch" placeholder="Search tenants..." class="h-10 w-full md:w-64 rounded-full border-none bg-slate-50 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-slate-100 transition-all placeholder:text-slate-400">
                         </div>
                         <div class="flex items-center rounded-full bg-slate-50 p-1 border border-slate-100">
-                             <button class="rounded-full bg-white p-1.5 shadow-sm text-slate-900">
+                             <button type="button" id="tenantViewList" class="tenant-view-toggle rounded-full bg-white p-1.5 shadow-sm text-slate-900" title="List view">
                                 <i data-lucide="list" class="h-4 w-4"></i>
                             </button>
-                            <button class="rounded-full p-1.5 text-slate-400 hover:text-slate-600">
+                            <button type="button" id="tenantViewGrid" class="tenant-view-toggle rounded-full p-1.5 text-slate-400 hover:text-slate-600" title="Grid view">
                                 <i data-lucide="grid" class="h-4 w-4"></i>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Tenants Table -->
-                <div class="rounded-[2rem] border border-slate-100 bg-white overflow-hidden shadow-sm">
+                <!-- Tenants List (table) -->
+                <div id="tenantsListView" class="rounded-[2rem] border border-slate-100 bg-white overflow-hidden shadow-sm">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
@@ -214,10 +226,13 @@ body { font-family: 'Inter', sans-serif; }
                     </div>
                 </div>
 
+                <!-- Tenants Grid (cards) -->
+                <div id="tenantsGridView" class="hidden grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" style="display: none;"></div>
+
                 <!-- Pagination -->
-                <div class="mt-8 flex items-center justify-between">
+                <div id="tenantsPagination" class="mt-8 flex items-center justify-between">
                      <div class="text-xs text-slate-500">
-                        Showing <span class="font-medium text-slate-900">1-6</span> of <span class="font-medium text-slate-900">124</span> tenants
+                        Showing <span id="tenantPaginationCount" class="font-medium text-slate-900">0</span> of <span id="tenantPaginationTotal" class="font-medium text-slate-900">0</span> tenants
                     </div>
                     <div class="flex gap-2">
                         <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors" disabled="">
@@ -358,6 +373,154 @@ body { font-family: 'Inter', sans-serif; }
         }
 
         let loadedTenants = [];
+        let tenantCategoryFilter = 'all'; // all | active | pending | past
+        let tenantViewMode = 'list';      // list | grid
+
+        function getTenantCategory(tenant) {
+            const s = (tenant.status || '').toLowerCase();
+            if (s === 'pending') return 'pending';
+            if (s === 'inactive') return 'past';
+            // Active Leases = anyone with status 'active' (show all active leases regardless of lease_end)
+            if (s === 'active') return 'active';
+            return 'active';
+        }
+
+        function updateKpis(tenants) {
+            const total = tenants.length;
+            const active = tenants.filter(t => getTenantCategory(t) === 'active').length;
+            const pending = tenants.filter(t => getTenantCategory(t) === 'pending').length;
+            const past = tenants.filter(t => getTenantCategory(t) === 'past').length;
+            const occupancy = total ? Math.round((active / total) * 100) : 0;
+            const el = (id, text) => { const e = document.getElementById(id); if (e) e.textContent = text; };
+            el('kpiTotalTenants', total);
+            el('kpiTotalChange', total > 0 ? '+' + total + ' total' : '');
+            el('kpiOccupancy', occupancy + '%');
+            el('kpiOccupancyLabel', occupancy >= 90 ? 'Stable' : occupancy >= 70 ? 'Good' : 'Low');
+            el('kpiPendingApps', pending);
+            el('kpiAiRisk', '0');
+            el('applicantsBadge', pending);
+            el('activeLeasesCount', active);
+            el('allTenantsCount', total);
+        }
+
+        function setTenantCategoryFilter(category) {
+            tenantCategoryFilter = category;
+            document.querySelectorAll('.tenant-filter-tab').forEach(btn => {
+                const isActive = (btn.getAttribute('data-category') || '') === tenantCategoryFilter;
+                btn.className = 'tenant-filter-tab whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium transition-colors ' +
+                    (isActive ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50');
+            });
+            applyTenantFilters();
+        }
+
+        function setTenantViewMode(mode) {
+            tenantViewMode = mode;
+            const listView = document.getElementById('tenantsListView');
+            const gridView = document.getElementById('tenantsGridView');
+            const listBtn = document.getElementById('tenantViewList');
+            const gridBtn = document.getElementById('tenantViewGrid');
+            if (listView) listView.style.display = mode === 'list' ? '' : 'none';
+            if (gridView) { gridView.style.display = mode === 'grid' ? 'grid' : 'none'; gridView.className = mode === 'grid' ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3' : 'hidden'; }
+            if (listBtn) listBtn.className = 'tenant-view-toggle rounded-full p-1.5 ' + (mode === 'list' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600');
+            if (gridBtn) gridBtn.className = 'tenant-view-toggle rounded-full p-1.5 ' + (mode === 'grid' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600');
+            applyTenantFilters();
+        }
+
+        function getFilteredTenants() {
+            let list = loadedTenants.filter(t => {
+                const cat = getTenantCategory(t);
+                if (tenantCategoryFilter === 'all') {}
+                else if (tenantCategoryFilter !== cat) return false;
+                return true;
+            });
+            const q = (document.getElementById('tenantSearch')?.value || '').trim().toLowerCase();
+            if (q) {
+                list = list.filter(t => {
+                    const str = [t.first_name, t.last_name, t.email, t.phone, t.property_name, t.unit].filter(Boolean).join(' ').toLowerCase();
+                    return str.includes(q);
+                });
+            }
+            return list;
+        }
+
+        function applyTenantFilters() {
+            const filtered = getFilteredTenants();
+            const tbody = document.getElementById('tenantsTableBody');
+            const q = (document.getElementById('tenantSearch')?.value || '').trim().toLowerCase();
+            if (tbody) {
+                tbody.querySelectorAll('tr').forEach(tr => {
+                    const cat = tr.dataset.category || '';
+                    if (cat === '' && tr.querySelector('td[colspan]')) {
+                        tr.style.display = filtered.length === 0 && loadedTenants.length === 0 ? '' : 'none';
+                        return;
+                    }
+                    const matchCategory = tenantCategoryFilter === 'all' || cat === tenantCategoryFilter;
+                    const matchSearch = !q || (tr.dataset.search || '').toLowerCase().includes(q);
+                    tr.style.display = (matchCategory && matchSearch) ? '' : 'none';
+                });
+            }
+            if (tenantViewMode === 'grid') {
+                renderTenantsGrid(filtered);
+                const gridView = document.getElementById('tenantsGridView');
+                if (gridView) gridView.style.display = 'grid';
+            }
+            const countEl = document.getElementById('tenantPaginationCount');
+            const totalEl = document.getElementById('tenantPaginationTotal');
+            if (countEl) countEl.textContent = filtered.length;
+            if (totalEl) totalEl.textContent = filtered.length;
+        }
+
+        function createTenantCard(tenant) {
+            const statusColors = { active: { bg: 'bg-green-50', text: 'text-green-700', label: 'Active' }, pending: { bg: 'bg-amber-50', text: 'text-amber-700', label: 'Pending' }, inactive: { bg: 'bg-slate-100', text: 'text-slate-600', label: 'Inactive' } };
+            const status = statusColors[tenant.status] || statusColors.inactive;
+            const cat = getTenantCategory(tenant);
+            if (cat === 'past') status.label = 'Past';
+            const initials = `${tenant.first_name?.[0] || ''}${tenant.last_name?.[0] || ''}`.toUpperCase();
+            const leaseEnd = tenant.lease_end ? new Date(tenant.lease_end).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+            const card = document.createElement('a');
+            card.href = 'tenant-detail.html?id=' + tenant.id;
+            card.className = 'block rounded-2xl border border-slate-100 bg-white p-5 transition-all hover:shadow-md hover:border-slate-200';
+            card.innerHTML = `
+                <div class="flex items-start gap-4">
+                    <div class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">${initials}</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium text-slate-900">${tenant.first_name} ${tenant.last_name}</p>
+                        <p class="text-xs text-slate-500 truncate">${tenant.email || tenant.phone || 'No contact'}</p>
+                        <p class="text-xs text-slate-500 mt-1">${tenant.property_name || 'No property'}${tenant.unit ? ' · ' + tenant.unit : ''}</p>
+                        <span class="inline-flex items-center gap-1 rounded-full ${status.bg} px-2 py-0.5 text-xs font-medium ${status.text} mt-2">${status.label}</span>
+                        <p class="text-xs text-slate-400 mt-2">Lease end ${leaseEnd}</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300 flex-shrink-0 mt-1"></i>
+                </div>
+            `;
+            return card;
+        }
+
+        function renderTenantsGrid(tenants) {
+            const grid = document.getElementById('tenantsGridView');
+            if (!grid) return;
+            grid.innerHTML = '';
+            if (tenants.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'col-span-full rounded-2xl border border-slate-100 bg-white p-8 text-center text-slate-500 text-sm';
+                empty.textContent = 'No tenants match the current filters.';
+                grid.appendChild(empty);
+            } else {
+                tenants.forEach(t => {
+                    grid.appendChild(createTenantCard(t));
+                });
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+
+        function filterTenantsTable() { applyTenantFilters(); }
+        document.getElementById('tenantSearch')?.addEventListener('input', filterTenantsTable);
+        document.getElementById('kpiPendingLink')?.addEventListener('click', function(e) { e.preventDefault(); setTenantCategoryFilter('pending'); });
+        document.querySelectorAll('.tenant-filter-tab').forEach(btn => {
+            btn.addEventListener('click', function() { setTenantCategoryFilter(this.getAttribute('data-category') || 'all'); });
+        });
+        document.getElementById('tenantViewList')?.addEventListener('click', () => setTenantViewMode('list'));
+        document.getElementById('tenantViewGrid')?.addEventListener('click', () => setTenantViewMode('grid'));
 
         async function openEditTenantModalById(id) {
             let tenant = loadedTenants.find(t => t.id == id);
@@ -379,9 +542,12 @@ body { font-family: 'Inter', sans-serif; }
 
                 if (tenants && tenants.length > 0) {
                     console.log(`✅ Loading ${tenants.length} tenants`);
+                    updateKpis(loadedTenants);
                     tenants.forEach(tenant => {
                         const row = document.createElement('tr');
                         row.className = 'group hover:bg-slate-50 transition-colors cursor-pointer';
+                        row.dataset.search = [tenant.first_name, tenant.last_name, tenant.email, tenant.phone, tenant.property_name, tenant.unit].filter(Boolean).join(' ').toLowerCase();
+                        row.dataset.category = getTenantCategory(tenant);
                         row.onclick = () => window.location.href = `tenant-detail.html?id=${tenant.id}`;
                         
                         const statusColors = {
@@ -452,9 +618,13 @@ body { font-family: 'Inter', sans-serif; }
                     });
                     lucide.createIcons();
                     console.log('✅ Tenants loaded successfully');
+                    applyTenantFilters();
                 } else {
                     console.log('🤷 No tenants found');
+                    updateKpis([]);
                     tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-slate-500">No tenants found</td></tr>';
+                    document.getElementById('tenantPaginationCount').textContent = '0';
+                    document.getElementById('tenantPaginationTotal').textContent = '0';
                 }
             } catch (error) {
                 console.error('❌ Error loading tenants:', error);

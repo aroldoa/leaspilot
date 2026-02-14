@@ -6,7 +6,13 @@ dotenv.config();
 
 const pool = createPool();
 
+const SEED_FORCE = process.env.SEED_FORCE === '1' || process.env.SEED_FORCE === 'true';
+
 async function seedDatabase() {
+  if (!pool) {
+    console.error('❌ DATABASE_URL not set or invalid. Set it in .env and try again.');
+    process.exit(1);
+  }
   try {
     console.log('🌱 Starting database seeding...');
 
@@ -31,11 +37,25 @@ async function seedDatabase() {
       console.log('✅ Created demo user');
     }
 
-    // Clear existing data for this user
-    await pool.query('DELETE FROM transactions WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM tenants WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM properties WHERE user_id = $1', [userId]);
-    console.log('✅ Cleared existing data');
+    // Check if user already has data (prevent accidental wipe)
+    const countResult = await pool.query(
+      'SELECT (SELECT COUNT(*) FROM properties WHERE user_id = $1) AS props, (SELECT COUNT(*) FROM tenants WHERE user_id = $1) AS tenants',
+      [userId]
+    );
+    const hasData = Number(countResult.rows[0].props) > 0 || Number(countResult.rows[0].tenants) > 0;
+
+    if (hasData && !SEED_FORCE) {
+      console.log('⚠️  Demo user already has properties/tenants. Skipping seed to prevent data loss.');
+      console.log('   To reset demo data, run: SEED_FORCE=1 npm run seed');
+      process.exit(0);
+    }
+
+    if (hasData && SEED_FORCE) {
+      await pool.query('DELETE FROM transactions WHERE user_id = $1', [userId]);
+      await pool.query('DELETE FROM tenants WHERE user_id = $1', [userId]);
+      await pool.query('DELETE FROM properties WHERE user_id = $1', [userId]);
+      console.log('✅ Cleared existing data (SEED_FORCE=1)');
+    }
 
     // Insert Properties
     const properties = [

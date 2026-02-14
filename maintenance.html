@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance - LeasePilot AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .detail-panel { transform: translateX(100%); transition: transform 0.25s ease, opacity 0.2s ease; }
+    .detail-panel.open { transform: translateX(0); }
+    .request-row { transition: background 0.1s ease; }
+    .request-row:hover { background: rgba(248,250,252,0.9); }
+    .request-row:active { background: rgba(241,245,249,1); }
+  </style>
+</head>
+<body class="bg-[#F3F5F7] text-slate-900 antialiased">
+  <div class="flex h-screen overflow-hidden">
+    <aside class="hidden md:flex w-72 flex-col justify-between border-r border-slate-200 bg-white p-6">
+      <div>
+        <a href="index.html" class="flex items-center mb-10">
+          <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-12">
+        </a>
+        <nav class="space-y-1">
+          <a href="index.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="layout-grid" class="h-5 w-5"></i> Dashboard
+          </a>
+          <a href="properties.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="home" class="h-5 w-5"></i> Properties
+          </a>
+          <a href="tenants.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="users" class="h-5 w-5"></i> Tenants
+          </a>
+          <a href="maintenance.html" class="flex items-center gap-3 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition-colors">
+            <i data-lucide="wrench" class="h-5 w-5 text-slate-900"></i> Maintenance
+          </a>
+          <a href="contractors.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="hard-hat" class="h-5 w-5"></i> Contractors
+          </a>
+          <a href="messages.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="message-square" class="h-5 w-5"></i> Messages
+          </a>
+          <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="wallet" class="h-5 w-5"></i> Financials
+          </a>
+          <a href="settings.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="settings" class="h-5 w-5"></i> Settings
+          </a>
+        </nav>
+      </div>
+      <div class="flex items-center gap-3 border-t border-slate-100 pt-5">
+        <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80">
+          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
+          <div class="flex flex-col flex-1">
+            <span class="text-sm font-medium" data-user-name>Sarah Jenkins</span>
+            <span class="text-xs text-slate-500">Portfolio Manager</span>
+          </div>
+        </a>
+        <button onclick="LeasePilot.logout()" class="text-slate-400 hover:text-slate-600" title="Logout"><i data-lucide="log-out" class="h-4 w-4"></i></button>
+      </div>
+    </aside>
+    <main class="flex-1 overflow-y-auto hide-scrollbar relative">
+      <div class="mx-auto max-w-7xl px-6 py-8 md:px-10 md:py-12">
+        <h1 class="text-3xl font-medium tracking-tight text-slate-900">Maintenance</h1>
+        <p class="mt-2 text-sm text-slate-500">Click a request to view details. Emergency tickets appear at the top.</p>
+        <div class="mt-6 rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+          <div id="maintenanceList" class="divide-y divide-slate-100">
+            <p class="text-slate-400 text-sm py-8 px-6">Loading...</p>
+          </div>
+        </div>
+      </div>
+      <!-- Request detail panel (slide-over) -->
+      <div id="detailPanel" class="detail-panel fixed top-0 right-0 z-40 h-full w-full max-w-xl bg-white shadow-xl border-l border-slate-200 overflow-y-auto" aria-hidden="true">
+        <div class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-6 py-4">
+          <h2 class="text-lg font-semibold text-slate-900">Request details</h2>
+          <button type="button" onclick="closeDetailPanel()" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Close">
+            <i data-lucide="x" class="h-5 w-5"></i>
+          </button>
+        </div>
+        <div id="detailContent" class="p-6">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+      <div id="detailBackdrop" class="fixed inset-0 z-30 bg-black/20 opacity-0 pointer-events-none transition-opacity duration-200" onclick="closeDetailPanel()" aria-hidden="true"></div>
+    </main>
+  </div>
+
+  <!-- Assign Contractor modal -->
+  <div id="assignVendorModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/40" aria-hidden="true">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+      <h3 class="text-lg font-semibold text-slate-900">Assign Contractor</h3>
+      <p class="text-sm text-slate-500 mt-1">Request #<span id="assignVendorReqId"></span></p>
+      <input type="hidden" id="assignVendorReqIdInput" value="">
+      <div class="mt-4">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Contractor</label>
+        <select id="assignContractorSelect" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 focus:border-slate-400 focus:outline-none">
+          <option value="">None</option>
+        </select>
+        <p class="mt-2 text-xs text-slate-500"><a href="contractors.html" class="text-slate-700 hover:underline">Add contractors</a> to assign them here.</p>
+      </div>
+      <div class="mt-6 flex gap-3 justify-end">
+        <button type="button" onclick="closeAssignVendorModal()" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
+        <button type="button" onclick="submitAssignContractor()" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Assign</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Send SMS modal -->
+  <div id="smsModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/40" aria-hidden="true">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+      <h3 class="text-lg font-semibold text-slate-900">Send SMS</h3>
+      <p class="text-sm text-slate-500 mt-1" id="smsModalRecipient">To: …</p>
+      <input type="hidden" id="smsModalContractorId" value="">
+      <input type="hidden" id="smsModalTenantId" value="">
+      <div class="mt-4">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Message</label>
+        <textarea id="smsModalBody" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none" placeholder="Type your message..."></textarea>
+      </div>
+      <div class="mt-6 flex gap-3 justify-end">
+        <button type="button" onclick="closeSmsModal()" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
+        <button type="button" id="smsModalSend" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Status modal -->
+  <div id="changeStatusModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/40" aria-hidden="true">
+    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onclick="event.stopPropagation()">
+      <h3 class="text-lg font-semibold text-slate-900">Change Status</h3>
+      <p class="text-sm text-slate-500 mt-1">Request #<span id="changeStatusReqId"></span></p>
+      <input type="hidden" id="changeStatusReqIdInput" value="">
+      <div class="mt-4 space-y-2">
+        <button type="button" data-status="open" class="status-option w-full text-left rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-900 hover:bg-slate-50">New</button>
+        <button type="button" data-status="in_progress" class="status-option w-full text-left rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-900 hover:bg-slate-50">In Progress</button>
+        <button type="button" data-status="waiting_vendor" class="status-option w-full text-left rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-900 hover:bg-slate-50">Waiting Vendor</button>
+        <button type="button" data-status="completed" class="status-option w-full text-left rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-900 hover:bg-slate-50">Completed</button>
+      </div>
+      <div class="mt-4 flex justify-end">
+        <button type="button" onclick="closeChangeStatusModal()" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var ISSUE_ICONS = {
+        plumbing: 'droplet',
+        electrical: 'zap',
+        hvac: 'thermometer',
+        appliance: 'refrigerator',
+        pest: 'bug',
+        other: 'wrench'
+      };
+      var STATUS_LABELS = { open: 'New', in_progress: 'In Progress', waiting_vendor: 'Waiting Vendor', completed: 'Completed' };
+      var STATUS_CLASS = {
+        open: 'bg-amber-50 text-amber-700',
+        in_progress: 'bg-blue-50 text-blue-700',
+        waiting_vendor: 'bg-slate-100 text-slate-700',
+        completed: 'bg-green-50 text-green-700'
+      };
+
+      function esc(s) {
+        if (s == null) return '';
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+      }
+
+      function timeAgo(dateStr) {
+        if (!dateStr) return '';
+        var d = new Date(dateStr);
+        var s = Math.floor((Date.now() - d) / 1000);
+        if (s < 60) return s + ' sec ago';
+        if (s < 3600) return Math.floor(s / 60) + ' min ago';
+        if (s < 86400) return Math.floor(s / 3600) + ' hr ago';
+        if (s < 2592000) return Math.floor(s / 86400) + ' days ago';
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+
+      function hasPhotos(r) {
+        return getPhotoUrls(r).length > 0;
+      }
+
+      function getPhotoUrls(r) {
+        if (!r.photo_urls) return [];
+        try {
+          var arr = typeof r.photo_urls === 'string' ? JSON.parse(r.photo_urls) : r.photo_urls;
+          return Array.isArray(arr) ? arr.filter(function(u) { return u && String(u).trim(); }) : [];
+        } catch (e) { return []; }
+      }
+
+      function getIssueIcon(issueType) {
+        var t = (issueType || 'other').toLowerCase();
+        return ISSUE_ICONS[t] || 'wrench';
+      }
+
+      function getStatusLabel(status) {
+        var s = (status || 'open').toLowerCase().replace(/-/g, '_');
+        return STATUS_LABELS[s] || status || 'New';
+      }
+
+      function getStatusClass(status) {
+        var s = (status || 'open').toLowerCase().replace(/-/g, '_');
+        return STATUS_CLASS[s] || STATUS_CLASS.open;
+      }
+
+      var currentRequests = [];
+
+      function renderCards(requests) {
+        currentRequests = requests || [];
+        var el = document.getElementById('maintenanceList');
+        if (!requests || requests.length === 0) {
+          el.innerHTML = '<div class="py-16 px-6 text-center"><i data-lucide="wrench" class="h-14 w-14 mx-auto mb-4 text-slate-300"></i><p class="text-slate-600 font-medium">No maintenance requests yet</p><p class="text-sm text-slate-400 mt-1">Tenants can submit requests from their portal.</p></div>';
+          lucide.createIcons();
+          return;
+        }
+        el.innerHTML = requests.map(function(r) {
+          var propUnit = (r.property_name || 'Property') + (r.tenant_unit ? ' · Unit ' + r.tenant_unit : '');
+          var icon = getIssueIcon(r.issue_type);
+          var isEmergency = (r.priority || 'normal') === 'emergency';
+          var priorityBadge = isEmergency
+            ? '<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">Emergency</span>'
+            : '<span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">Normal</span>';
+          var photoUrls = getPhotoUrls(r);
+          var photoInd = photoUrls.length ? '<span class="text-slate-500 text-xs">' + photoUrls.length + ' photo' + (photoUrls.length !== 1 ? 's' : '') + '</span>' : '';
+          var statusLabel = getStatusLabel(r.status);
+          var statusClass = getStatusClass(r.status);
+          var rowBorder = isEmergency ? 'border-l-4 border-l-red-500' : '';
+          return '<button type="button" class="request-row w-full flex items-center gap-4 px-6 py-4 text-left ' + rowBorder + '" data-id="' + r.id + '" onclick="openDetailPanel(' + r.id + ')">' +
+            '<div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">' +
+              '<i data-lucide="' + icon + '" class="h-5 w-5"></i>' +
+            '</div>' +
+            '<div class="min-w-0 flex-1">' +
+              '<p class="font-medium text-slate-900 truncate">' + esc(r.subject || 'Request') + '</p>' +
+              '<p class="text-sm text-slate-500 truncate">' + esc(propUnit) + ' · ' + timeAgo(r.created_at) + '</p>' +
+            '</div>' +
+            '<div class="flex shrink-0 items-center gap-2 flex-wrap justify-end">' +
+              priorityBadge +
+              '<span class="rounded-full px-2.5 py-0.5 text-xs font-medium ' + statusClass + '">' + statusLabel + '</span>' +
+              (photoInd ? '<span class="text-slate-400">' + photoInd + '</span>' : '') +
+              '<span class="text-slate-400 text-sm">View details <i data-lucide="chevron-right" class="h-4 w-4 inline"></i></span>' +
+            '</div>' +
+          '</button>';
+        }).join('');
+        lucide.createIcons();
+      }
+
+      function findRequest(id) {
+        for (var i = 0; i < currentRequests.length; i++) {
+          if (currentRequests[i].id === id) return currentRequests[i];
+        }
+        return null;
+      }
+
+      window.openDetailPanel = function(id) {
+        var r = findRequest(id);
+        if (!r) return;
+        currentDetailId = id;
+        var panel = document.getElementById('detailPanel');
+        var backdrop = document.getElementById('detailBackdrop');
+        var content = document.getElementById('detailContent');
+        panel.setAttribute('aria-hidden', 'false');
+        panel.classList.add('open');
+        backdrop.classList.remove('pointer-events-none');
+        backdrop.classList.add('opacity-100');
+        content.innerHTML = renderDetailContent(r);
+        lucide.createIcons();
+        var assignBtn = content.querySelector('[data-action="assign-vendor"]');
+        var statusBtn = content.querySelector('[data-action="change-status"]');
+        var closeBtn = content.querySelector('[data-action="close-ticket"]');
+        var smsTenantBtn = content.querySelector('[data-action="sms-tenant"]');
+        var smsContractorBtn = content.querySelector('[data-action="sms-contractor"]');
+        if (assignBtn) assignBtn.onclick = function() { openAssignVendor(r.id); };
+        if (statusBtn) statusBtn.onclick = function() { openChangeStatus(r.id); };
+        if (closeBtn) closeBtn.onclick = function() { closeTicket(r.id); };
+        if (smsTenantBtn) smsTenantBtn.onclick = function() {
+          document.getElementById('smsModalContractorId').value = '';
+          document.getElementById('smsModalTenantId').value = r.tenant_id;
+          document.getElementById('smsModalRecipient').textContent = 'To: ' + ([r.tenant_first_name, r.tenant_last_name].filter(Boolean).join(' ') || 'Tenant');
+          document.getElementById('smsModalBody').value = '';
+          document.getElementById('smsModal').classList.remove('hidden');
+          document.getElementById('smsModal').classList.add('flex');
+        };
+        if (smsContractorBtn) smsContractorBtn.onclick = function() {
+          document.getElementById('smsModalTenantId').value = '';
+          document.getElementById('smsModalContractorId').value = r.assigned_contractor_id;
+          document.getElementById('smsModalRecipient').textContent = 'To: ' + (r.contractor_name || 'Contractor');
+          document.getElementById('smsModalBody').value = '';
+          document.getElementById('smsModal').classList.remove('hidden');
+          document.getElementById('smsModal').classList.add('flex');
+        };
+      };
+
+      var currentDetailId = null;
+
+      window.closeDetailPanel = function() {
+        currentDetailId = null;
+        document.getElementById('detailPanel').classList.remove('open');
+        document.getElementById('detailPanel').setAttribute('aria-hidden', 'true');
+        document.getElementById('detailBackdrop').classList.add('pointer-events-none');
+        document.getElementById('detailBackdrop').classList.remove('opacity-100');
+      };
+
+      function refreshDetailIfOpen() {
+        if (currentDetailId == null) return;
+        var r = findRequest(currentDetailId);
+        if (!r) return;
+        var content = document.getElementById('detailContent');
+        if (!content) return;
+        content.innerHTML = renderDetailContent(r);
+        lucide.createIcons();
+        var assignBtn = content.querySelector('[data-action="assign-vendor"]');
+        var statusBtn = content.querySelector('[data-action="change-status"]');
+        var closeBtn = content.querySelector('[data-action="close-ticket"]');
+        var smsTenantBtn = content.querySelector('[data-action="sms-tenant"]');
+        var smsContractorBtn = content.querySelector('[data-action="sms-contractor"]');
+        if (assignBtn) assignBtn.onclick = function() { openAssignVendor(r.id); };
+        if (statusBtn) statusBtn.onclick = function() { openChangeStatus(r.id); };
+        if (closeBtn) closeBtn.onclick = function() { closeTicket(r.id); };
+        if (smsTenantBtn) smsTenantBtn.onclick = function() {
+          document.getElementById('smsModalContractorId').value = '';
+          document.getElementById('smsModalTenantId').value = r.tenant_id;
+          document.getElementById('smsModalRecipient').textContent = 'To: ' + ([r.tenant_first_name, r.tenant_last_name].filter(Boolean).join(' ') || 'Tenant');
+          document.getElementById('smsModalBody').value = '';
+          document.getElementById('smsModal').classList.remove('hidden');
+          document.getElementById('smsModal').classList.add('flex');
+        };
+        if (smsContractorBtn) smsContractorBtn.onclick = function() {
+          document.getElementById('smsModalTenantId').value = '';
+          document.getElementById('smsModalContractorId').value = r.assigned_contractor_id;
+          document.getElementById('smsModalRecipient').textContent = 'To: ' + (r.contractor_name || 'Contractor');
+          document.getElementById('smsModalBody').value = '';
+          document.getElementById('smsModal').classList.remove('hidden');
+          document.getElementById('smsModal').classList.add('flex');
+        };
+      }
+
+      window.closeSmsModal = function() {
+        document.getElementById('smsModal').classList.add('hidden');
+        document.getElementById('smsModal').classList.remove('flex');
+      };
+      (function() {
+        var smsModal = document.getElementById('smsModal');
+        if (smsModal) smsModal.addEventListener('click', function(e) {
+          if (e.target === this) window.closeSmsModal();
+        });
+        var smsSendBtn = document.getElementById('smsModalSend');
+        if (smsSendBtn) smsSendBtn.onclick = function() {
+          var contractorId = document.getElementById('smsModalContractorId').value;
+          var tenantId = document.getElementById('smsModalTenantId').value;
+          var body = document.getElementById('smsModalBody').value.trim() || 'Hi, this is your property manager. Please reach out when you can.';
+          if (!contractorId && !tenantId) return;
+          var btn = this;
+          btn.disabled = true;
+          var promise = contractorId ? LeasePilot.DataManager.sendSmsToContractor(contractorId, body) : LeasePilot.DataManager.sendSmsToTenant(tenantId, body);
+          promise.then(function() {
+            window.closeSmsModal();
+            if (window.LeasePilot && window.LeasePilot.Toast) LeasePilot.Toast.show('SMS sent');
+          }).catch(function(err) {
+            if (window.LeasePilot && window.LeasePilot.Toast) LeasePilot.Toast.show(err.message || 'Failed to send SMS', 'error');
+          }).finally(function() { btn.disabled = false; });
+        };
+      })();
+
+      function renderDetailContent(r) {
+        var propUnit = (r.property_name || 'Property') + (r.tenant_unit ? ' · Unit ' + r.tenant_unit : '');
+        var tenantName = [r.tenant_first_name, r.tenant_last_name].filter(Boolean).join(' ') || '—';
+        var icon = getIssueIcon(r.issue_type);
+        var isEmergency = (r.priority || 'normal') === 'emergency';
+        var priorityBadge = isEmergency
+          ? '<span class="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">Emergency</span>'
+          : '<span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">Normal</span>';
+        var statusLabel = getStatusLabel(r.status);
+        var statusClass = getStatusClass(r.status);
+        var photoUrls = getPhotoUrls(r);
+        var photosHtml = photoUrls.length
+          ? '<div class="mt-4"><p class="text-sm font-medium text-slate-700 mb-2">Photos</p><div class="flex flex-wrap gap-3">' + photoUrls.map(function(url) {
+              var u = esc(url);
+              return '<a href="' + u + '" target="_blank" rel="noopener" class="block rounded-xl overflow-hidden border border-slate-200 w-28 h-28 shrink-0 bg-slate-50"><img src="' + u + '" alt="Issue photo" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.style.display=\'none\'"></a>';
+            }).join('') + '</div></div>'
+          : '';
+        var created = r.created_at ? new Date(r.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        var updated = r.updated_at ? new Date(r.updated_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        var vendor = r.assigned_contractor_id && r.contractor_name
+          ? esc(r.contractor_name + (r.contractor_company ? ' · ' + r.contractor_company : '')) + (r.contractor_phone ? '<br><span class="text-slate-500 text-xs">' + esc(r.contractor_phone) + '</span>' : '')
+          : (r.assigned_vendor ? esc(r.assigned_vendor) : '—');
+        var issueType = (r.issue_type || 'other').replace(/_/g, ' ');
+        return '<div class="space-y-6">' +
+          '<div class="flex items-start gap-3">' +
+            '<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600"><i data-lucide="' + icon + '" class="h-6 w-6"></i></div>' +
+            '<div class="min-w-0 flex-1">' +
+              '<h3 class="text-xl font-semibold text-slate-900">' + esc(r.subject || 'Request') + '</h3>' +
+              '<p class="text-sm text-slate-500 mt-1">' + esc(propUnit) + '</p>' +
+              '<div class="flex flex-wrap gap-2 mt-2">' + priorityBadge + '<span class="rounded-full px-2.5 py-1 text-xs font-medium ' + statusClass + '">' + statusLabel + '</span></div>' +
+            '</div>' +
+          '</div>' +
+          (r.description ? '<div><p class="text-sm font-medium text-slate-700 mb-1">Description</p><p class="text-slate-600 text-sm whitespace-pre-wrap">' + esc(r.description) + '</p></div>' : '') +
+          '<dl class="grid grid-cols-1 gap-3 text-sm">' +
+            '<div><dt class="text-slate-500">Tenant</dt><dd class="font-medium text-slate-900">' + esc(tenantName) + '</dd></div>' +
+            '<div><dt class="text-slate-500">Issue type</dt><dd class="font-medium text-slate-900">' + esc(issueType) + '</dd></div>' +
+            '<div><dt class="text-slate-500">Assigned contractor</dt><dd class="font-medium text-slate-900">' + vendor + '</dd></div>' +
+            '<div><dt class="text-slate-500">Submitted</dt><dd class="text-slate-700">' + created + '</dd></div>' +
+            '<div><dt class="text-slate-500">Last updated</dt><dd class="text-slate-700">' + updated + '</dd></div>' +
+          '</dl>' +
+          photosHtml +
+          (r.property_id ? '<p class="pt-2"><a href="property-detail.html?id=' + r.property_id + '" class="text-sm font-medium text-slate-600 hover:text-slate-900">View property →</a></p>' : '') +
+          '<div class="pt-4 border-t border-slate-100 flex flex-wrap gap-2">' +
+            (window.smsConfigured && r.tenant_id ? '<button type="button" data-action="sms-tenant" class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-200"><i data-lucide="message-circle" class="h-4 w-4"></i> Text Tenant</button>' : '') +
+            (window.smsConfigured && r.assigned_contractor_id && r.contractor_phone ? '<button type="button" data-action="sms-contractor" class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-200"><i data-lucide="message-circle" class="h-4 w-4"></i> Text Contractor</button>' : '') +
+            '<button type="button" data-action="assign-vendor" class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-200"><i data-lucide="user-plus" class="h-4 w-4"></i> Assign Contractor</button>' +
+            '<button type="button" data-action="change-status" class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-200"><i data-lucide="refresh-cw" class="h-4 w-4"></i> Change Status</button>' +
+            '<button type="button" data-action="close-ticket" class="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-800 hover:bg-green-200"><i data-lucide="check-circle" class="h-4 w-4"></i> Close Ticket</button>' +
+          '</div>' +
+        '</div>';
+      }
+
+      window.openAssignVendor = function(id) {
+        document.getElementById('assignVendorReqIdInput').value = id;
+        document.getElementById('assignVendorReqId').textContent = id;
+        var sel = document.getElementById('assignContractorSelect');
+        var r = findRequest(parseInt(id, 10));
+        LeasePilot.DataManager.getContractors().then(function(list) {
+          sel.innerHTML = '<option value="">None</option>' + (list || []).map(function(c) {
+            var label = [c.name, c.company].filter(Boolean).join(' · ') || 'Contractor';
+            return '<option value="' + c.id + '">' + label + '</option>';
+          }).join('');
+          if (r && r.assigned_contractor_id) sel.value = r.assigned_contractor_id;
+          else sel.value = '';
+        }).catch(function() { sel.innerHTML = '<option value="">None</option>'; });
+        document.getElementById('assignVendorModal').classList.remove('hidden');
+        document.getElementById('assignVendorModal').classList.add('flex');
+      };
+      window.closeAssignVendorModal = function() {
+        document.getElementById('assignVendorModal').classList.add('hidden');
+        document.getElementById('assignVendorModal').classList.remove('flex');
+      };
+      window.submitAssignContractor = function() {
+        var id = document.getElementById('assignVendorReqIdInput').value;
+        var val = document.getElementById('assignContractorSelect').value;
+        if (!id) return;
+        var payload = { assigned_contractor_id: val ? parseInt(val, 10) : null };
+        LeasePilot.DataManager.updateMaintenanceRequest(id, payload).then(function() {
+          closeAssignVendorModal();
+          loadRequests().then(refreshDetailIfOpen);
+          if (window.LeasePilot && window.LeasePilot.Toast) LeasePilot.Toast.show('Contractor updated');
+        }).catch(function() {
+          if (window.LeasePilot && window.LeasePilot.Toast) LeasePilot.Toast.show('Failed to update', 'error');
+        });
+      };
+
+      window.openChangeStatus = function(id) {
+        document.getElementById('changeStatusReqIdInput').value = id;
+        document.getElementById('changeStatusReqId').textContent = id;
+        document.getElementById('changeStatusModal').classList.remove('hidden');
+        document.getElementById('changeStatusModal').classList.add('flex');
+      };
+      window.closeChangeStatusModal = function() {
+        document.getElementById('changeStatusModal').classList.add('hidden');
+        document.getElementById('changeStatusModal').classList.remove('flex');
+      };
+
+      window.closeTicket = function(id) {
+        if (!confirm('Mark this request as completed?')) return;
+        LeasePilot.DataManager.updateMaintenanceRequest(id, { status: 'completed' }).then(function() {
+          loadRequests().then(refreshDetailIfOpen);
+          if (window.LeasePilot && window.LeasePilot.Toast) LeasePilot.Toast.show('Ticket closed');
+        }).catch(function() {
+          if (window.LeasePilot && window.LeasePilot.Toast) LeasePilot.Toast.show('Failed to close', 'error');
+        });
+      };
+
+      function loadRequests() {
+        var el = document.getElementById('maintenanceList');
+        el.innerHTML = '<p class="py-8 px-6 text-slate-400 text-sm">Loading...</p>';
+        return LeasePilot.DataManager.getMaintenanceRequests()
+          .then(function(requests) {
+            renderCards(requests);
+          })
+          .catch(function() {
+            el.innerHTML = '<p class="py-8 px-6 text-slate-500 text-sm">Unable to load maintenance requests.</p>';
+          });
+      }
+
+      document.getElementById('assignVendorModal').addEventListener('click', function(e) {
+        if (e.target === this) closeAssignVendorModal();
+      });
+      document.getElementById('changeStatusModal').addEventListener('click', function(e) {
+        if (e.target === this) closeChangeStatusModal();
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeDetailPanel();
+      });
+
+      async function init() {
+        var w = 0;
+        while (typeof LeasePilot === 'undefined' && w < 100) { await new Promise(function(r) { setTimeout(r, 50); }); w++; }
+        if (typeof LeasePilot === 'undefined') { document.getElementById('maintenanceList').innerHTML = '<p class="col-span-full text-red-500">App failed to load.</p>'; return; }
+        await LeasePilot.checkAuth();
+        try {
+          var s = await LeasePilot.DataManager.getSmsStatus();
+          window.smsConfigured = s && s.configured;
+        } catch (e) { window.smsConfigured = false; }
+        lucide.createIcons();
+        document.querySelectorAll('#changeStatusModal .status-option').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var id = document.getElementById('changeStatusReqIdInput').value;
+            var status = this.getAttribute('data-status');
+            if (!id || !status) return;
+            LeasePilot.DataManager.updateMaintenanceRequest(id, { status: status }).then(function() {
+              closeChangeStatusModal();
+              loadRequests().then(refreshDetailIfOpen);
+              if (window.LeasePilot && window.LeasePilot.Toast) LeasePilot.Toast.show('Status updated');
+            }).catch(function() {
+              if (window.LeasePilot && window.LeasePilot.Toast) LeasePilot.Toast.show('Failed to update', 'error');
+            });
+          });
+        });
+        loadRequests();
+      }
+      init();
+    })();
+  </script>
+</body>
+</html>

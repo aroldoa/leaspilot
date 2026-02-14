@@ -1,10 +1,10 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all properties for user
-router.get('/', authenticateToken, async (req, res) => {
+// Get all properties for user (manager only)
+router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
@@ -21,7 +21,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // Get single property
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
@@ -42,7 +42,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // Create property
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const {
       name, type, address, city, state, zip,
@@ -66,7 +66,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // Update property
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const {
       name, type, address, city, state, zip,
@@ -96,7 +96,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 });
 
 // Delete property
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(

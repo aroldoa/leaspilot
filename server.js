@@ -11,8 +11,14 @@ import { requirePool } from './middleware/requirePool.js';
 import authRoutes from './routes/auth.js';
 import propertyRoutes from './routes/properties.js';
 import tenantRoutes from './routes/tenants.js';
+import tenantPortalRoutes from './routes/tenant.js';
 import transactionRoutes from './routes/transactions.js';
 import userRoutes from './routes/users.js';
+import maintenanceRequestsRoutes from './routes/maintenance-requests.js';
+import contractorsRoutes from './routes/contractors.js';
+import contractorPortalRoutes from './routes/contractor.js';
+import smsRoutes from './routes/sms.js';
+import messagesRoutes from './routes/messages.js';
 
 dotenv.config();
 
@@ -31,10 +37,23 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   : ['https://app.leasepilotai.com', 'http://localhost:3000', 'http://127.0.0.1:3000'];
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(express.json());
-// Serve static files from project root (required on Vercel where cwd may not be project root)
-app.use(express.static(__dirname));
-// Explicit fallback for / so root always serves index.html
+// Root and status first so they always work
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/status', (req, res) => {
+  res.type('html').send(`
+    <!DOCTYPE html><html><head><meta charset="utf-8"><title>LeasePilot</title></head>
+    <body style="font-family:sans-serif;max-width:600px;margin:2rem auto;padding:1rem;">
+      <h1>Server is running</h1>
+      <p>If you see this, the server is working.</p>
+      <p><a href="/">Open the app</a> &middot; <a href="/api/health">API health</a></p>
+    </body></html>
+  `);
+});
+// Serve static files (HTML, JS, etc.) from project root
+app.use(express.static(__dirname));
+// Serve uploaded files (avatars, maintenance photos)
+const uploadsPath = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath));
 
 // Request logging (verbose only in development to avoid leaking request details in production logs)
 app.use((req, res, next) => {
@@ -48,15 +67,18 @@ app.use((req, res, next) => {
   next();
 });
 
-// General API rate limit (100 req/15 min per IP). Skip /api/auth so login is never blocked.
+// General API rate limit (300 req/15 min per IP). Auth and read-only data loads are skipped so normal use never hits 429.
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use('/api/', (req, res, next) => {
-  if (req.path.startsWith('auth') || req.path.startsWith('/auth')) return next();
+  const p = req.path;
+  if (p.startsWith('auth') || p.startsWith('/auth')) return next();
+  // Don't count GET /properties or GET /tenants (loaded on every page)
+  if (req.method === 'GET' && (p.startsWith('properties') || p.startsWith('/properties') || p.startsWith('tenants') || p.startsWith('/tenants'))) return next();
   apiLimiter(req, res, next);
 });
 
@@ -95,6 +117,12 @@ app.get('/api/health', async (req, res) => {
 app.use('/api/auth', requirePool, authRoutes);
 app.use('/api/properties', requirePool, propertyRoutes);
 app.use('/api/tenants', requirePool, tenantRoutes);
+app.use('/api/tenant', requirePool, tenantPortalRoutes);
+app.use('/api/maintenance-requests', requirePool, maintenanceRequestsRoutes);
+app.use('/api/contractors', requirePool, contractorsRoutes);
+app.use('/api/contractor', requirePool, contractorPortalRoutes);
+app.use('/api/sms', requirePool, smsRoutes);
+app.use('/api/messages', requirePool, messagesRoutes);
 app.use('/api/transactions', requirePool, transactionRoutes);
 app.use('/api/users', requirePool, userRoutes);
 

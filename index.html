@@ -8,12 +8,25 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
     <style>
-      body { font-family: 'Inter', sans-serif; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      body { font-family: 'Inter', sans-serif; background: #F3F5F7; color: #0f172a; margin: 0; }
+      .hide-scrollbar::-webkit-scrollbar { display: none; }
+      .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-[#F3F5F7] text-slate-900 antialiased selection:bg-slate-200">
+  <noscript>
+    <div style="padding:2rem;text-align:center;">
+      <p>JavaScript is required. Enable it and refresh, or open <a href="http://localhost:3000">http://localhost:3000</a> after running <code>npm start</code>.</p>
+    </div>
+  </noscript>
+
+  <div id="appLoading" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#F3F5F7]" style="display: none;">
+    <div class="text-center p-8">
+      <p class="text-slate-600 mb-2">Loading LeasePilot...</p>
+      <p id="appLoadingError" class="text-sm text-red-600 hidden"></p>
+      <p class="text-xs text-slate-400 mt-4">If this doesn’t go away, open <strong>http://localhost:3000</strong> in your browser (not the file).</p>
+    </div>
+  </div>
 
   <div class="flex h-screen overflow-hidden">
       <!-- Sidebar -->
@@ -37,6 +50,18 @@
                   <a href="tenants.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
                       <i data-lucide="users" class="h-5 w-5"></i>
                       Tenants
+                  </a>
+                  <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                      <i data-lucide="wrench" class="h-5 w-5"></i>
+                      Maintenance
+                  </a>
+                  <a href="contractors.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                      <i data-lucide="hard-hat" class="h-5 w-5"></i>
+                      Contractors
+                  </a>
+                  <a href="messages.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                      <i data-lucide="message-square" class="h-5 w-5"></i>
+                      Messages
                   </a>
                   <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
                       <i data-lucide="wallet" class="h-5 w-5"></i>
@@ -114,9 +139,10 @@
                           <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-slate-900 transition-colors"></i>
                           <input type="text" placeholder="Search properties..." class="h-12 w-64 rounded-full border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-slate-900 transition-all placeholder:text-slate-400">
               </div>
-                      <button class="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-900 hover:bg-slate-50 transition-colors">
+                      <a href="messages.html" class="relative flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-900 hover:bg-slate-50 transition-colors" title="Messages">
                           <i data-lucide="bell" class="h-5 w-5"></i>
-            </button>
+                          <span data-notification-count class="hidden absolute -top-0.5 -right-0.5 min-w-[1.25rem] h-5 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-medium">0</span>
+            </a>
                       <button class="flex h-12 items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
                           <i data-lucide="plus" class="h-4 w-4"></i>
                           Add Property
@@ -230,6 +256,19 @@
         </div>
       </div>
         </div>
+
+              <!-- Maintenance requests from tenants -->
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10">
+                  <div class="md:col-span-12 rounded-[2rem] bg-white p-6 shadow-sm border border-slate-100">
+                      <div class="flex items-center justify-between mb-4">
+                          <h2 class="text-lg font-medium text-slate-900">Maintenance requests</h2>
+                          <a href="properties.html" class="text-sm font-medium text-slate-500 hover:text-slate-900">View properties</a>
+                      </div>
+                      <div id="dashboardMaintenanceList" class="space-y-3 text-sm">
+                          <p class="text-slate-400">Loading...</p>
+                      </div>
+                  </div>
+              </div>
 
               <!-- Properties List -->
               <div class="mb-6 flex items-center justify-between">
@@ -358,21 +397,64 @@
 
     <script src="app.js"></script>
     <script>
-        // Check authentication - wait for LeasePilot to be available
-        (async () => {
-            // Wait for app.js to load and define LeasePilot
-            while (typeof LeasePilot === 'undefined') {
-                await new Promise(resolve => setTimeout(resolve, 50));
+        (function() {
+            var loadingEl = document.getElementById('appLoading');
+            var errorEl = document.getElementById('appLoadingError');
+            var attempts = 0;
+            var maxAttempts = 100;
+
+            function showError(msg) {
+                if (loadingEl) loadingEl.style.display = 'flex';
+                if (errorEl) { errorEl.textContent = msg || 'Failed to load app.'; errorEl.classList.remove('hidden'); }
             }
-            
-            await LeasePilot.checkAuth();
+            function hideLoading() {
+                if (loadingEl) loadingEl.style.display = 'none';
+            }
+
+            // Show loading if LeasePilot isn't ready quickly
+            var loadingTimer = setTimeout(function() {
+                if (typeof LeasePilot === 'undefined') loadingEl && (loadingEl.style.display = 'flex');
+            }, 800);
+
+            (async function() {
+                while (typeof LeasePilot === 'undefined' && attempts < maxAttempts) {
+                    await new Promise(function(r) { setTimeout(r, 50); });
+                    attempts++;
+                }
+                clearTimeout(loadingTimer);
+                if (typeof LeasePilot === 'undefined') {
+                    showError('App script did not load. Use http://localhost:3000 (run: npm start).');
+                    return;
+                }
+                try {
+                    await LeasePilot.checkAuth();
+                    hideLoading();
+                    var listEl = document.getElementById('dashboardMaintenanceList');
+                    if (listEl) {
+                        try {
+                            var requests = await LeasePilot.DataManager.getMaintenanceRequests();
+                            if (!requests || requests.length === 0) {
+                                listEl.innerHTML = '<p class="text-slate-400">No maintenance requests from tenants yet.</p>';
+                            } else {
+                                listEl.innerHTML = requests.map(function(r) {
+                                    var tenantName = [r.tenant_first_name, r.tenant_last_name].filter(Boolean).join(' ') || 'Tenant';
+                                    var propLink = r.property_id ? '<a href="property-detail.html?id=' + r.property_id + '" class="text-slate-900 font-medium hover:underline">' + (r.property_name || 'Property') + '</a>' : (r.property_name || '—');
+                                    var date = r.created_at ? new Date(r.created_at).toLocaleDateString() : '';
+                                    var status = (r.status || 'open').toLowerCase();
+                                    var statusClass = status === 'open' ? 'bg-amber-50 text-amber-700' : status === 'in_progress' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700';
+                                    return '<div class="flex items-center justify-between py-2 border-b border-slate-50 last:border-0"><div><p class="font-medium text-slate-900">' + (r.subject || 'Request') + '</p><p class="text-slate-500">' + tenantName + (r.tenant_unit ? ' · Unit ' + r.tenant_unit : '') + ' · ' + propLink + '</p></div><span class="rounded-full px-2 py-0.5 text-xs font-medium ' + statusClass + '">' + (r.status || 'open') + '</span><span class="text-slate-400 text-xs">' + date + '</span></div>';
+                                }).join('');
+                            }
+                        } catch (err) {
+                            listEl.innerHTML = '<p class="text-slate-400">Unable to load maintenance requests.</p>';
+                        }
+                    }
+                } catch (e) {
+                    showError(e && e.message ? e.message : 'Auth check failed.');
+                }
+                lucide.createIcons({ attrs: { 'stroke-width': 1.5 } });
+            })();
         })();
-        
-        lucide.createIcons({
-            attrs: {
-                'stroke-width': 1.5
-            }
-      });
     </script>
   
 </body></html>

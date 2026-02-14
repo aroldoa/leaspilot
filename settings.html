@@ -39,6 +39,18 @@
                         <i data-lucide="users" class="h-5 w-5"></i>
                         Tenants
                     </a>
+                    <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="wrench" class="h-5 w-5"></i>
+                        Maintenance
+                    </a>
+                    <a href="contractors.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="hard-hat" class="h-5 w-5"></i>
+                        Contractors
+                    </a>
+                    <a href="messages.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="message-square" class="h-5 w-5"></i>
+                        Messages
+                    </a>
                     <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
                         <i data-lucide="wallet" class="h-5 w-5"></i>
                         Financials
@@ -63,7 +75,7 @@
                 </div>
 
                 <div class="flex items-center gap-3 border-t border-slate-100 pt-5">
-                    <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
+                    <img data-user-avatar src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
                     <div class="flex flex-col flex-1">
                         <span class="text-sm font-medium" data-user-name>Sarah Jenkins</span>
                         <span class="text-xs text-slate-500">Portfolio Manager</span>
@@ -98,10 +110,14 @@
                     <h2 class="text-lg font-semibold text-slate-900 mb-6">Profile</h2>
                     <div class="space-y-5">
                         <div class="flex items-center gap-4">
-                            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-16 w-16 rounded-full object-cover ring-2 ring-slate-100">
+                            <img id="profilePhoto" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="Profile" class="h-16 w-16 rounded-full object-cover ring-2 ring-slate-100">
+                            <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden">
                             <div>
-                                <button class="text-sm font-medium text-slate-900 hover:text-slate-700">Change photo</button>
-                                <p class="text-xs text-slate-500 mt-1">JPG, PNG or GIF. Max size 2MB.</p>
+                                <button type="button" id="changePhotoBtn" class="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition-colors hover:border-slate-900 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2">
+                                    <i data-lucide="camera" class="h-4 w-4"></i>
+                                    Change photo
+                                </button>
+                                <p class="text-xs text-slate-500 mt-2">JPG, PNG, GIF or WebP. Max 2MB.</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
@@ -116,15 +132,15 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Role</label>
-                            <input type="text" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none" value="Portfolio Manager" disabled>
+                            <input type="text" id="userRole" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 outline-none cursor-not-allowed" value="Portfolio Manager" disabled>
                         </div>
-                        <button onclick="saveProfile()" class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
+                        <button type="button" id="saveProfileBtn" onclick="saveProfile()" class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
                             Save Changes
                         </button>
                     </div>
                 </div>
 
-                <!-- Preferences -->
+                <!-- Preferences (saved to localStorage) -->
                 <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
                     <h2 class="text-lg font-semibold text-slate-900 mb-6">Preferences</h2>
                     <div class="space-y-4">
@@ -134,7 +150,7 @@
                                 <p class="text-xs text-slate-500">Receive email updates about your properties</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer" checked>
+                                <input type="checkbox" id="prefEmailNotifications" class="sr-only peer">
                                 <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-900"></div>
                             </label>
                         </div>
@@ -144,7 +160,7 @@
                                 <p class="text-xs text-slate-500">Get urgent alerts via text message</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer">
+                                <input type="checkbox" id="prefSmsNotifications" class="sr-only peer">
                                 <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-900"></div>
                             </label>
                         </div>
@@ -154,7 +170,7 @@
                                 <p class="text-xs text-slate-500">Enable AI-powered recommendations</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer" checked>
+                                <input type="checkbox" id="prefAiInsights" class="sr-only peer">
                                 <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-900"></div>
                             </label>
                         </div>
@@ -210,53 +226,174 @@
         </main>
     </div>
 
-    <script src="app.js"></script>
     <script>
-        // Wait for LeasePilot to be available
-        (async () => {
-            while (typeof LeasePilot === 'undefined') {
-                await new Promise(resolve => setTimeout(resolve, 50));
+        lucide.createIcons({ attrs: { 'stroke-width': 1.5 } });
+
+        (async function() {
+            var wait = 0;
+            while (typeof LeasePilot === 'undefined' && wait < 100) {
+                await new Promise(function(r) { setTimeout(r, 50); });
+                wait++;
             }
+            if (typeof LeasePilot === 'undefined') return;
             await LeasePilot.checkAuth();
+
+            var defaultAvatar = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100';
+            function avatarFullUrl(url) {
+                return (url && url.startsWith('/')) ? (window.location.origin || '') + url : (url || defaultAvatar);
+            }
+            function setProfilePhotoSrc(url) {
+                var full = avatarFullUrl(url);
+                var el = document.getElementById('profilePhoto');
+                if (el) el.src = full;
+                document.querySelectorAll('[data-user-avatar]').forEach(function(img) { img.src = full; });
+            }
+
+            var dm = LeasePilot.DataManager;
+            if (dm && dm.getProfile) {
+                try {
+                    var user = await dm.getProfile();
+                    if (user) {
+                        document.getElementById('userName').value = user.name || '';
+                        document.getElementById('userEmail').value = user.email || '';
+                        var roleEl = document.querySelector('#userRole');
+                        if (roleEl) roleEl.value = user.role || 'Portfolio Manager';
+                        setProfilePhotoSrc(user.avatar_url);
+                    }
+                } catch (e) {
+                    var fromStorage = LeasePilot.getCurrentUser();
+                    if (fromStorage) {
+                        document.getElementById('userName').value = fromStorage.name || '';
+                        document.getElementById('userEmail').value = fromStorage.email || '';
+                    }
+                }
+            } else {
+                var fromStorage = LeasePilot.getCurrentUser();
+                if (fromStorage) {
+                    document.getElementById('userName').value = fromStorage.name || '';
+                    document.getElementById('userEmail').value = fromStorage.email || '';
+                    setProfilePhotoSrc(fromStorage.avatar_url);
+                }
+            }
+
+            var avatarInput = document.getElementById('avatarInput');
+            var changePhotoBtn = document.getElementById('changePhotoBtn');
+            if (changePhotoBtn && avatarInput) {
+                changePhotoBtn.addEventListener('click', function() { avatarInput.click(); });
+                avatarInput.addEventListener('change', async function() {
+                    var file = this.files && this.files[0];
+                    if (!file) return;
+                    if (file.size > 2 * 1024 * 1024) {
+                        if (LeasePilot.Toast) LeasePilot.Toast.show('Image must be 2MB or smaller.', 'error');
+                        return;
+                    }
+                    var uploadFn = (LeasePilot.DataManager && LeasePilot.DataManager.uploadAvatar) ? LeasePilot.DataManager.uploadAvatar.bind(LeasePilot.DataManager) : null;
+                    if (!uploadFn) {
+                        if (LeasePilot.Toast) LeasePilot.Toast.show('Upload not available. Refresh the page.', 'error');
+                        return;
+                    }
+                    changePhotoBtn.disabled = true;
+                    try {
+                        var updated = await uploadFn(file);
+                        if (updated && updated.avatar_url) {
+                            setProfilePhotoSrc(updated.avatar_url);
+                            localStorage.setItem('user', JSON.stringify(updated));
+                            if (LeasePilot.Toast) LeasePilot.Toast.show('Photo updated.', 'success');
+                        } else {
+                            if (LeasePilot.Toast) LeasePilot.Toast.show('Upload succeeded but no photo URL returned.', 'error');
+                        }
+                    } catch (err) {
+                        var msg = (err && err.message) ? err.message : 'Failed to upload photo.';
+                        if (LeasePilot.Toast) LeasePilot.Toast.show(msg, 'error');
+                        console.error('Avatar upload error:', err);
+                    } finally {
+                        changePhotoBtn.disabled = false;
+                        avatarInput.value = '';
+                    }
+                });
+            }
+
+            // Preferences: load from localStorage and save on change
+            var PREFS_KEY = 'leasepilot_preferences';
+            var defaultPrefs = { emailNotifications: true, smsNotifications: false, aiInsights: true };
+            function loadPreferences() {
+                try {
+                    var s = localStorage.getItem(PREFS_KEY);
+                    var p = s ? JSON.parse(s) : defaultPrefs;
+                    var emailEl = document.getElementById('prefEmailNotifications');
+                    var smsEl = document.getElementById('prefSmsNotifications');
+                    var aiEl = document.getElementById('prefAiInsights');
+                    if (emailEl) emailEl.checked = !!p.emailNotifications;
+                    if (smsEl) smsEl.checked = !!p.smsNotifications;
+                    if (aiEl) aiEl.checked = !!p.aiInsights;
+                } catch (e) {}
+            }
+            function savePreferences() {
+                var emailEl = document.getElementById('prefEmailNotifications');
+                var smsEl = document.getElementById('prefSmsNotifications');
+                var aiEl = document.getElementById('prefAiInsights');
+                var p = {
+                    emailNotifications: emailEl ? emailEl.checked : true,
+                    smsNotifications: smsEl ? smsEl.checked : false,
+                    aiInsights: aiEl ? aiEl.checked : true
+                };
+                try {
+                    localStorage.setItem(PREFS_KEY, JSON.stringify(p));
+                } catch (e) {}
+            }
+            loadPreferences();
+            ['prefEmailNotifications', 'prefSmsNotifications', 'prefAiInsights'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('change', savePreferences);
+            });
         })();
-        
-        lucide.createIcons({
-            attrs: {
-                'stroke-width': 1.5
-            }
-        });
 
-        // Load user data - wait for LeasePilot
-        (async () => {
-            while (typeof LeasePilot === 'undefined') {
-                await new Promise(resolve => setTimeout(resolve, 50));
+        window.saveProfile = async function() {
+            if (typeof LeasePilot === 'undefined') {
+                alert('App not loaded. Refresh the page and try again.');
+                return;
             }
-            const user = LeasePilot.getCurrentUser();
-        if (user) {
-            document.getElementById('userName').value = user.name || 'Sarah Jenkins';
-            document.getElementById('userEmail').value = user.email || 'sarah@example.com';
-        }
-
-        function saveProfile() {
-            const name = document.getElementById('userName').value;
-            const email = document.getElementById('userEmail').value;
-            
-            const user = {
-                name: name,
-                email: email,
-                role: 'Portfolio Manager'
-            };
-            
-            localStorage.setItem('user', JSON.stringify(user));
-            LeasePilot.Toast.show('Profile updated successfully!', 'success');
-        }
-
-        function deleteAccount() {
-            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                localStorage.clear();
-                window.location.href = 'login.html';
+            var nameEl = document.getElementById('userName');
+            var emailEl = document.getElementById('userEmail');
+            var name = (nameEl && nameEl.value) ? nameEl.value.trim() : '';
+            var email = (emailEl && emailEl.value) ? emailEl.value.trim() : '';
+            if (!name) {
+                if (LeasePilot.Toast) LeasePilot.Toast.show('Name is required.', 'error');
+                return;
             }
-        }
+            if (!email) {
+                if (LeasePilot.Toast) LeasePilot.Toast.show('Email is required.', 'error');
+                return;
+            }
+            var btn = document.getElementById('saveProfileBtn');
+            if (btn) btn.disabled = true;
+            try {
+                var updated = await LeasePilot.API.put('/users/me', { name: name, email: email });
+                if (updated && (updated.name !== undefined || updated.email !== undefined)) {
+                    localStorage.setItem('user', JSON.stringify(updated));
+                    document.querySelectorAll('[data-user-name]').forEach(function(el) { el.textContent = updated.name || ''; });
+                    if (LeasePilot.Toast) LeasePilot.Toast.show('Profile saved.', 'success');
+                } else {
+                    if (LeasePilot.Toast) LeasePilot.Toast.show('Unexpected response. Please try again.', 'error');
+                }
+            } catch (e) {
+                var msg = (e && e.message) ? e.message : 'Failed to save profile.';
+                if (LeasePilot.Toast) LeasePilot.Toast.show(msg, 'error');
+                console.error('Save profile error:', e);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        };
+
+        window.deleteAccount = async function() {
+            if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) return;
+            try {
+                await LeasePilot.DataManager.deleteAccount();
+            } catch (e) {}
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        };
     </script>
 
 </body>

@@ -37,6 +37,18 @@ body { font-family: 'Inter', sans-serif; }
                         <i data-lucide="users" class="h-5 w-5"></i>
                         Tenants
                     </a>
+                    <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="wrench" class="h-5 w-5"></i>
+                        Maintenance
+                    </a>
+                    <a href="contractors.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="hard-hat" class="h-5 w-5"></i>
+                        Contractors
+                    </a>
+                    <a href="messages.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="message-square" class="h-5 w-5"></i>
+                        Messages
+                    </a>
                     <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
                         <i data-lucide="wallet" class="h-5 w-5"></i>
                         Financials
@@ -206,12 +218,12 @@ body { font-family: 'Inter', sans-serif; }
 
                 <!-- Tabs -->
                 <div class="mb-8 border-b border-slate-200">
-                    <div class="flex gap-6 overflow-x-auto hide-scrollbar">
-                        <button onclick="showTab('units')" class="tab-button border-b-2 border-slate-900 pb-3 text-sm font-medium text-slate-900" data-tab="units">Units</button>
-                        <button onclick="showTab('leases')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all" data-tab="leases">Leases</button>
-                        <button onclick="showTab('financials')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all" data-tab="financials">Financials</button>
-                        <button onclick="showTab('maintenance')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all" data-tab="maintenance">Maintenance <span class="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600" id="maintenanceBadge">0</span></button>
-                        <button onclick="showTab('documents')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all" data-tab="documents">Documents</button>
+                    <div class="flex flex-wrap gap-4 sm:gap-6 overflow-x-auto hide-scrollbar min-h-[2.5rem]">
+                        <button onclick="showTab('units')" class="tab-button border-b-2 border-slate-900 pb-3 text-sm font-medium text-slate-900 whitespace-nowrap" data-tab="units">Units</button>
+                        <button onclick="showTab('maintenance')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="maintenance">Maintenance <span class="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600" id="maintenanceBadge">0</span></button>
+                        <button onclick="showTab('leases')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="leases">Leases</button>
+                        <button onclick="showTab('financials')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="financials">Financials</button>
+                        <button onclick="showTab('documents')" class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="documents">Documents</button>
                     </div>
                 </div>
 
@@ -343,15 +355,27 @@ body { font-family: 'Inter', sans-serif; }
                 <div id="maintenanceTab" class="tab-content hidden">
                     <div class="mb-4 flex items-center justify-between">
                         <h2 class="text-lg font-medium text-slate-900">Maintenance Requests</h2>
-                        <button class="flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
-                            <i data-lucide="plus" class="h-4 w-4"></i> New Request
-                        </button>
                     </div>
                     <div class="rounded-[2rem] border border-slate-100 bg-white overflow-hidden shadow-sm p-8">
-                        <div class="text-center py-12">
-                            <i data-lucide="wrench" class="h-12 w-12 mx-auto mb-4 text-slate-300"></i>
-                            <p class="text-slate-500 mb-4">No maintenance requests yet</p>
-                            <p class="text-sm text-slate-400">Maintenance tracking coming soon</p>
+                        <div id="maintenanceRequestsContainer" class="space-y-3">
+                            <p class="text-slate-400 text-sm">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Maintenance request detail modal -->
+                <div id="maintenanceDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" onclick="if (event.target === this) closeMaintenanceDetailModal()">
+                    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+                        <div class="sticky top-0 bg-white border-b border-slate-100 px-8 py-5 flex items-center justify-between">
+                            <h3 class="text-xl font-semibold text-slate-900">Request details</h3>
+                            <button type="button" onclick="closeMaintenanceDetailModal()" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+                        </div>
+                        <div id="maintenanceDetailContent" class="p-8 text-base">
+                            <!-- Filled by JS -->
+                        </div>
+                        <div class="px-8 pb-8 pt-0 flex gap-3">
+                            <a id="maintenanceDetailOpenLink" href="maintenance.html" class="flex-1 text-center rounded-xl bg-slate-900 px-4 py-3 text-base font-medium text-white hover:bg-slate-800">Open in Maintenance</a>
+                            <button type="button" onclick="closeMaintenanceDetailModal()" class="rounded-xl border border-slate-200 px-4 py-3 text-base font-medium text-slate-700 hover:bg-slate-50">Close</button>
                         </div>
                     </div>
                 </div>
@@ -410,10 +434,89 @@ body { font-family: 'Inter', sans-serif; }
                     </form>
                 </div>
             </div>
+
+            <!-- Edit Property modal (stays on this page) -->
+            <div id="editPropertyModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" onclick="if (event.target === this) closeEditPropertyModal()">
+                <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+                    <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+                        <h2 class="text-xl font-semibold text-slate-900">Edit Property</h2>
+                        <button type="button" onclick="closeEditPropertyModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+                    </div>
+                    <form id="editPropertyForm" class="p-6 space-y-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Property Name</label>
+                                <input type="text" name="name" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Property Type</label>
+                                <select name="type" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                                    <option value="Single Family">Single Family</option>
+                                    <option value="Multifamily">Multifamily</option>
+                                    <option value="Condo">Condo</option>
+                                    <option value="Apartment">Apartment</option>
+                                    <option value="Commercial">Commercial</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Address</label>
+                            <input type="text" name="address" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">City</label>
+                                <input type="text" name="city" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">State</label>
+                                <input type="text" name="state" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">ZIP</label>
+                                <input type="text" name="zip" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Bedrooms</label>
+                                <input type="number" name="bedrooms" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Bathrooms</label>
+                                <input type="number" name="bathrooms" step="0.5" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Sq ft</label>
+                                <input type="number" name="sqft" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Monthly Rent</label>
+                            <input type="number" name="rent" step="0.01" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                            <select name="status" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                                <option value="vacant">Vacant</option>
+                                <option value="occupied">Occupied</option>
+                                <option value="maintenance">Maintenance</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Image URL</label>
+                            <input type="url" name="image" placeholder="https://..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                        </div>
+                        <div class="flex gap-3 pt-4">
+                            <button type="button" onclick="closeEditPropertyModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium">Cancel</button>
+                            <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-medium">Update Property</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </main>
     </div>
 
-    <script src="app.js"></script>
     <script>
         let currentProperty = null;
         let propertyTenants = [];
@@ -459,6 +562,114 @@ body { font-family: 'Inter', sans-serif; }
                 renderLeasesTable();
             } else if (tabName === 'financials') {
                 renderFinancialsTable();
+            } else if (tabName === 'maintenance') {
+                loadMaintenanceRequests();
+            }
+        }
+
+        var currentMaintenanceRequests = [];
+
+        function openMaintenanceDetailModal(requestId) {
+            var r = currentMaintenanceRequests.find(function(x) { return x.id === requestId; });
+            if (!r) return;
+            var tenantName = [r.tenant_first_name, r.tenant_last_name].filter(Boolean).join(' ') || 'Tenant';
+            var unit = r.tenant_unit ? 'Unit ' + r.tenant_unit : '—';
+            var created = r.created_at ? new Date(r.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+            var updated = r.updated_at ? new Date(r.updated_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+            var priority = (r.priority || 'normal').replace(/_/g, ' ');
+            var issueType = (r.issue_type || 'other').replace(/_/g, ' ');
+            var contractor = r.contractor_name ? (r.contractor_name + (r.contractor_company ? ' · ' + r.contractor_company : '')) : 'Not assigned';
+            var statusLabel = (r.status || 'open').replace(/_/g, ' ');
+            var photosHtml = '';
+            if (r.photo_urls) {
+                try {
+                    var urls = typeof r.photo_urls === 'string' ? JSON.parse(r.photo_urls) : r.photo_urls;
+                    if (Array.isArray(urls) && urls.length) {
+                        var base = window.location.origin || '';
+                        photosHtml = '<div class="mt-5"><p class="text-slate-500 text-sm uppercase tracking-wide font-medium mb-3">Photos</p><div class="flex flex-wrap gap-3">' + urls.map(function(u) {
+                            var src = u.startsWith('http') ? u : (base + (u.startsWith('/') ? u : '/' + u));
+                            return '<a href="' + src + '" target="_blank" rel="noopener" class="block"><img src="' + src + '" alt="Photo" class="h-28 w-28 rounded-lg object-cover border border-slate-200"></a>';
+                        }).join('') + '</div></div>';
+                    }
+                } catch (e) {}
+            }
+            var content = document.getElementById('maintenanceDetailContent');
+            if (content) {
+                content.innerHTML = '<div class="space-y-5">' +
+                    '<div><p class="text-slate-500 text-sm uppercase tracking-wide font-medium">Subject</p><p class="font-medium text-slate-900 mt-1 text-lg">' + (r.subject || '—') + '</p></div>' +
+                    (r.description ? '<div><p class="text-slate-500 text-sm uppercase tracking-wide font-medium">Description</p><p class="text-slate-700 mt-1 whitespace-pre-wrap leading-relaxed">' + r.description + '</p></div>' : '') +
+                    '<div class="grid grid-cols-2 gap-5">' +
+                    '<div><p class="text-slate-500 text-sm uppercase tracking-wide font-medium">Tenant</p><p class="text-slate-900 mt-1">' + tenantName + '</p></div>' +
+                    '<div><p class="text-slate-500 text-sm uppercase tracking-wide font-medium">Unit</p><p class="text-slate-900 mt-1">' + unit + '</p></div>' +
+                    '<div><p class="text-slate-500 text-sm uppercase tracking-wide font-medium">Priority</p><p class="text-slate-900 mt-1">' + priority + '</p></div>' +
+                    '<div><p class="text-slate-500 text-sm uppercase tracking-wide font-medium">Issue type</p><p class="text-slate-900 mt-1">' + issueType + '</p></div>' +
+                    '<div><p class="text-slate-500 text-sm uppercase tracking-wide font-medium">Status</p><p class="text-slate-900 mt-1">' + statusLabel + '</p></div>' +
+                    '<div class="col-span-2"><p class="text-slate-500 text-sm uppercase tracking-wide font-medium">Contractor</p><p class="text-slate-900 mt-1">' + contractor + '</p></div>' +
+                    '<div><p class="text-slate-500 text-sm uppercase tracking-wide font-medium">Created</p><p class="text-slate-600 mt-1">' + created + '</p></div>' +
+                    '<div><p class="text-slate-500 text-sm uppercase tracking-wide font-medium">Updated</p><p class="text-slate-600 mt-1">' + updated + '</p></div>' +
+                    '</div>' + photosHtml + '</div>';
+            }
+            var link = document.getElementById('maintenanceDetailOpenLink');
+            if (link) link.href = 'maintenance.html';
+            var modal = document.getElementById('maintenanceDetailModal');
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function closeMaintenanceDetailModal() {
+            var modal = document.getElementById('maintenanceDetailModal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+
+        async function loadMaintenanceRequests() {
+            const container = document.getElementById('maintenanceRequestsContainer');
+            const badge = document.getElementById('maintenanceBadge');
+            if (!container) return;
+            if (!currentProperty || !currentProperty.id) {
+                container.innerHTML = '<p class="text-slate-400 text-sm">No property loaded.</p>';
+                return;
+            }
+            try {
+                const requests = await LeasePilot.DataManager.getMaintenanceRequests(currentProperty.id);
+                currentMaintenanceRequests = requests || [];
+                if (badge) badge.textContent = currentMaintenanceRequests.length;
+                if (!currentMaintenanceRequests.length) {
+                    container.innerHTML = '<div class="text-center py-12"><i data-lucide="wrench" class="h-12 w-12 mx-auto mb-4 text-slate-300"></i><p class="text-slate-500">No maintenance requests yet</p><p class="text-sm text-slate-400 mt-1">Tenants can submit requests from their portal.</p></div>';
+                } else {
+                    container.innerHTML = currentMaintenanceRequests.map(function(r) {
+                        var tenantName = [r.tenant_first_name, r.tenant_last_name].filter(Boolean).join(' ') || 'Tenant';
+                        var date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+                        var status = (r.status || 'open').toLowerCase();
+                        var statusClass = status === 'open' ? 'bg-amber-50 text-amber-700' : status === 'in_progress' ? 'bg-blue-50 text-blue-700' : status === 'waiting_vendor' ? 'bg-slate-100 text-slate-700' : 'bg-green-50 text-green-700';
+                        var priority = (r.priority || 'normal').toLowerCase();
+                        var priorityClass = priority === 'emergency' ? 'bg-red-50 text-red-700' : priority === 'high' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600';
+                        var issueType = (r.issue_type || 'other').replace(/_/g, ' ');
+                        var contractor = r.contractor_name ? '<span class="text-slate-500 text-xs"> · ' + r.contractor_name + '</span>' : '';
+                        var desc = (r.description || '').slice(0, 80);
+                        if (r.description && r.description.length > 80) desc += '…';
+                        return '<div class="maintenance-request-row border border-slate-100 rounded-xl p-4 cursor-pointer hover:bg-slate-50 transition-colors flex items-start justify-between gap-4" data-request-id="' + r.id + '" role="button" tabindex="0">' +
+                            '<div class="min-w-0 flex-1">' +
+                                '<div class="flex flex-wrap items-center gap-2">' +
+                                    '<span class="rounded-full px-2 py-0.5 text-xs font-medium ' + priorityClass + '">' + (r.priority || 'normal') + '</span>' +
+                                    '<span class="rounded-full px-2.5 py-0.5 text-xs font-medium ' + statusClass + '">' + (r.status || 'open') + '</span>' +
+                                '</div>' +
+                                '<p class="font-medium text-slate-900 mt-1">' + (r.subject || 'Request') + '</p>' +
+                                '<p class="text-slate-500 text-sm">' + tenantName + (r.tenant_unit ? ' · Unit ' + r.tenant_unit : '') + contractor + '</p>' +
+                                (desc ? '<p class="text-slate-500 text-sm mt-0.5">' + desc + '</p>' : '') +
+                                '<p class="text-slate-400 text-xs mt-1">' + issueType + ' · ' + date + '</p>' +
+                            '</div>' +
+                            '<span class="shrink-0 text-slate-400"><i data-lucide="chevron-right" class="h-5 w-5"></i></span>' +
+                            '</div>';
+                    }).join('');
+                    container.querySelectorAll('.maintenance-request-row').forEach(function(row) {
+                        var id = parseInt(row.getAttribute('data-request-id'), 10);
+                        row.addEventListener('click', function() { openMaintenanceDetailModal(id); });
+                        row.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMaintenanceDetailModal(id); } });
+                    });
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } catch (e) {
+                container.innerHTML = '<p class="text-slate-400 text-sm">Unable to load maintenance requests.</p>';
             }
         }
 
@@ -489,6 +700,7 @@ body { font-family: 'Inter', sans-serif; }
                 await loadPropertyTransactions();
                 updateStats();
                 renderUnitsTable(); // Initial render for units tab
+                await loadMaintenanceRequests(); // Update maintenance badge
             } catch (error) {
                 console.error('Error loading property:', error);
                 LeasePilot.Toast.show('Failed to load property data.', 'error');
@@ -735,6 +947,7 @@ body { font-family: 'Inter', sans-serif; }
             propertyTenants.forEach(tenant => {
                 const row = document.createElement('tr');
                 row.className = 'group hover:bg-slate-50 transition-colors';
+                row.dataset.search = [tenant.unit, tenant.first_name, tenant.last_name, tenant.email].filter(Boolean).join(' ').toLowerCase();
                 
                 const statusColors = {
                     'active': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-100', dot: 'bg-green-500', label: 'Occupied' },
@@ -788,7 +1001,21 @@ body { font-family: 'Inter', sans-serif; }
             });
 
             lucide.createIcons();
+            filterUnitsSearch();
         }
+
+        function filterUnitsSearch() {
+            const q = (document.getElementById('unitSearch')?.value || '').trim().toLowerCase();
+            ['unitsTableBody', 'leasesTableBody'].forEach(id => {
+                const tbody = document.getElementById(id);
+                if (!tbody) return;
+                tbody.querySelectorAll('tr').forEach(tr => {
+                    const search = (tr.dataset.search || '').toLowerCase();
+                    tr.style.display = (q === '' || search.includes(q)) ? '' : 'none';
+                });
+            });
+        }
+        document.getElementById('unitSearch')?.addEventListener('input', filterUnitsSearch);
 
         // Render leases table (for Leases tab)
         function renderLeasesTable() {
@@ -814,6 +1041,7 @@ body { font-family: 'Inter', sans-serif; }
             propertyTenants.forEach(tenant => {
                 const row = document.createElement('tr');
                 row.className = 'group hover:bg-slate-50 transition-colors';
+                row.dataset.search = [tenant.unit, tenant.first_name, tenant.last_name, tenant.email].filter(Boolean).join(' ').toLowerCase();
                 
                 const statusColors = {
                     'active': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-100', label: 'Active' },
@@ -864,6 +1092,7 @@ body { font-family: 'Inter', sans-serif; }
             });
 
             lucide.createIcons();
+            filterUnitsSearch();
         }
 
         // Render financials table (for Financials tab)
@@ -979,11 +1208,75 @@ body { font-family: 'Inter', sans-serif; }
             lucide.createIcons();
         }
 
-        // Edit property
+        function closeEditPropertyModal() {
+            const modal = document.getElementById('editPropertyModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function openEditPropertyModal() {
+            if (!currentProperty) return;
+            const form = document.getElementById('editPropertyForm');
+            if (!form) return;
+            form.querySelector('input[name="name"]').value = currentProperty.name || '';
+            form.querySelector('select[name="type"]').value = currentProperty.type || 'Apartment';
+            form.querySelector('input[name="address"]').value = currentProperty.address || '';
+            form.querySelector('input[name="city"]').value = currentProperty.city || '';
+            form.querySelector('input[name="state"]').value = currentProperty.state || '';
+            form.querySelector('input[name="zip"]').value = currentProperty.zip || '';
+            form.querySelector('input[name="bedrooms"]').value = currentProperty.bedrooms ?? '';
+            form.querySelector('input[name="bathrooms"]').value = currentProperty.bathrooms ?? '';
+            form.querySelector('input[name="sqft"]').value = currentProperty.sqft ?? '';
+            form.querySelector('input[name="rent"]').value = currentProperty.rent ?? '';
+            form.querySelector('select[name="status"]').value = currentProperty.status || 'vacant';
+            form.querySelector('input[name="image"]').value = currentProperty.image_url || '';
+            const modal = document.getElementById('editPropertyModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.style.overflow = 'hidden';
+            }
+            if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+        }
+
+        // Edit property (stays on this page, no redirect)
         function editProperty() {
             if (!currentProperty) return;
-            window.location.href = `properties.html?edit=${currentProperty.id}`;
+            openEditPropertyModal();
         }
+
+        document.getElementById('editPropertyForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!currentProperty) return;
+            const formData = new FormData(e.target);
+            const property = {
+                id: currentProperty.id,
+                name: formData.get('name'),
+                type: formData.get('type'),
+                address: formData.get('address'),
+                city: formData.get('city'),
+                state: formData.get('state'),
+                zip: formData.get('zip'),
+                bedrooms: parseInt(formData.get('bedrooms'), 10) || 0,
+                bathrooms: parseFloat(formData.get('bathrooms')) || 0,
+                sqft: parseInt(formData.get('sqft'), 10) || 0,
+                rent: parseFloat(formData.get('rent')) || 0,
+                status: formData.get('status') || 'vacant',
+                image_url: formData.get('image') || null
+            };
+            try {
+                await LeasePilot.DataManager.saveProperty(property);
+                if (LeasePilot.Toast) LeasePilot.Toast.show('Property updated.', 'success');
+                closeEditPropertyModal();
+                await loadProperty();
+            } catch (err) {
+                const msg = (err && err.message) ? err.message : 'Failed to update property.';
+                if (LeasePilot.Toast) LeasePilot.Toast.show(msg, 'error');
+            }
+        });
 
         // Initialize page
         (async () => {

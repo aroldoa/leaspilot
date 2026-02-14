@@ -1,7 +1,7 @@
 // LeasePilot AI - Main Application JavaScript
 
-// Use same origin in production (e.g. Vercel), localhost when developing
-const API_BASE_URL = (typeof window !== 'undefined' && window.location.origin)
+// Use same origin when served over http(s); fallback to localhost when opened via file:// or origin missing
+const API_BASE_URL = (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http'))
   ? `${window.location.origin}/api`
   : 'http://localhost:3000/api';
 
@@ -28,10 +28,31 @@ const API = {
       console.log(`📡 Response status: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('❌ API Error:', errorData);
-        const err = new Error(errorData.error || `Request failed with status ${response.status}`);
+        let errorMessage = `Request failed with status ${response.status}`;
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const errorData = await response.json().catch(() => ({}));
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } else {
+          const text = await response.text().catch(() => '');
+          if (text) errorMessage = text;
+        }
+        if (response.status === 429) {
+          errorMessage = errorMessage.includes('many') ? errorMessage : 'Too many requests. Please try again in a few minutes.';
+        }
+        if (response.status === 503) {
+          errorMessage = errorMessage.includes('unavailable') ? errorMessage : 'Service unavailable. The database may be disconnected.';
+        }
+        console.error('❌ API Error:', { status: response.status, error: errorMessage });
+        const err = new Error(errorMessage);
         err.status = response.status;
+        // Session expired or invalid: clear and send to login so user doesn't see "empty" data
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          const p = (typeof window !== 'undefined' && window.location.pathname) || '';
+          window.location.href = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
+        }
         throw err;
       }
 
@@ -62,8 +83,32 @@ const API = {
     });
   },
 
+  patch(endpoint, data) {
+    return this.request(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  },
+
   delete(endpoint) {
     return this.request(endpoint, { method: 'DELETE' });
+  },
+
+  async uploadAvatar(file) {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('Not logged in');
+    const formData = new FormData();
+    formData.append('avatar', file, file.name || 'avatar.jpg');
+    const response = await fetch(`${API_BASE_URL}/users/me/avatar`, {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: formData
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || `Upload failed (${response.status})`);
+    }
+    return await response.json();
   }
 };
 
@@ -76,7 +121,8 @@ async function checkAuth() {
 
   const token = localStorage.getItem('token');
   if (!token) {
-    window.location.href = 'login.html';
+    const p = window.location.pathname || '';
+    window.location.href = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
     return false;
   }
 
@@ -84,6 +130,26 @@ async function checkAuth() {
     const response = await API.get('/auth/verify');
     if (response.user) {
       localStorage.setItem('user', JSON.stringify(response.user));
+      const role = (response.user.role || '').toLowerCase();
+      const path = window.location.pathname || '';
+      const isTenantPage = path.includes('/tenant/');
+      const isContractorPage = path.includes('/contractor/');
+      if (role === 'tenant' && !isTenantPage) {
+        window.location.href = 'tenant/dashboard.html';
+        return false;
+      }
+      if (role === 'contractor' && !isContractorPage) {
+        window.location.href = 'contractor/messages.html';
+        return false;
+      }
+      if (role !== 'tenant' && isTenantPage) {
+        window.location.href = '../index.html';
+        return false;
+      }
+      if (role !== 'contractor' && isContractorPage) {
+        window.location.href = '../index.html';
+        return false;
+      }
       return true;
     }
   } catch (error) {
@@ -93,7 +159,8 @@ async function checkAuth() {
     if (status === 401 || status === 403) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = 'login.html';
+      const p = (typeof window !== 'undefined' && window.location.pathname) || '';
+      window.location.href = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
       return false;
     }
     if (typeof window !== 'undefined' && window.LeasePilot && window.LeasePilot.Toast && window.LeasePilot.Toast.show) {
@@ -113,7 +180,8 @@ function getCurrentUser() {
 function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
-  window.location.href = 'login.html';
+  const p = (typeof window !== 'undefined' && window.location.pathname) || '';
+  window.location.href = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
 }
 
 // Initialize Lucide icons
@@ -135,6 +203,9 @@ const DataManager = {
       return await API.get('/properties');
     } catch (error) {
       console.error('Error fetching properties:', error);
+      if (error.status !== 401 && error.status !== 403 && typeof window !== 'undefined' && window.LeasePilot?.Toast?.show) {
+        window.LeasePilot.Toast.show(error.message || 'Failed to load properties.', 'error');
+      }
       return [];
     }
   },
@@ -176,6 +247,9 @@ const DataManager = {
       return await API.get('/tenants');
     } catch (error) {
       console.error('Error fetching tenants:', error);
+      if (error.status !== 401 && error.status !== 403 && typeof window !== 'undefined' && window.LeasePilot?.Toast?.show) {
+        window.LeasePilot.Toast.show(error.message || 'Failed to load tenants.', 'error');
+      }
       return [];
     }
   },
@@ -275,25 +349,220 @@ const DataManager = {
       throw error;
     }
   },
-  
-  // Notifications
+
+  // Maintenance requests (tenant-submitted; manager view)
+  async getMaintenanceRequests(propertyId) {
+    try {
+      const q = propertyId != null ? `?property_id=${encodeURIComponent(propertyId)}` : '';
+      return await API.get('/maintenance-requests' + q);
+    } catch (error) {
+      console.error('Error fetching maintenance requests:', error);
+      throw error;
+    }
+  },
+
+  async updateMaintenanceRequest(id, data) {
+    try {
+      return await API.patch('/maintenance-requests/' + encodeURIComponent(id), data);
+    } catch (error) {
+      console.error('Error updating maintenance request:', error);
+      throw error;
+    }
+  },
+
+  // Contractors (manager's vendor list)
+  async getContractors() {
+    try {
+      return await API.get('/contractors');
+    } catch (error) {
+      console.error('Error fetching contractors:', error);
+      throw error;
+    }
+  },
+  async createContractor(data) {
+    try {
+      return await API.post('/contractors', data);
+    } catch (error) {
+      console.error('Error creating contractor:', error);
+      throw error;
+    }
+  },
+  async updateContractor(id, data) {
+    try {
+      return await API.patch('/contractors/' + encodeURIComponent(id), data);
+    } catch (error) {
+      console.error('Error updating contractor:', error);
+      throw error;
+    }
+  },
+  async deleteContractor(id) {
+    try {
+      return await API.delete('/contractors/' + encodeURIComponent(id));
+    } catch (error) {
+      console.error('Error deleting contractor:', error);
+      throw error;
+    }
+  },
+
+  // SMS (Twilio)
+  async getSmsStatus() {
+    try {
+      return await API.get('/sms/status');
+    } catch (error) {
+      return { configured: false };
+    }
+  },
+  async sendSms(to, body) {
+    return await API.post('/sms/send', { to, body });
+  },
+  async sendSmsToContractor(contractorId, body) {
+    return await API.post('/sms/send-to-contractor/' + encodeURIComponent(contractorId), { body });
+  },
+  async sendSmsToTenant(tenantId, body) {
+    return await API.post('/sms/send-to-tenant/' + encodeURIComponent(tenantId), { body });
+  },
+
+  // In-app messages (manager → tenant or contractor)
+  async getMessages(recipientType) {
+    try {
+      const q = recipientType ? '?recipient_type=' + encodeURIComponent(recipientType) : '';
+      return await API.get('/messages' + q);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      throw error;
+    }
+  },
+  async sendMessage(data) {
+    try {
+      return await API.post('/messages', data);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
+  },
+  async replyToThread(replyToMessageId, body, sendSms) {
+    try {
+      return await API.post('/messages/reply', {
+        reply_to_message_id: replyToMessageId,
+        body: body,
+        send_sms: !!sendSms
+      });
+    } catch (error) {
+      console.error('Error replying to thread:', error);
+      throw error;
+    }
+  },
+
+  // Tenant: my messages from manager
+  async getMyMessages() {
+    try {
+      return await API.get('/tenant/messages');
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      throw error;
+    }
+  },
+  async getTenantUnreadMessageCount() {
+    try {
+      const data = await API.get('/tenant/messages/unread-count');
+      return data && typeof data.unread_count === 'number' ? data.unread_count : 0;
+    } catch (e) {
+      return 0;
+    }
+  },
+  async markMessageRead(messageId) {
+    try {
+      return await API.patch('/tenant/messages/' + encodeURIComponent(messageId) + '/read');
+    } catch (error) {
+      console.error('Error marking message read:', error);
+      throw error;
+    }
+  },
+  async replyToMessage(parentMessageId, body) {
+    try {
+      return await API.post('/tenant/messages', { parent_message_id: parentMessageId, body: body });
+    } catch (error) {
+      console.error('Error replying to message:', error);
+      throw error;
+    }
+  },
+
+  // Notifications: unread message count (replies from tenants/contractors to manager)
   async getNotifications() {
-    // TODO: Implement when notifications API is ready
     return [];
   },
-  
   async addNotification(notification) {
-    // TODO: Implement when notifications API is ready
     return notification;
   },
-  
-  async markNotificationRead(id) {
-    // TODO: Implement when notifications API is ready
+  async markNotificationRead() {
+    return undefined;
   },
-  
-  getUnreadCount() {
-    // TODO: Implement when notifications API is ready
-    return 0;
+  async getUnreadCount() {
+    try {
+      const user = getCurrentUser();
+      if (!user || (user.role || '').toLowerCase() !== 'portfolio manager') return 0;
+      const data = await API.get('/messages/unread-count');
+      return data && typeof data.count === 'number' ? data.count : 0;
+    } catch (e) {
+      return 0;
+    }
+  },
+  async markRepliesRead() {
+    try {
+      const user = getCurrentUser();
+      if (!user || (user.role || '').toLowerCase() !== 'portfolio manager') return;
+      await API.post('/messages/mark-replies-read');
+    } catch (e) {}
+  },
+
+  // Current user profile (for settings)
+  async getProfile() {
+    try {
+      return await API.get('/users/me');
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      throw error;
+    }
+  },
+  async updateProfile(data) {
+    try {
+      return await API.put('/users/me', data);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  },
+  async deleteAccount() {
+    try {
+      return await API.delete('/users/me');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      throw error;
+    }
+  },
+  async uploadAvatar(file) {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Not logged in');
+      const formData = new FormData();
+      formData.append('avatar', file, file.name || 'avatar.jpg');
+      const API_BASE = (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http'))
+        ? `${window.location.origin}/api`
+        : 'http://localhost:3000/api';
+      const response = await fetch(`${API_BASE}/users/me/avatar`, {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        body: formData
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `Upload failed (${response.status})`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      throw error;
+    }
   }
 };
 
@@ -405,12 +674,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
   
-  // Update notification count
+  // Update notification count (replies from tenants/contractors)
   const unreadCount = await DataManager.getUnreadCount();
   const notificationBadges = document.querySelectorAll('[data-notification-count]');
   notificationBadges.forEach(badge => {
     if (unreadCount > 0) {
-      badge.textContent = unreadCount;
+      badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
       badge.classList.remove('hidden');
     } else {
       badge.classList.add('hidden');

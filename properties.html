@@ -36,6 +36,18 @@ body { font-family: 'Inter', sans-serif; }
                         <i data-lucide="users" class="h-5 w-5"></i>
                         Tenants
                     </a>
+                    <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="wrench" class="h-5 w-5"></i>
+                        Maintenance
+                    </a>
+                    <a href="contractors.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="hard-hat" class="h-5 w-5"></i>
+                        Contractors
+                    </a>
+                    <a href="messages.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="message-square" class="h-5 w-5"></i>
+                        Messages
+                    </a>
                     <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
                         <i data-lucide="wallet" class="h-5 w-5"></i>
                         Financials
@@ -109,17 +121,17 @@ body { font-family: 'Inter', sans-serif; }
                 <!-- Filters & Controls -->
                 <div class="mb-8 flex flex-col gap-4 rounded-3xl bg-white p-2 shadow-sm border border-slate-100 md:flex-row md:items-center justify-between">
                     <div class="flex items-center gap-1 overflow-x-auto p-1 hide-scrollbar">
-                        <button class="whitespace-nowrap rounded-full bg-slate-100 px-4 py-2 text-xs font-medium text-slate-900 transition-colors">
-                            All Properties <span class="ml-1 text-slate-400">24</span>
+                        <button type="button" id="filterAll" data-status="all" class="filter-tab whitespace-nowrap rounded-full bg-slate-100 px-4 py-2 text-xs font-medium text-slate-900 transition-colors">
+                            All Properties <span id="countAll" class="ml-1 text-slate-400">0</span>
                         </button>
-                        <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-                            Occupied <span class="ml-1 text-slate-400">20</span>
+                        <button type="button" id="filterOccupied" data-status="occupied" class="filter-tab whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                            Occupied <span id="countOccupied" class="ml-1 text-slate-400">0</span>
                         </button>
-                        <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-                            Vacant <span class="ml-1 text-slate-400">3</span>
+                        <button type="button" id="filterVacant" data-status="vacant" class="filter-tab whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                            Vacant <span id="countVacant" class="ml-1 text-slate-400">0</span>
                         </button>
-                        <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-                            Maintenance <span class="ml-1 text-slate-400">1</span>
+                        <button type="button" id="filterMaintenance" data-status="maintenance" class="filter-tab whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                            Maintenance <span id="countMaintenance" class="ml-1 text-slate-400">0</span>
                         </button>
                     </div>
                     
@@ -127,20 +139,20 @@ body { font-family: 'Inter', sans-serif; }
                         <div class="h-4 w-px bg-slate-200 hidden md:block"></div>
                         <div class="relative group w-full md:w-auto">
                             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-slate-900 transition-colors"></i>
-                            <input type="text" placeholder="Search address, city..." class="h-10 w-full md:w-64 rounded-full border-none bg-slate-50 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-slate-100 transition-all placeholder:text-slate-400">
+                            <input type="text" id="propertiesSearch" placeholder="Search address, city..." class="h-10 w-full md:w-64 rounded-full border-none bg-slate-50 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-slate-100 transition-all placeholder:text-slate-400">
                         </div>
                         <div class="flex items-center rounded-full bg-slate-50 p-1 border border-slate-100">
-                            <button class="rounded-full bg-white p-1.5 shadow-sm text-slate-900">
+                            <button type="button" id="viewGrid" class="view-toggle rounded-full bg-white p-1.5 shadow-sm text-slate-900" title="Grid view">
                                 <i data-lucide="layout-grid" class="h-4 w-4"></i>
                             </button>
-                            <button class="rounded-full p-1.5 text-slate-400 hover:text-slate-600">
+                            <button type="button" id="viewList" class="view-toggle rounded-full p-1.5 text-slate-400 hover:text-slate-600" title="List view">
                                 <i data-lucide="list" class="h-4 w-4"></i>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Properties Grid -->
+                <!-- Properties Grid or List -->
                 <div id="propertiesGrid" class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                     <!-- Add Property Card -->
                     <button onclick="openPropertyModal()" class="group relative flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-dashed border-slate-200 bg-slate-50 transition-all hover:bg-slate-100 hover:border-slate-300 min-h-[350px]">
@@ -154,9 +166,9 @@ body { font-family: 'Inter', sans-serif; }
                 </div>
 
                 <!-- Pagination -->
-                <div class="mt-12 flex items-center justify-between border-t border-slate-200 pt-8">
+                <div id="paginationBar" class="mt-12 flex items-center justify-between border-t border-slate-200 pt-8">
                      <div class="text-xs text-slate-500">
-                        Showing <span class="font-medium text-slate-900">1-5</span> of <span class="font-medium text-slate-900">24</span> properties
+                        Showing <span id="paginationRange" class="font-medium text-slate-900">0</span> of <span id="paginationTotal" class="font-medium text-slate-900">0</span> properties
                     </div>
                     <div class="flex gap-2">
                         <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors" disabled="">
@@ -181,7 +193,7 @@ body { font-family: 'Inter', sans-serif; }
         <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b border-slate-200 flex items-center justify-between">
                 <h2 id="propertyModalTitle" class="text-xl font-semibold text-slate-900">Add New Property</h2>
-                <button onclick="LeasePilot.Modal.close('addPropertyModal')" class="text-slate-400 hover:text-slate-600">
+                <button onclick="closePropertyModal()" class="text-slate-400 hover:text-slate-600">
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
             </div>
@@ -252,7 +264,7 @@ body { font-family: 'Inter', sans-serif; }
                     <input type="url" name="image" id="propertyImage" placeholder="https://..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
                 </div>
                 <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="LeasePilot.Modal.close('addPropertyModal')" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium">Cancel</button>
+                    <button type="button" onclick="closePropertyModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium">Cancel</button>
                     <button type="submit" id="propertySubmitBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-medium">Add Property</button>
                 </div>
             </form>
@@ -287,68 +299,156 @@ body { font-family: 'Inter', sans-serif; }
         });
 
         let currentEditingProperty = null;
+        let returnToDetailId = null;
+        let allProperties = [];
+        let statusFilter = 'all';
+        let searchQuery = '';
+        let viewMode = 'grid'; // 'grid' | 'list'
 
-        // Load and display properties
+        function closePropertyModal() {
+            if (returnToDetailId) {
+                window.location.href = `property-detail.html?id=${returnToDetailId}`;
+                return;
+            }
+            LeasePilot.Modal.close('addPropertyModal');
+        }
+
+        function getStatusCounts(properties) {
+            const counts = { all: 0, occupied: 0, vacant: 0, maintenance: 0 };
+            (properties || []).forEach(p => {
+                counts.all++;
+                const s = (p.status || '').toLowerCase();
+                if (s === 'occupied') counts.occupied++;
+                else if (s === 'vacant') counts.vacant++;
+                else if (s === 'maintenance') counts.maintenance++;
+            });
+            return counts;
+        }
+
+        function updateFilterCounts(properties) {
+            const counts = getStatusCounts(properties);
+            const el = (id, n) => { const e = document.getElementById(id); if (e) e.textContent = n; };
+            el('countAll', counts.all);
+            el('countOccupied', counts.occupied);
+            el('countVacant', counts.vacant);
+            el('countMaintenance', counts.maintenance);
+        }
+
+        function setActiveFilter(status) {
+            statusFilter = status;
+            document.querySelectorAll('.filter-tab').forEach(btn => {
+                const isActive = (btn.getAttribute('data-status') || '') === statusFilter;
+                btn.className = 'filter-tab whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium transition-colors ' +
+                    (isActive ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:bg-slate-50');
+                const span = btn.querySelector('span');
+                if (span) span.className = 'ml-1 ' + (isActive ? 'text-slate-600' : 'text-slate-400');
+            });
+            applyFiltersAndRender();
+        }
+
+        function setViewMode(mode) {
+            viewMode = mode;
+            const gridBtn = document.getElementById('viewGrid');
+            const listBtn = document.getElementById('viewList');
+            if (gridBtn && listBtn) {
+                const active = 'rounded-full bg-white p-1.5 shadow-sm text-slate-900';
+                const inactive = 'rounded-full p-1.5 text-slate-400 hover:text-slate-600';
+                gridBtn.className = 'view-toggle ' + (mode === 'grid' ? active : inactive);
+                listBtn.className = 'view-toggle ' + (mode === 'list' ? active : inactive);
+            }
+            applyFiltersAndRender();
+        }
+
+        function getFilteredProperties() {
+            let list = allProperties.slice();
+            if (statusFilter !== 'all') {
+                list = list.filter(p => (p.status || '').toLowerCase() === statusFilter);
+            }
+            const q = (searchQuery || '').trim().toLowerCase();
+            if (q) {
+                list = list.filter(p => {
+                    const name = (p.name || '').toLowerCase();
+                    const address = (p.address || '').toLowerCase();
+                    const city = (p.city || '').toLowerCase();
+                    const state = (p.state || '').toLowerCase();
+                    const zip = (p.zip || '').toString();
+                    return name.includes(q) || address.includes(q) || city.includes(q) || state.includes(q) || zip.includes(q);
+                });
+            }
+            return list;
+        }
+
+        function applyFiltersAndRender() {
+            const grid = document.getElementById('propertiesGrid');
+            if (!grid) return;
+            const filtered = getFilteredProperties();
+            const addButtonHTML = grid.querySelector('button[onclick*="openPropertyModal"]')?.outerHTML || '';
+
+            if (viewMode === 'list') {
+                grid.className = 'grid grid-cols-1 gap-4';
+            } else {
+                grid.className = 'grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3';
+            }
+
+            grid.innerHTML = '';
+            filtered.forEach(property => {
+                const el = viewMode === 'list' ? createPropertyListItem(property) : createPropertyCard(property);
+                grid.appendChild(el);
+            });
+
+            if (addButtonHTML) {
+                grid.insertAdjacentHTML('beforeend', addButtonHTML);
+            } else {
+                const addBtn = document.createElement('button');
+                addBtn.setAttribute('onclick', 'openPropertyModal()');
+                addBtn.className = 'group relative flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-dashed border-slate-200 bg-slate-50 transition-all hover:bg-slate-100 hover:border-slate-300 min-h-[350px]';
+                addBtn.innerHTML = `
+                    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                        <i data-lucide="plus" class="h-6 w-6 text-slate-900"></i>
+                    </div>
+                    <h3 class="text-sm font-medium text-slate-900">Add New Property</h3>
+                    <p class="mt-1 text-xs text-slate-500">Sync with MLS or add manually</p>
+                `;
+                grid.appendChild(addBtn);
+            }
+
+            const rangeEl = document.getElementById('paginationRange');
+            const totalEl = document.getElementById('paginationTotal');
+            if (rangeEl) rangeEl.textContent = filtered.length;
+            if (totalEl) totalEl.textContent = filtered.length;
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // Load from API and then apply filters/view
         async function loadProperties() {
             try {
                 console.log('🔍 Starting to load properties...');
                 const properties = await LeasePilot.DataManager.getProperties();
-                console.log('📦 Properties received:', properties);
-                
-                const grid = document.getElementById('propertiesGrid');
-                if (!grid) {
-                    console.error('❌ Properties grid element not found!');
-                    return;
-                }
-                
-                // Store the add button HTML before clearing
-                const addButtonHTML = grid.querySelector('button')?.outerHTML || '';
-                
-                // Clear all content
-                grid.innerHTML = '';
-                
-                // Add property cards
-                if (properties && properties.length > 0) {
-                    console.log(`✅ Adding ${properties.length} properties to grid`);
-                    properties.forEach((property, index) => {
-                        console.log(`  - Adding property ${index + 1}: ${property.name}`);
-                        const card = createPropertyCard(property);
-                        grid.appendChild(card);
-                    });
-                } else {
-                    console.warn('⚠️ No properties found or empty array');
-                }
-                
-                // Re-add the add button at the end
-                if (addButtonHTML) {
-                    grid.insertAdjacentHTML('beforeend', addButtonHTML);
-                } else {
-                    // Create add button if it doesn't exist
-                    const addBtn = document.createElement('button');
-                    addBtn.setAttribute('onclick', 'openPropertyModal()');
-                    addBtn.className = 'group relative flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-dashed border-slate-200 bg-slate-50 transition-all hover:bg-slate-100 hover:border-slate-300 min-h-[350px]';
-                    addBtn.innerHTML = `
-                        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm mb-4 group-hover:scale-110 transition-transform">
-                            <i data-lucide="plus" class="h-6 w-6 text-slate-900"></i>
-                        </div>
-                        <h3 class="text-sm font-medium text-slate-900">Add New Property</h3>
-                        <p class="mt-1 text-xs text-slate-500">Sync with MLS or add manually</p>
-                    `;
-                    grid.appendChild(addBtn);
-                }
-                
-                lucide.createIcons();
+                allProperties = Array.isArray(properties) ? properties : [];
+                console.log('📦 Properties received:', allProperties.length);
+
+                updateFilterCounts(allProperties);
+                applyFiltersAndRender();
                 console.log('✅ Properties loaded successfully');
             } catch (error) {
                 console.error('❌ Error loading properties:', error);
-                console.error('Error details:', error.message, error.stack);
                 if (typeof LeasePilot !== 'undefined' && LeasePilot.Toast) {
-                    LeasePilot.Toast.show('Failed to load properties: ' + error.message, 'error');
+                    LeasePilot.Toast.show('Failed to load properties: ' + (error.message || 'Unknown error'), 'error');
                 } else {
                     alert('Failed to load properties. Check console for details.');
                 }
             }
         }
+
+        // Wire filter bar (status, search, grid/list)
+        document.querySelectorAll('.filter-tab').forEach(btn => {
+            btn.addEventListener('click', function() { setActiveFilter(this.getAttribute('data-status') || 'all'); });
+        });
+        const searchInput = document.getElementById('propertiesSearch');
+        if (searchInput) searchInput.addEventListener('input', function() { searchQuery = this.value.trim(); applyFiltersAndRender(); });
+        document.getElementById('viewGrid')?.addEventListener('click', () => setViewMode('grid'));
+        document.getElementById('viewList')?.addEventListener('click', () => setViewMode('list'));
 
         // Create property card element
         function createPropertyCard(property) {
@@ -410,8 +510,47 @@ body { font-family: 'Inter', sans-serif; }
             return card;
         }
 
+        function createPropertyListItem(property) {
+            const statusColors = {
+                'occupied': { bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500', label: 'Occupied' },
+                'vacant': { bg: 'bg-slate-50', text: 'text-slate-600', dot: 'bg-slate-400', label: 'Vacant' },
+                'maintenance': { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Maintenance' }
+            };
+            const status = statusColors[property.status] || statusColors.vacant;
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 transition-all hover:shadow-md hover:border-slate-200';
+            row.innerHTML = `
+                <a href="property-detail.html?id=${property.id}" class="flex-shrink-0 h-24 w-32 rounded-xl overflow-hidden bg-slate-100">
+                    <img src="${property.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800&h=500'}" class="h-full w-full object-cover" alt="${property.name}">
+                </a>
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="text-base font-medium text-slate-900">${property.name}</h3>
+                        <span class="inline-flex items-center gap-1 rounded-full ${status.bg} px-2.5 py-0.5 text-xs font-medium ${status.text}">
+                            <span class="h-1.5 w-1.5 rounded-full ${status.dot}"></span> ${status.label}
+                        </span>
+                    </div>
+                    <p class="text-sm text-slate-500 mt-0.5">${property.address || ''}${property.city ? ', ' + property.city : ''}${property.state ? ', ' + property.state : ''} ${property.zip || ''}</p>
+                    <div class="flex items-center gap-4 mt-2 text-xs text-slate-400">
+                        <span><i data-lucide="bed-double" class="h-3.5 w-3.5 inline -mt-0.5"></i> ${property.bedrooms || 0} Bed</span>
+                        <span><i data-lucide="bath" class="h-3.5 w-3.5 inline -mt-0.5"></i> ${property.bathrooms || 0} Bath</span>
+                        <span><i data-lucide="ruler" class="h-3.5 w-3.5 inline -mt-0.5"></i> ${property.sqft || 0} sqft</span>
+                    </div>
+                </div>
+                <div class="flex-shrink-0 text-right">
+                    <div class="text-sm font-semibold text-slate-900">$${parseFloat(property.rent || 0).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}<span class="font-normal text-slate-400 text-xs">/mo</span></div>
+                    <div class="flex items-center justify-end gap-1 mt-2">
+                        <a href="property-detail.html?id=${property.id}" class="text-xs text-slate-500 hover:text-slate-700">View</a>
+                        <button onclick="editProperty(${property.id})" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="Edit"><i data-lucide="edit" class="h-4 w-4"></i></button>
+                        <button onclick="deleteProperty(${property.id})" class="rounded-full p-1.5 text-slate-400 hover:bg-red-100 hover:text-red-600" title="Delete"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                    </div>
+                </div>
+            `;
+            return row;
+        }
+
         // Open modal for add/edit
-        function openPropertyModal(propertyId = null) {
+        async function openPropertyModal(propertyId = null) {
             currentEditingProperty = propertyId;
             const form = document.getElementById('propertyForm');
             const title = document.getElementById('propertyModalTitle');
@@ -420,7 +559,7 @@ body { font-family: 'Inter', sans-serif; }
             if (propertyId) {
                 title.textContent = 'Edit Property';
                 submitBtn.textContent = 'Update Property';
-                loadPropertyForEdit(propertyId);
+                await loadPropertyForEdit(propertyId);
             } else {
                 title.textContent = 'Add New Property';
                 submitBtn.textContent = 'Add Property';
@@ -457,7 +596,7 @@ body { font-family: 'Inter', sans-serif; }
 
         // Edit property
         async function editProperty(id) {
-            openPropertyModal(id);
+            await openPropertyModal(id);
         }
 
         // Delete property
@@ -497,11 +636,14 @@ body { font-family: 'Inter', sans-serif; }
             try {
                 await LeasePilot.DataManager.saveProperty(property);
                 LeasePilot.Toast.show(propertyId ? 'Property updated successfully!' : 'Property added successfully!', 'success');
+                returnToDetailId = null;
                 LeasePilot.Modal.close('addPropertyModal');
                 e.target.reset();
                 loadProperties();
             } catch (error) {
-                LeasePilot.Toast.show('Failed to save property. Please try again.', 'error');
+                const msg = (error && error.message) ? error.message : 'Failed to save property. Please try again.';
+                LeasePilot.Toast.show(msg, 'error');
+                console.error('Save property error:', error);
             }
         });
 
@@ -542,6 +684,20 @@ body { font-family: 'Inter', sans-serif; }
                 // Load properties
                 console.log('📋 Loading properties...');
                 await loadProperties();
+                const params = new URLSearchParams(window.location.search);
+                const editId = params.get('edit');
+                if (editId) {
+                    returnToDetailId = editId;
+                    await openPropertyModal(editId);
+                    if (window.history && window.history.replaceState) {
+                        window.history.replaceState({}, '', window.location.pathname || 'properties.html');
+                    }
+                    document.getElementById('addPropertyModal')?.addEventListener('click', function(e) {
+                        if (e.target === this && returnToDetailId) {
+                            window.location.href = `property-detail.html?id=${returnToDetailId}`;
+                        }
+                    });
+                }
             } catch (error) {
                 console.error('❌ Error initializing page:', error);
                 console.error('Error stack:', error.stack);

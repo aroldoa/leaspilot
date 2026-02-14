@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payments - Tenant Portal | LeasePilot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../app.js"></script>
+  <script src="notifications.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-[#F3F5F7] text-slate-900 antialiased">
+  <div class="min-h-screen">
+    <header class="bg-white border-b border-slate-200">
+      <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="dashboard.html" class="flex items-center gap-2">
+          <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot" class="h-9">
+        </a>
+        <nav class="flex items-center gap-1">
+          <a href="dashboard.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Dashboard</a>
+          <a href="payments.html" class="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900">Payments</a>
+          <a href="maintenance.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Maintenance</a>
+          <a href="documents.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Documents</a>
+          <a href="messages.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 inline-flex items-center gap-1.5">Messages <span id="tenantNavMessagesBadge" class="hidden inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold">0</span></a>
+          <a href="profile.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Profile</a>
+          <a href="messages.html" class="relative rounded-full p-2.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700" title="Notifications"><i data-lucide="bell" class="h-5 w-5"></i><span id="tenantNotificationsBadge" class="hidden absolute top-0 right-0 min-w-[1.25rem] h-5 px-1 rounded-full bg-red-500 text-white text-xs font-semibold inline-flex items-center justify-center">0</span></a>
+          <button onclick="LeasePilot.logout()" class="rounded-full p-2 text-slate-400 hover:text-slate-600" title="Sign out"><i data-lucide="log-out" class="h-4 w-4"></i></button>
+        </nav>
+      </div>
+    </header>
+    <main class="max-w-5xl mx-auto px-4 py-8">
+      <h1 class="text-2xl font-semibold text-slate-900 mb-6">Payments</h1>
+      <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm mb-6">
+        <h2 class="text-lg font-medium text-slate-900 mb-2">Current balance</h2>
+        <p id="balance" class="text-2xl font-semibold text-slate-900">$0</p>
+        <button id="payBtn" class="mt-4 rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-slate-800">Pay rent</button>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+        <h2 class="text-lg font-medium text-slate-900 mb-4">Payment history</h2>
+        <div id="paymentHistory" class="text-sm text-slate-500">No payment history yet.</div>
+      </div>
+    </main>
+  </div>
+  <script>
+    (async () => {
+      let wait = 0;
+      while (typeof LeasePilot === 'undefined' && wait < 100) { await new Promise(r => setTimeout(r, 50)); wait++; }
+      if (typeof LeasePilot === 'undefined') return;
+      await LeasePilot.checkAuth();
+      lucide.createIcons();
+      try {
+        const b = await LeasePilot.API.get('/tenant/balance');
+        document.getElementById('balance').textContent = '$' + (b.balance || 0).toFixed(2);
+      } catch (e) {}
+      document.getElementById('payBtn').onclick = async () => {
+        try {
+          const r = await LeasePilot.API.post('/tenant/pay', {});
+          if (LeasePilot.Toast) LeasePilot.Toast.show(r.message || 'Payment not available.', 'info');
+          else alert(r.message || 'Payment not available.');
+        } catch (err) {
+          if (LeasePilot.Toast) LeasePilot.Toast.show(err.message || 'Unable to process.', 'error');
+        }
+      };
+      try {
+        const list = await LeasePilot.API.get('/tenant/payments');
+        if (list && list.length) document.getElementById('paymentHistory').innerHTML = list.map(p => '<div class="py-2 border-b border-slate-50">' + (p.description || p.amount) + ' – ' + (p.transaction_date || '') + '</div>').join('');
+      } catch (e) {}
+    })();
+  </script>
+</body>
+</html>

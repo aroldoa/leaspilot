@@ -36,6 +36,18 @@ body { font-family: 'Inter', sans-serif; }
                         <i data-lucide="users" class="h-5 w-5 text-slate-900"></i>
                         Tenants
                     </a>
+                    <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="wrench" class="h-5 w-5"></i>
+                        Maintenance
+                    </a>
+                    <a href="contractors.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="hard-hat" class="h-5 w-5"></i>
+                        Contractors
+                    </a>
+                    <a href="messages.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="message-square" class="h-5 w-5"></i>
+                        Messages
+                    </a>
                     <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
                         <i data-lucide="wallet" class="h-5 w-5"></i>
                         Financials
@@ -114,10 +126,14 @@ body { font-family: 'Inter', sans-serif; }
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <button type="button" id="tenantInternalMessageBtn" class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors" title="Send internal message (visible in tenant portal)">
                             <i data-lucide="message-square" class="h-4 w-4"></i>
-                            Message
+                            Message tenant
+                        </button>
+                        <button type="button" id="tenantMessageBtn" class="hidden flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors" title="Send SMS">
+                            <i data-lucide="message-circle" class="h-4 w-4"></i>
+                            Send SMS
                         </button>
                         <button onclick="editTenant()" class="flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors shadow-sm hover:shadow-md">
                             <i data-lucide="pencil" class="h-4 w-4"></i>
@@ -214,6 +230,39 @@ body { font-family: 'Inter', sans-serif; }
                             </div>
                         </div>
                     </div>
+
+                    <!-- Tenant Portal -->
+                    <div id="portalCard" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mt-6">
+                        <h2 class="text-lg font-medium text-slate-900 mb-4">Tenant portal</h2>
+                        <div id="portalHasAccess" class="hidden text-sm text-slate-600">
+                            <span class="inline-flex items-center gap-2 text-green-700"><i data-lucide="check-circle" class="h-4 w-4"></i> This tenant has portal access and can sign in to the tenant dashboard.</span>
+                        </div>
+                        <div id="portalNoAccess" class="hidden">
+                            <p class="text-sm text-slate-600 mb-4">Invite this tenant to the self-service portal. They will be able to view their lease, balance, submit maintenance requests, and more.</p>
+                            <button type="button" onclick="openInviteModal()" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Invite to portal</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invite to portal modal -->
+                <div id="invitePortalModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" onclick="if (event.target === this) closeInviteModal()">
+                    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+                        <h2 class="text-xl font-semibold text-slate-900 mb-4">Invite to portal</h2>
+                        <form id="invitePortalForm" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                                <input type="email" id="inviteEmail" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-100 outline-none" placeholder="tenant@example.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Temporary password (min 8 characters)</label>
+                                <input type="password" id="invitePassword" required minlength="8" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-100 outline-none" placeholder="••••••••">
+                            </div>
+                            <div class="flex gap-3 pt-2">
+                                <button type="button" onclick="closeInviteModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-medium">Cancel</button>
+                                <button type="submit" class="flex-1 py-2.5 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800">Send invite</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
                 <!-- Lease Tab Content -->
@@ -286,14 +335,122 @@ body { font-family: 'Inter', sans-serif; }
                 </footer>
 
             </div>
+
+            <!-- Edit Tenant modal (stays on this page) -->
+            <!-- Send internal message to tenant (in-app; tenant sees in portal) -->
+            <div id="internalMessageModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50" onclick="if (event.target === this) closeInternalMessageModal()">
+                <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+                    <h3 class="text-lg font-semibold text-slate-900">Message tenant</h3>
+                    <p class="text-sm text-slate-500 mt-1">This message will appear in the tenant's portal. They can reply from there.</p>
+                    <form id="internalMessageForm" class="mt-4 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Subject <span class="text-slate-400">(required)</span></label>
+                            <input type="text" id="internalMessageSubject" required maxlength="255" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none" placeholder="e.g. Lease renewal reminder">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Message</label>
+                            <textarea id="internalMessageBody" rows="4" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none" placeholder="Type your message..."></textarea>
+                        </div>
+                        <div id="internalMessageSmsWrap" class="hidden">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="internalMessageSendSms" class="rounded border-slate-300 text-slate-900 focus:ring-slate-400">
+                                <span class="text-sm text-slate-700">Also send as SMS</span>
+                            </label>
+                        </div>
+                        <div class="flex gap-3 justify-end pt-2">
+                            <button type="button" onclick="closeInternalMessageModal()" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
+                            <button type="submit" id="internalMessageSubmit" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Send message</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Send SMS modal -->
+            <div id="smsModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/40" onclick="if (event.target === this) window.closeSmsModal && closeSmsModal()">
+                <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+                    <h3 class="text-lg font-semibold text-slate-900">Send SMS</h3>
+                    <p class="text-sm text-slate-500 mt-1" id="smsModalRecipient">To: …</p>
+                    <input type="hidden" id="smsModalContractorId" value="">
+                    <input type="hidden" id="smsModalTenantId" value="">
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Message</label>
+                        <textarea id="smsModalBody" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none" placeholder="Type your message..."></textarea>
+                    </div>
+                    <div class="mt-6 flex gap-3 justify-end">
+                        <button type="button" onclick="closeSmsModal()" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="button" id="smsModalSend" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="editTenantModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" onclick="if (event.target === this) closeEditTenantModal()">
+                <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+                    <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+                        <h2 class="text-xl font-semibold text-slate-900">Edit Tenant</h2>
+                        <button type="button" onclick="closeEditTenantModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+                    </div>
+                    <form id="editTenantForm" class="p-6 space-y-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">First Name</label>
+                                <input type="text" name="firstName" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Last Name</label>
+                                <input type="text" name="lastName" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                            <input type="email" name="email" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Phone</label>
+                            <input type="tel" name="phone" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Property</label>
+                            <select name="propertyId" id="editTenantPropertySelect" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                                <option value="">Select Property</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Unit</label>
+                            <input type="text" name="unit" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Lease start</label>
+                                <input type="date" name="leaseStart" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Lease end</label>
+                                <input type="date" name="leaseEnd" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                            <select name="status" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                                <option value="active">Active</option>
+                                <option value="pending">Pending</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-3 pt-4">
+                            <button type="button" onclick="closeEditTenantModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium">Cancel</button>
+                            <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-medium">Update Tenant</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </main>
     </div>
 
-    <script src="app.js"></script>
     <script>
         let currentTenant = null;
         let tenantProperty = null;
         let tenantTransactions = [];
+        let smsConfigured = false;
 
         // Get tenant ID from URL
         function getTenantId() {
@@ -490,8 +647,146 @@ body { font-family: 'Inter', sans-serif; }
                 leaseDates.textContent = daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Lease expired';
             }
 
+            // Tenant portal: show has access or invite button
+            const hasPortal = currentTenant.portal_user_id != null;
+            const portalHasAccess = document.getElementById('portalHasAccess');
+            const portalNoAccess = document.getElementById('portalNoAccess');
+            if (portalHasAccess) portalHasAccess.classList.toggle('hidden', !hasPortal);
+            if (portalNoAccess) portalNoAccess.classList.toggle('hidden', hasPortal);
+
+            const messageBtn = document.getElementById('tenantMessageBtn');
+            if (messageBtn) {
+                if (smsConfigured && currentTenant.phone) {
+                    messageBtn.classList.remove('hidden');
+                    messageBtn.classList.add('flex');
+                    messageBtn.onclick = () => openSmsModalTenant(currentTenant.id, `${currentTenant.first_name || ''} ${currentTenant.last_name || ''}`.trim());
+                } else {
+                    messageBtn.classList.add('hidden');
+                    messageBtn.classList.remove('flex');
+                }
+            }
+            const internalMsgBtn = document.getElementById('tenantInternalMessageBtn');
+            if (internalMsgBtn) {
+                internalMsgBtn.style.display = currentTenant ? 'flex' : 'none';
+                internalMsgBtn.onclick = () => openInternalMessageModal();
+            }
+
             lucide.createIcons();
         }
+
+        function openSmsModalTenant(tenantId, name) {
+            document.getElementById('smsModalContractorId').value = '';
+            document.getElementById('smsModalTenantId').value = tenantId;
+            document.getElementById('smsModalRecipient').textContent = 'To: ' + name;
+            document.getElementById('smsModalBody').value = '';
+            document.getElementById('smsModal').classList.remove('hidden');
+            document.getElementById('smsModal').classList.add('flex');
+        }
+        function closeSmsModal() {
+            document.getElementById('smsModal').classList.add('hidden');
+            document.getElementById('smsModal').classList.remove('flex');
+        }
+        document.getElementById('smsModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeSmsModal();
+        });
+        document.getElementById('smsModalSend')?.addEventListener('click', function() {
+            const contractorId = document.getElementById('smsModalContractorId').value;
+            const tenantId = document.getElementById('smsModalTenantId').value;
+            const body = document.getElementById('smsModalBody').value.trim() || 'Hi, this is your property manager. Please reach out when you can.';
+            const btn = document.getElementById('smsModalSend');
+            if (!tenantId && !contractorId) return;
+            btn.disabled = true;
+            const promise = contractorId
+                ? LeasePilot.DataManager.sendSmsToContractor(contractorId, body)
+                : LeasePilot.DataManager.sendSmsToTenant(tenantId, body);
+            promise.then(function() {
+                closeSmsModal();
+                if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('SMS sent');
+            }).catch(function(err) {
+                if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show(err.message || 'Failed to send SMS', 'error');
+            }).finally(function() { btn.disabled = false; });
+        });
+
+        function openInternalMessageModal() {
+            if (!currentTenant || !currentTenant.id) return;
+            var modal = document.getElementById('internalMessageModal');
+            var subject = document.getElementById('internalMessageSubject');
+            var body = document.getElementById('internalMessageBody');
+            var smsWrap = document.getElementById('internalMessageSmsWrap');
+            var smsCheck = document.getElementById('internalMessageSendSms');
+            if (subject) subject.value = '';
+            if (body) body.value = '';
+            if (smsCheck) smsCheck.checked = false;
+            if (smsWrap) {
+                smsWrap.classList.toggle('hidden', !(smsConfigured && currentTenant.phone));
+            }
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+            if (subject) subject.focus();
+        }
+        function closeInternalMessageModal() {
+            var modal = document.getElementById('internalMessageModal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+        document.getElementById('internalMessageModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeInternalMessageModal();
+        });
+        document.getElementById('internalMessageForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!currentTenant || !currentTenant.id) return;
+            var subject = (document.getElementById('internalMessageSubject')?.value || '').trim();
+            var body = (document.getElementById('internalMessageBody')?.value || '').trim();
+            var sendSms = document.getElementById('internalMessageSendSms')?.checked || false;
+            var btn = document.getElementById('internalMessageSubmit');
+            if (!subject) {
+                if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Subject is required', 'error');
+                return;
+            }
+            btn.disabled = true;
+            LeasePilot.DataManager.sendMessage({
+                recipient_type: 'tenant',
+                recipient_id: currentTenant.id,
+                subject: subject,
+                body: body || undefined,
+                send_sms: sendSms
+            }).then(function() {
+                closeInternalMessageModal();
+                if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Message sent');
+            }).catch(function(err) {
+                if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show(err.message || err.error || 'Failed to send message', 'error');
+            }).finally(function() { btn.disabled = false; });
+        });
+
+        function openInviteModal() {
+            const modal = document.getElementById('invitePortalModal');
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+            const email = document.getElementById('inviteEmail');
+            if (email && currentTenant && currentTenant.email) email.value = currentTenant.email;
+        }
+        function closeInviteModal() {
+            const modal = document.getElementById('invitePortalModal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+        document.getElementById('invitePortalForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('inviteEmail')?.value?.trim();
+            const password = document.getElementById('invitePassword')?.value;
+            if (!email || !password || !currentTenant || !currentTenant.id) return;
+            try {
+                const response = await fetch(`${window.location.origin}/api/tenants/${currentTenant.id}/invite`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.error || 'Invite failed');
+                LeasePilot.Toast.show(data.message || 'Tenant invited.', 'success');
+                closeInviteModal();
+                currentTenant = await LeasePilot.DataManager.getTenant(currentTenant.id);
+                renderTenant();
+            } catch (err) {
+                LeasePilot.Toast.show(err.message || 'Invite failed.', 'error');
+            }
+        });
 
         // Update property information
         function updatePropertyInfo() {
@@ -577,11 +872,82 @@ body { font-family: 'Inter', sans-serif; }
             });
         }
 
-        // Edit tenant
+        function closeEditTenantModal() {
+            const modal = document.getElementById('editTenantModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.style.overflow = '';
+            }
+        }
+
+        async function openEditTenantModal() {
+            if (!currentTenant) return;
+            const form = document.getElementById('editTenantForm');
+            const propSelect = document.getElementById('editTenantPropertySelect');
+            if (!form || !propSelect) return;
+            form.querySelector('input[name="firstName"]').value = currentTenant.first_name || '';
+            form.querySelector('input[name="lastName"]').value = currentTenant.last_name || '';
+            form.querySelector('input[name="email"]').value = currentTenant.email || '';
+            form.querySelector('input[name="phone"]').value = currentTenant.phone || '';
+            form.querySelector('input[name="unit"]').value = currentTenant.unit || '';
+            form.querySelector('input[name="leaseStart"]').value = currentTenant.lease_start ? String(currentTenant.lease_start).slice(0, 10) : '';
+            form.querySelector('input[name="leaseEnd"]').value = currentTenant.lease_end ? String(currentTenant.lease_end).slice(0, 10) : '';
+            form.querySelector('select[name="status"]').value = currentTenant.status || 'active';
+            propSelect.innerHTML = '<option value="">Select Property</option>';
+            try {
+                const properties = await LeasePilot.DataManager.getProperties();
+                properties.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.name || p.address || 'Property ' + p.id;
+                    if (currentTenant.property_id && p.id == currentTenant.property_id) opt.selected = true;
+                    propSelect.appendChild(opt);
+                });
+            } catch (e) {
+                console.error('Error loading properties for edit:', e);
+            }
+            const modal = document.getElementById('editTenantModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.style.overflow = 'hidden';
+            }
+            if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+        }
+
+        // Edit tenant (stays on this page, no redirect)
         function editTenant() {
             if (!currentTenant) return;
-            window.location.href = `tenants.html?edit=${currentTenant.id}`;
+            openEditTenantModal();
         }
+
+        document.getElementById('editTenantForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!currentTenant) return;
+            const formData = new FormData(e.target);
+            const tenant = {
+                id: currentTenant.id,
+                firstName: (formData.get('firstName') || '').toString().trim(),
+                lastName: (formData.get('lastName') || '').toString().trim(),
+                email: (formData.get('email') || '').toString().trim(),
+                phone: (formData.get('phone') || '').toString().trim() || null,
+                propertyId: formData.get('propertyId') || null,
+                unit: (formData.get('unit') || '').toString().trim() || null,
+                status: (formData.get('status') || 'active').toString(),
+                lease_start: (formData.get('leaseStart') || '').toString().trim() || null,
+                lease_end: (formData.get('leaseEnd') || '').toString().trim() || null
+            };
+            try {
+                await LeasePilot.DataManager.saveTenant(tenant);
+                if (LeasePilot.Toast) LeasePilot.Toast.show('Tenant updated.', 'success');
+                closeEditTenantModal();
+                await loadTenant();
+            } catch (err) {
+                const msg = (err && err.message) ? err.message : 'Failed to update tenant.';
+                if (LeasePilot.Toast) LeasePilot.Toast.show(msg, 'error');
+            }
+        });
 
         // Initialize page
         (async () => {
@@ -607,7 +973,12 @@ body { font-family: 'Inter', sans-serif; }
                 const userNameEl = document.querySelector('[data-user-name]');
                 if (userNameEl) userNameEl.textContent = user.name || 'User';
             }
-            
+
+            try {
+                const s = await LeasePilot.DataManager.getSmsStatus();
+                smsConfigured = s && s.configured;
+            } catch (e) {}
+
             await loadTenant();
         })();
         

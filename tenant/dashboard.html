@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Tenant Portal | LeasePilot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../app.js"></script>
+  <script src="notifications.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+  body { font-family: 'Inter', sans-serif; }
+  .dashboard-loading { color: transparent; background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: dashboard-shimmer 1s ease-in-out infinite; border-radius: 4px; }
+  @keyframes dashboard-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+</style>
+</head>
+<body class="bg-[#F3F5F7] text-slate-900 antialiased">
+  <div class="min-h-screen">
+    <!-- Tenant nav -->
+    <header class="bg-white border-b border-slate-200">
+      <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="dashboard.html" class="flex items-center gap-2">
+          <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot" class="h-9">
+        </a>
+        <nav class="flex items-center gap-1">
+          <a href="dashboard.html" class="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900">Dashboard</a>
+          <a href="payments.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Payments</a>
+          <a href="maintenance.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Maintenance</a>
+          <a href="documents.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Documents</a>
+          <a href="messages.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 inline-flex items-center gap-1.5">Messages <span id="tenantNavMessagesBadge" class="hidden inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold">0</span></a>
+          <a href="profile.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Profile</a>
+          <a href="messages.html" class="relative rounded-full p-2.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700" title="Notifications"><i data-lucide="bell" class="h-5 w-5"></i><span id="tenantNotificationsBadge" class="hidden absolute top-0 right-0 min-w-[1.25rem] h-5 px-1 rounded-full bg-red-500 text-white text-xs font-semibold inline-flex items-center justify-center">0</span></a>
+          <button onclick="LeasePilot.logout()" class="rounded-full p-2 text-slate-400 hover:text-slate-600" title="Sign out"><i data-lucide="log-out" class="h-4 w-4"></i></button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-8">
+      <!-- Welcome -->
+      <div class="mb-8">
+        <h1 id="dashboardWelcome" class="text-2xl font-semibold text-slate-900">Welcome back</h1>
+        <p id="dashboardSubtitle" class="text-slate-500 mt-1">Here’s an overview of your lease and actions.</p>
+      </div>
+
+      <!-- New messages notification banner -->
+      <div id="tenantNewMessagesBanner" class="hidden flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 mb-8">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100"><i data-lucide="message-square" class="h-5 w-5 text-amber-700"></i></span>
+        <div class="min-w-0 flex-1">
+          <p class="tenant-new-messages-text font-medium text-amber-900">You have new messages</p>
+          <p class="text-sm text-amber-700">From your property manager. Reply from Messages.</p>
+        </div>
+        <a href="messages.html" class="shrink-0 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700">View messages</a>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+        <a href="payments.html" class="quick-action flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:border-slate-300 hover:shadow">
+          <span class="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-600"><i data-lucide="wallet" class="h-5 w-5"></i></span>
+          <span class="text-sm font-medium text-slate-800">Pay rent</span>
+        </a>
+        <a href="messages.html" class="quick-action flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:border-slate-300 hover:shadow">
+          <span class="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-600"><i data-lucide="message-square" class="h-5 w-5"></i></span>
+          <span class="text-sm font-medium text-slate-800">Messages</span>
+        </a>
+        <a href="maintenance.html" class="quick-action flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:border-slate-300 hover:shadow">
+          <span class="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-600"><i data-lucide="wrench" class="h-5 w-5"></i></span>
+          <span class="text-sm font-medium text-slate-800">Maintenance</span>
+        </a>
+        <a href="documents.html" class="quick-action flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:border-slate-300 hover:shadow">
+          <span class="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-600"><i data-lucide="file-text" class="h-5 w-5"></i></span>
+          <span class="text-sm font-medium text-slate-800">Documents</span>
+        </a>
+      </div>
+
+      <!-- Rent balance & Lease summary -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="wallet" class="h-5 w-5 text-slate-400"></i>
+            <h2 class="text-sm font-medium text-slate-500 uppercase tracking-wide">Rent amount</h2>
+          </div>
+          <p id="rentAmount" class="text-3xl font-semibold text-slate-900">—</p>
+          <p id="rentAmountLabel" class="text-sm text-slate-500 mt-1">Monthly rent set by your property manager</p>
+          <p id="rentBalanceLine" class="text-sm text-slate-600 mt-2 hidden"></p>
+          <button id="payRentBtn" class="mt-4 rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-slate-800 transition">Pay rent</button>
+          <p id="rentAllSet" class="mt-4 hidden text-sm font-medium text-emerald-600">You’re all set — no balance due.</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="home" class="h-5 w-5 text-slate-400"></i>
+            <h2 class="text-sm font-medium text-slate-500 uppercase tracking-wide">Lease summary</h2>
+          </div>
+          <p id="leaseProperty" class="font-medium text-slate-900">—</p>
+          <p id="leaseAddress" class="text-sm text-slate-600 mt-0.5">—</p>
+          <p id="leaseUnit" class="text-sm text-slate-500">—</p>
+          <p id="leaseDates" class="text-sm text-slate-500 mt-2">—</p>
+          <a href="profile.html" class="mt-3 inline-block text-sm font-medium text-slate-600 hover:text-slate-900">View profile →</a>
+        </div>
+      </div>
+
+      <!-- Maintenance: submit + recent -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <div class="flex items-center gap-2 mb-4">
+            <i data-lucide="wrench" class="h-5 w-5 text-slate-400"></i>
+            <h2 class="text-lg font-medium text-slate-900">Submit maintenance request</h2>
+          </div>
+          <form id="maintenanceForm" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+              <input type="text" name="subject" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-100 focus:border-slate-300 outline-none transition" placeholder="e.g. Leaking faucet">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+              <textarea name="description" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-100 focus:border-slate-300 outline-none transition" placeholder="Describe the issue..."></textarea>
+            </div>
+            <button type="submit" class="rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-slate-800 transition">Submit request</button>
+          </form>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="clipboard-list" class="h-5 w-5 text-slate-400"></i>
+              <h2 class="text-lg font-medium text-slate-900">Recent requests</h2>
+            </div>
+            <a href="maintenance.html" class="text-sm font-medium text-slate-600 hover:text-slate-900">View all</a>
+          </div>
+          <div id="maintenanceList" class="space-y-3 text-sm text-slate-600">Loading...</div>
+        </div>
+      </div>
+
+      </main>
+  </div>
+
+  <script>
+    (async () => {
+      let wait = 0;
+      while (typeof LeasePilot === 'undefined' && wait < 100) { await new Promise(r => setTimeout(r, 50)); wait++; }
+      if (typeof LeasePilot === 'undefined') { alert('App failed to load.'); return; }
+      const ok = await LeasePilot.checkAuth();
+      if (!ok) return;
+      lucide.createIcons();
+
+      const API = { get: (e) => LeasePilot.API.get(e), post: (e, d) => LeasePilot.API.post(e, d) };
+
+      // Welcome: use tenant first name from lease or profile
+      (async () => {
+        try {
+          const lease = await API.get('/tenant/lease');
+          const name = (lease.first_name || '').trim();
+          const welcomeEl = document.getElementById('dashboardWelcome');
+          const subEl = document.getElementById('dashboardSubtitle');
+          if (name && welcomeEl) welcomeEl.textContent = 'Hi, ' + name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+          if (subEl) subEl.textContent = 'Here’s an overview of your lease and quick actions.';
+        } catch (e) {
+          const welcomeEl = document.getElementById('dashboardWelcome');
+          if (welcomeEl) welcomeEl.textContent = 'Welcome back';
+        }
+      })();
+
+      // Rent amount (from property manager) and balance
+      try {
+        const lease = await API.get('/tenant/lease');
+        const rent = parseFloat(lease.property_rent ?? lease.propertyRent) || 0;
+        const rentAmountEl = document.getElementById('rentAmount');
+        if (rentAmountEl) rentAmountEl.textContent = rent > 0 ? '$' + Number(rent).toFixed(2) : '—';
+      } catch (e) {
+        const el = document.getElementById('rentAmount');
+        if (el) el.textContent = '—';
+      }
+      try {
+        const bal = await API.get('/tenant/balance');
+        const balance = parseFloat(bal.balance) || 0;
+        const balanceLine = document.getElementById('rentBalanceLine');
+        const payBtn = document.getElementById('payRentBtn');
+        const allSetEl = document.getElementById('rentAllSet');
+        if (balanceLine) {
+          if (balance > 0) {
+            balanceLine.textContent = 'Balance due: $' + balance.toFixed(2);
+            balanceLine.classList.remove('hidden');
+          } else {
+            balanceLine.classList.add('hidden');
+          }
+        }
+        if (balance <= 0) {
+          if (payBtn) payBtn.classList.add('hidden');
+          if (allSetEl) allSetEl.classList.remove('hidden');
+        } else {
+          if (payBtn) payBtn.classList.remove('hidden');
+          if (allSetEl) allSetEl.classList.add('hidden');
+        }
+      } catch (e) {
+        const balanceLine = document.getElementById('rentBalanceLine');
+        if (balanceLine) balanceLine.classList.add('hidden');
+      }
+
+      // Lease
+      try {
+        const lease = await API.get('/tenant/lease');
+        const propName = lease.property_name ?? lease.propertyName;
+        document.getElementById('leaseProperty').textContent = propName || '—';
+        const addrParts = [
+          lease.property_address ?? lease.propertyAddress,
+          lease.property_city ?? lease.propertyCity,
+          lease.property_state ?? lease.propertyState,
+          lease.property_zip ?? lease.propertyZip
+        ].filter(function (v) { return v != null && String(v).trim() !== ''; });
+        document.getElementById('leaseAddress').textContent = addrParts.length ? addrParts.join(', ') : '—';
+        document.getElementById('leaseUnit').textContent = lease.unit ? 'Unit ' + lease.unit : '—';
+        const start = lease.lease_start ? new Date(lease.lease_start).toLocaleDateString() : '';
+        const end = lease.lease_end ? new Date(lease.lease_end).toLocaleDateString() : '';
+        document.getElementById('leaseDates').textContent = start && end ? start + ' – ' + end : start || end || '—';
+      } catch (e) {}
+
+      // Pay rent
+      document.getElementById('payRentBtn').onclick = async () => {
+        try {
+          const r = await API.post('/tenant/pay', {});
+          if (LeasePilot.Toast) LeasePilot.Toast.show(r.message || 'Payment not available.', 'info');
+          else alert(r.message || 'Payment not available.');
+        } catch (err) {
+          if (LeasePilot.Toast) LeasePilot.Toast.show(err.message || 'Unable to process.', 'error');
+        }
+      };
+
+      // Maintenance list (recent, with status badges; shows Assigned + contractor when assigned)
+      function statusClass(s, isAssigned) {
+        if (isAssigned) return 'bg-violet-100 text-violet-800';
+        const v = (s || '').toLowerCase();
+        if (v === 'completed' || v === 'closed') return 'bg-emerald-100 text-emerald-800';
+        if (v === 'in_progress' || v === 'in progress') return 'bg-blue-100 text-blue-800';
+        if (v === 'waiting_vendor' || v === 'waiting vendor') return 'bg-amber-100 text-amber-800';
+        return 'bg-slate-100 text-slate-700';
+      }
+      function renderMaintenanceList(list) {
+        const el = document.getElementById('maintenanceList');
+        if (!list || !list.length) {
+          el.innerHTML = '<p class="text-slate-500 py-2">No requests yet.</p><a href="maintenance.html" class="text-sm font-medium text-slate-600 hover:text-slate-900">Submit a request →</a>';
+          return;
+        }
+        const recent = list.slice(0, 5);
+        el.innerHTML = recent.map(m => {
+          const d = m.created_at ? new Date(m.created_at).toLocaleDateString() : '';
+          const isAssigned = (m.status && String(m.status).toLowerCase() === 'assigned') || !!(m.assigned_contractor_id != null && m.assigned_contractor_id !== '' && m.assigned_contractor_id !== 0) || !!(m.contractor_name && m.contractor_name.trim());
+          const status = isAssigned ? 'Assigned' : ((m.status || 'open').replace(/_/g, ' '));
+          const contractorLabel = (m.contractor_name && m.contractor_name.trim()) ? String(m.contractor_name).trim() : (m.description && m.description.includes('[Assigned to:') ? ((m.description.match(/\[Assigned to: ([^\]]+)\]/) || [])[1] || '').trim() : '');
+          const sub = contractorLabel ? ' · ' + contractorLabel : '';
+          const sc = statusClass(m.status, isAssigned);
+          return '<a href="maintenance.html" class="flex items-center justify-between gap-3 py-3 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 rounded-lg px-2 -mx-2 transition"><span class="font-medium text-slate-800 truncate">' + (m.subject || 'Request') + '</span><span class="flex items-center gap-2 shrink-0"><span class="rounded-full px-2 py-0.5 text-xs font-medium ' + sc + '">' + status + '</span><span class="text-slate-400 text-xs">' + d + sub + '</span></span></a>';
+        }).join('');
+        lucide.createIcons();
+      }
+      try {
+        const list = await API.get('/tenant/maintenance?t=' + Date.now());
+        // #region agent log
+        (function(){
+          var first = list && list[0];
+          var isAssignedFromStatus = first && first.status && String(first.status).toLowerCase() === 'assigned';
+          var isAssignedFromFields = first && (!!(first.assigned_contractor_id != null && first.assigned_contractor_id !== '' && first.assigned_contractor_id !== 0) || !!(first.contractor_name && first.contractor_name.trim()));
+          var isAssigned = isAssignedFromStatus || isAssignedFromFields;
+          var descSnippet = first && first.description ? String(first.description).slice(-80) : '';
+          fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H2,H5',location:'tenant/dashboard.html:maintenance list',message:'Dashboard received maintenance list',data:{listLength:list?list.length:0,firstKeys:first?Object.keys(first):[],firstStatus:first?first.status:undefined,firstDescriptionEnd:descSnippet,computedIsAssigned:isAssigned},timestamp:Date.now()})}).catch(function(){});
+        })();
+        // #endregion
+        renderMaintenanceList(list);
+      } catch (e) { document.getElementById('maintenanceList').innerHTML = '<p class="text-slate-500 py-2">Unable to load. <a href="maintenance.html" class="text-slate-600 hover:underline">Go to Maintenance</a></p>'; }
+
+      // Maintenance form
+      document.getElementById('maintenanceForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const btn = e.target.querySelector('button[type="submit"]');
+        if (btn) btn.disabled = true;
+        try {
+          await API.post('/tenant/maintenance', { subject: fd.get('subject'), description: fd.get('description') });
+          if (LeasePilot.Toast) LeasePilot.Toast.show('Request submitted. We’ll get back to you soon.', 'success');
+          e.target.reset();
+          const list = await API.get('/tenant/maintenance?t=' + Date.now());
+          renderMaintenanceList(list);
+        } catch (err) {
+          if (LeasePilot.Toast) LeasePilot.Toast.show(err.message || 'Failed to submit.', 'error');
+        }
+        if (btn) btn.disabled = false;
+      };
+
+      lucide.createIcons();
+    })();
+  </script>
+</body>
+</html>

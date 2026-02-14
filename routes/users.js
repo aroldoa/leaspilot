@@ -1,6 +1,32 @@
 import express from 'express';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
+import multer from 'multer';
 import { authenticateToken } from '../middleware/auth.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const avatarDir = path.join(__dirname, '..', 'uploads', 'avatars');
+fs.mkdirSync(avatarDir, { recursive: true });
+
+const avatarUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, avatarDir),
+    filename: (req, file, cb) => {
+      const ext = (path.extname(file.originalname) || '').toLowerCase();
+      const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+      const safe = allowed.includes(ext) ? ext : '.jpg';
+      cb(null, `user-${req.userId}-${Date.now()}${safe}`);
+    }
+  }),
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Only JPG, PNG, GIF or WebP images allowed (max 2MB)'), false);
+  },
+  limits: { fileSize: 2 * 1024 * 1024 }
+}).single('avatar');
 
 const router = express.Router();
 
@@ -9,7 +35,7 @@ router.get('/me', authenticateToken, async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
-      'SELECT id, email, name, role, created_at FROM users WHERE id = $1',
+      'SELECT id, email, name, role, avatar_url, created_at FROM users WHERE id = $1',
       [req.userId]
     );
 
@@ -48,13 +74,46 @@ router.put('/me', authenticateToken, async (req, res) => {
            email = COALESCE($2, email),
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $3
-       RETURNING id, email, name, role`,
-      [name, email, req.userId]
+       RETURNING id, email, name, role, avatar_url`,
+      [name || null, email || null, req.userId]
     );
 
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating user:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Upload profile avatar (multipart: field name "avatar")
+router.post('/me/avatar', authenticateToken, (req, res, next) => {
+  avatarUpload(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message || 'Upload failed' });
+    }
+    next();
+  });
+}, async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+    const pool = req.app.locals.pool;
+    const avatarUrl = '/uploads/avatars/' + req.file.filename;
+    await pool.query(
+      'UPDATE users SET avatar_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [avatarUrl, req.userId]
+    );
+    const result = await pool.query(
+      'SELECT id, email, name, role, avatar_url FROM users WHERE id = $1',
+      [req.userId]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error saving avatar:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
