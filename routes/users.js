@@ -1,18 +1,30 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
 import { authenticateToken } from '../middleware/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const avatarDir = path.join(__dirname, '..', 'uploads', 'avatars');
-fs.mkdirSync(avatarDir, { recursive: true });
+const avatarDir = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'leasepilot-uploads', 'avatars')
+  : path.join(__dirname, '..', 'uploads', 'avatars');
+try {
+  fs.mkdirSync(avatarDir, { recursive: true });
+} catch (err) {
+  if (err.code !== 'ENOENT' && err.code !== 'EEXIST') console.warn('Avatar upload dir not created:', err.message);
+}
 
 const avatarUpload = multer({
   storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, avatarDir),
+    destination: (req, file, cb) => {
+      try {
+        fs.mkdirSync(avatarDir, { recursive: true });
+      } catch (e) {}
+      cb(null, avatarDir);
+    },
     filename: (req, file, cb) => {
       const ext = (path.extname(file.originalname) || '').toLowerCase();
       const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
