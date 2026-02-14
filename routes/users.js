@@ -8,13 +8,23 @@ import multer from 'multer';
 import { authenticateToken } from '../middleware/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const avatarDir = process.env.VERCEL
-  ? path.join(os.tmpdir(), 'leasepilot-uploads', 'avatars')
-  : path.join(__dirname, '..', 'uploads', 'avatars');
-try {
-  fs.mkdirSync(avatarDir, { recursive: true });
-} catch (err) {
-  if (err.code !== 'ENOENT' && err.code !== 'EEXIST') console.warn('Avatar upload dir not created:', err.message);
+const projectAvatarDir = path.join(__dirname, '..', 'uploads', 'avatars');
+const tmpAvatarDir = path.join(os.tmpdir(), 'leasepilot-uploads', 'avatars');
+const isServerless = __dirname.startsWith('/var/task') || process.env.VERCEL === '1';
+let avatarDir = tmpAvatarDir;
+if (!isServerless) {
+  try {
+    fs.mkdirSync(projectAvatarDir, { recursive: true });
+    avatarDir = projectAvatarDir;
+  } catch (err) {
+    try {
+      fs.mkdirSync(tmpAvatarDir, { recursive: true });
+    } catch (e) {}
+  }
+} else {
+  try {
+    fs.mkdirSync(tmpAvatarDir, { recursive: true });
+  } catch (e) {}
 }
 
 const avatarUpload = multer({
