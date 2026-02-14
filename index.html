@@ -135,9 +135,12 @@
                       </h1>
           </div>
                   <div class="flex items-center gap-3">
-                      <div class="relative hidden md:block group">
+                      <div class="relative group" id="dashboardSearchWrap">
                           <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-slate-900 transition-colors"></i>
-                          <input type="text" placeholder="Search properties..." class="h-12 w-64 rounded-full border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-slate-900 transition-all placeholder:text-slate-400">
+                          <input type="text" id="dashboardSearchProperties" placeholder="Search properties..." autocomplete="off" class="h-12 w-48 md:w-64 rounded-full border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-slate-900 transition-all placeholder:text-slate-400">
+                          <div id="dashboardSearchDropdown" class="hidden absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-slate-200 bg-white shadow-xl overflow-hidden max-h-[320px] overflow-y-auto">
+                              <div id="dashboardSearchDropdownContent" class="py-1"></div>
+                          </div>
               </div>
                       <a href="messages.html" class="relative flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-900 hover:bg-slate-50 transition-colors" title="Messages">
                           <i data-lucide="bell" class="h-5 w-5"></i>
@@ -271,9 +274,15 @@
               </div>
 
               <!-- Properties List -->
-              <div class="mb-6 flex items-center justify-between">
-                  <h2 class="text-xl font-medium tracking-tight text-slate-900">Active Properties</h2>
-                  <a href="properties.html" class="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900">
+              <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div class="flex items-center gap-3 min-w-0">
+                      <h2 class="text-xl font-medium tracking-tight text-slate-900 shrink-0">Active Properties</h2>
+                      <div class="relative flex-1 min-w-0 max-w-xs">
+                          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                          <input type="text" id="dashboardSearchPropertiesTable" placeholder="Search name, address, city..." class="w-full h-9 rounded-full border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-slate-900 placeholder:text-slate-400">
+                      </div>
+                  </div>
+                  <a href="properties.html" class="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 shrink-0">
                       View all <i data-lucide="arrow-right" class="h-4 w-4"></i>
                   </a>
         </div>
@@ -289,100 +298,8 @@
                               <th scope="col" class="px-6 py-4 text-right font-medium tracking-wider">Action</th>
                           </tr>
                       </thead>
-                      <tbody class="divide-y divide-slate-100">
-                          <!-- Row 1 -->
-                          <tr onclick="window.location.href='property-detail.html?id=1'" class="group hover:bg-slate-50/50 transition-colors cursor-pointer">
-                              <td class="whitespace-nowrap px-6 py-4">
-                                  <div class="flex items-center gap-4">
-                                      <div class="h-12 w-12 overflow-hidden rounded-xl bg-slate-100">
-                                          <img src="https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/917d6f93-fb36-439a-8c48-884b67b35381_1600w.jpg" class="h-full w-full object-cover" alt="Property">
-            </div>
-            <div>
-                                          <div class="font-medium text-slate-900">Highland Lofts</div>
-                                          <div class="text-xs text-slate-500">Unit 402 • Downtown</div>
-            </div>
-          </div>
-                              </td>
-                              <td class="whitespace-nowrap px-6 py-4">
-                                  <span class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
-                                      <span class="h-1.5 w-1.5 rounded-full bg-green-600"></span>
-                                      Occupied
-                                  </span>
-                              </td>
-                              <td class="whitespace-nowrap px-6 py-4 text-slate-900 font-medium">$3,450</td>
-                              <td class="whitespace-nowrap px-6 py-4">
-                                  <div class="flex items-center gap-2">
-                                      <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&amp;fit=crop&amp;q=80&amp;w=50&amp;h=50" class="h-6 w-6 rounded-full object-cover" alt="Tenant">
-                                      <span>Arthur Clarke</span>
-            </div>
-                              </td>
-                              <td class="whitespace-nowrap px-6 py-4 text-right">
-                                  <button class="rounded-full border border-slate-200 p-2 text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all">
-                                      <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                                  </button>
-                              </td>
-                          </tr>
-                           <!-- Row 2 -->
-                           <tr onclick="window.location.href='property-detail.html?id=3'" class="group hover:bg-slate-50/50 transition-colors cursor-pointer">
-                              <td class="whitespace-nowrap px-6 py-4">
-                                  <div class="flex items-center gap-4">
-                                      <div class="h-12 w-12 overflow-hidden rounded-xl bg-slate-100">
-                                          <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=100&h=100" class="h-full w-full object-cover" alt="Property">
-            </div>
-            <div>
-                                          <div class="font-medium text-slate-900">The Meridian</div>
-                                          <div class="text-xs text-slate-500">Unit 12B • Westside</div>
-            </div>
-          </div>
-                              </td>
-                              <td class="whitespace-nowrap px-6 py-4">
-                                  <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                                      <span class="h-1.5 w-1.5 rounded-full bg-amber-600"></span>
-                                      Maintenance
-                                  </span>
-                              </td>
-                              <td class="whitespace-nowrap px-6 py-4 text-slate-900 font-medium">$2,800</td>
-                              <td class="whitespace-nowrap px-6 py-4">
-                                  <div class="flex items-center gap-2">
-                                      <div class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] font-medium text-slate-500">JS</div>
-                                      <span>Jane Smith</span>
-                                  </div>
-                              </td>
-                              <td class="whitespace-nowrap px-6 py-4 text-right">
-                                  <button class="rounded-full border border-slate-200 p-2 text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all">
-                                      <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                                  </button>
-                              </td>
-                          </tr>
-                          <!-- Row 3 -->
-                          <tr onclick="window.location.href='property-detail.html?id=2'" class="group hover:bg-slate-50/50 transition-colors cursor-pointer">
-                              <td class="whitespace-nowrap px-6 py-4">
-                                  <div class="flex items-center gap-4">
-                                      <div class="h-12 w-12 overflow-hidden rounded-xl bg-slate-100">
-                                          <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=100&h=100" class="h-full w-full object-cover" alt="Property">
-            </div>
-            <div>
-                                          <div class="font-medium text-slate-900">Sunset Villas</div>
-                                          <div class="text-xs text-slate-500">Unit 101 • Coastal</div>
-            </div>
-          </div>
-                              </td>
-                              <td class="whitespace-nowrap px-6 py-4">
-                                  <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                                      <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-                                      Vacant
-                                  </span>
-                              </td>
-                              <td class="whitespace-nowrap px-6 py-4 text-slate-900 font-medium">$4,100</td>
-                              <td class="whitespace-nowrap px-6 py-4">
-                                  <span class="text-slate-400 italic text-xs">--</span>
-                              </td>
-                              <td class="whitespace-nowrap px-6 py-4 text-right" onclick="event.stopPropagation()">
-                                  <button onclick="LeasePilot.Modal.open('addTenantModal')" class="rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white hover:bg-slate-800 transition-all">
-                                      List Now
-                                  </button>
-                              </td>
-                          </tr>
+                      <tbody id="dashboardPropertiesBody" class="divide-y divide-slate-100">
+                          <tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 text-sm">Loading properties...</td></tr>
                       </tbody>
                   </table>
         </div>
@@ -449,6 +366,129 @@
                             listEl.innerHTML = '<p class="text-slate-400">Unable to load maintenance requests.</p>';
                         }
                     }
+
+                    var dashboardPropertiesBody = document.getElementById('dashboardPropertiesBody');
+                    var dashboardSearchInput = document.getElementById('dashboardSearchProperties');
+                    var dashboardSearchTableInput = document.getElementById('dashboardSearchPropertiesTable');
+                    var dashboardPropertiesData = [];
+                    function esc(s) { return (s == null ? '' : String(s)).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+                    function renderDashboardProperties() {
+                        var data = Array.isArray(dashboardPropertiesData) ? dashboardPropertiesData : [];
+                        var q = (dashboardSearchTableInput && dashboardSearchTableInput.value) ? dashboardSearchTableInput.value.trim().toLowerCase() : '';
+                        var list = q ? data.filter(function (item) {
+                            var p = item.property;
+                            var t = item.tenant;
+                            var name = (p.name || '').toLowerCase();
+                            var addr = (p.address || '').toLowerCase();
+                            var city = (p.city || '').toLowerCase();
+                            var state = (p.state || '').toLowerCase();
+                            var zip = (p.zip || '').toLowerCase();
+                            var tenantName = t ? ((t.first_name || '') + ' ' + (t.last_name || '')).trim().toLowerCase() : '';
+                            return name.indexOf(q) >= 0 || addr.indexOf(q) >= 0 || city.indexOf(q) >= 0 || state.indexOf(q) >= 0 || zip.indexOf(q) >= 0 || tenantName.indexOf(q) >= 0;
+                        }) : data;
+                        if (!dashboardPropertiesBody) return;
+                        if (data.length === 0) {
+                            dashboardPropertiesBody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 text-sm">No properties yet.</td></tr>';
+                            return;
+                        }
+                        if (list.length === 0) {
+                            dashboardPropertiesBody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 text-sm">No properties match your search.</td></tr>';
+                            return;
+                        }
+                        dashboardPropertiesBody.innerHTML = list.map(function (item) {
+                            var p = item.property;
+                            var t = item.tenant;
+                            var id = p.id;
+                            var name = esc(p.name || 'Property');
+                            var subtitle = [p.address, p.city].filter(Boolean).slice(0, 2).join(' • ') || '—';
+                            var status = (p.status || 'vacant').toLowerCase();
+                            var statusLabel = status === 'occupied' ? 'Occupied' : status === 'maintenance' ? 'Maintenance' : 'Vacant';
+                            var statusClass = status === 'occupied' ? 'bg-green-50 text-green-700' : status === 'maintenance' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600';
+                            var rent = p.rent != null ? '$' + Number(p.rent).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '—';
+                            var ini = t ? (((t.first_name || '').trim()[0] || '') + ((t.last_name || '').trim()[0] || '')).toUpperCase() || '?' : '';
+                            var tenantHtml = t ? '<div class="flex items-center gap-2"><div class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] font-medium text-slate-500">' + esc(ini) + '</div><span>' + esc((t.first_name || '') + ' ' + (t.last_name || '').trim()) + '</span></div>' : '<span class="text-slate-400 italic text-xs">—</span>';
+                            var actionHtml = t ? '<button class="rounded-full border border-slate-200 p-2 text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all" onclick="event.stopPropagation()"><i data-lucide="more-horizontal" class="h-4 w-4"></i></button>' : '<button class="rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white hover:bg-slate-800 transition-all" onclick="event.stopPropagation(); window.location.href=\'property-detail.html?id=' + id + '\'">List Now</button>';
+                            var imgSrc = (p.image_url || '').trim() ? esc(p.image_url) : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=100&h=100';
+                            return '<tr onclick="window.location.href=\'property-detail.html?id=' + id + '\'" class="group hover:bg-slate-50/50 transition-colors cursor-pointer"><td class="whitespace-nowrap px-6 py-4"><div class="flex items-center gap-4"><div class="h-12 w-12 overflow-hidden rounded-xl bg-slate-100"><img src="' + imgSrc + '" class="h-full w-full object-cover" alt=""></div><div><div class="font-medium text-slate-900">' + name + '</div><div class="text-xs text-slate-500">' + esc(subtitle) + '</div></div></div></td><td class="whitespace-nowrap px-6 py-4"><span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ' + statusClass + '"><span class="h-1.5 w-1.5 rounded-full ' + (status === 'occupied' ? 'bg-green-600' : status === 'maintenance' ? 'bg-amber-600' : 'bg-slate-400') + '"></span>' + statusLabel + '</span></td><td class="whitespace-nowrap px-6 py-4 text-slate-900 font-medium">' + rent + '</td><td class="whitespace-nowrap px-6 py-4">' + tenantHtml + '</td><td class="whitespace-nowrap px-6 py-4 text-right" onclick="event.stopPropagation()">' + actionHtml + '</td></tr>';
+                        }).join('');
+                        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+                    }
+                    if (dashboardPropertiesBody) {
+                        try {
+                            var props = await LeasePilot.DataManager.getProperties();
+                            var tenants = await LeasePilot.DataManager.getTenants();
+                            var byProp = {};
+                            (tenants || []).forEach(function (t) { var pid = t.property_id != null ? String(t.property_id) : null; if (pid) { if (!byProp[pid]) byProp[pid] = []; byProp[pid].push(t); } });
+                            dashboardPropertiesData = (props || []).map(function (p) { var key = p.id != null ? String(p.id) : ''; var list = byProp[key] || []; return { property: p, tenant: list[0] || null }; });
+                            renderDashboardProperties();
+                        } catch (err) {
+                            dashboardPropertiesBody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 text-sm">Unable to load properties.</td></tr>';
+                        }
+                    }
+                    function onDashboardSearchInput() {
+                        renderDashboardProperties();
+                    }
+                    function getSearchMatchList(query) {
+                        var data = Array.isArray(dashboardPropertiesData) ? dashboardPropertiesData : [];
+                        if (!query) return [];
+                        var q = query.trim().toLowerCase();
+                        return data.filter(function (item) {
+                            var p = item.property;
+                            var t = item.tenant;
+                            var name = (p.name || '').toLowerCase();
+                            var addr = (p.address || '').toLowerCase();
+                            var city = (p.city || '').toLowerCase();
+                            var state = (p.state || '').toLowerCase();
+                            var zip = (p.zip || '').toLowerCase();
+                            var tenantName = t ? ((t.first_name || '') + ' ' + (t.last_name || '')).trim().toLowerCase() : '';
+                            return name.indexOf(q) >= 0 || addr.indexOf(q) >= 0 || city.indexOf(q) >= 0 || state.indexOf(q) >= 0 || zip.indexOf(q) >= 0 || tenantName.indexOf(q) >= 0;
+                        });
+                    }
+                    function showSearchDropdown(list) {
+                        var drop = document.getElementById('dashboardSearchDropdown');
+                        var content = document.getElementById('dashboardSearchDropdownContent');
+                        if (!drop || !content) return;
+                        if (!list || list.length === 0) {
+                            content.innerHTML = '<div class="px-4 py-6 text-center text-slate-500 text-sm">No properties match your search.</div>';
+                            drop.classList.remove('hidden');
+                            return;
+                        }
+                        var defaultImg = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=100&h=100';
+                        content.innerHTML = list.slice(0, 8).map(function (item) {
+                            var p = item.property;
+                            var id = p.id;
+                            var name = esc(p.name || 'Property');
+                            var address = esc([p.address, p.city, p.state, p.zip].filter(Boolean).join(', ') || '—');
+                            var imgSrc = (p.image_url || '').trim() ? esc(p.image_url) : defaultImg;
+                            return '<a href="property-detail.html?id=' + id + '" class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"><div class="h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-slate-100"><img src="' + imgSrc + '" alt="" class="h-full w-full object-cover"></div><div class="min-w-0 flex-1"><p class="font-medium text-slate-900 truncate">' + name + '</p><p class="text-xs text-slate-500 truncate">' + address + '</p></div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-300 shrink-0"></i></a>';
+                        }).join('');
+                        drop.classList.remove('hidden');
+                        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+                    }
+                    function hideSearchDropdown() {
+                        var drop = document.getElementById('dashboardSearchDropdown');
+                        if (drop) drop.classList.add('hidden');
+                    }
+                    if (dashboardSearchInput) {
+                        dashboardSearchInput.addEventListener('input', function (e) {
+                            var v = (e && e.target && e.target.value != null) ? String(e.target.value) : '';
+                            var list = getSearchMatchList(v);
+                            if (!v) hideSearchDropdown();
+                            else showSearchDropdown(list);
+                        });
+                        dashboardSearchInput.addEventListener('focus', function () {
+                            var v = (dashboardSearchInput && dashboardSearchInput.value) ? dashboardSearchInput.value.trim() : '';
+                            if (v) { var list = getSearchMatchList(v); showSearchDropdown(list); }
+                        });
+                        dashboardSearchInput.addEventListener('keydown', function (e) {
+                            if (e.key === 'Escape') { hideSearchDropdown(); e.target.blur(); }
+                        });
+                    }
+                    document.addEventListener('click', function (e) {
+                        var wrap = document.getElementById('dashboardSearchWrap');
+                        if (wrap && !wrap.contains(e.target)) hideSearchDropdown();
+                    });
+                    if (dashboardSearchTableInput) { dashboardSearchTableInput.addEventListener('input', onDashboardSearchInput); dashboardSearchTableInput.addEventListener('keyup', function (e) { if (e.key === 'Enter') onDashboardSearchInput(); }); }
                 } catch (e) {
                     showError(e && e.message ? e.message : 'Auth check failed.');
                 }
