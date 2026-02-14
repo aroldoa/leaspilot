@@ -60,7 +60,11 @@ router.get('/me', authenticateToken, async (req, res) => {
     fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'users.js:GET/me',message:'catch',data:{errorMessage:error?.message,errorCode:error?.code},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
     // #endregion
     console.error('Error fetching user:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.status(500).json({
+      error: isProduction ? 'Internal server error' : (error?.message || 'Internal server error'),
+      ...(isProduction ? {} : { code: error?.code }),
+    });
   }
 });
 
@@ -134,7 +138,11 @@ router.post('/me/avatar', authenticateToken, (req, res, next) => {
     fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'users.js:POST/me/avatar',message:'catch',data:{errorMessage:error?.message,errorCode:error?.code},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
     // #endregion
     console.error('Error saving avatar:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.status(500).json({
+      error: isProduction ? 'Internal server error' : (error?.message || 'Internal server error'),
+      ...(isProduction ? {} : { code: error?.code }),
+    });
   }
 });
 
