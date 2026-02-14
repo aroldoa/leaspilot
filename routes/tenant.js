@@ -7,14 +7,9 @@ import multer from 'multer';
 import { authenticateToken, requireTenant } from '../middleware/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadDir = process.env.VERCEL
+const uploadDir = process.env.VERCEL === '1' || __dirname.startsWith('/var/task')
   ? path.join(os.tmpdir(), 'leasepilot-uploads', 'maintenance')
   : path.join(__dirname, '..', 'uploads', 'maintenance');
-try {
-  fs.mkdirSync(uploadDir, { recursive: true });
-} catch (err) {
-  if (err.code !== 'ENOENT' && err.code !== 'EEXIST') console.warn('Upload dir not created:', err.message);
-}
 
 const maintenanceUpload = multer({
   storage: multer.diskStorage({

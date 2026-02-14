@@ -133,6 +133,9 @@ app.use('/api', (req, res) => {
 
 // Central error handler (no stack trace in production)
 app.use((err, req, res, next) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server.js:errorHandler',message:'unhandled',data:{errorMessage:err?.message,path:req?.path},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+  // #endregion
   console.error('Unhandled error:', err);
   res.status(500).json({
     error: isProduction ? 'Internal server error' : err.message,

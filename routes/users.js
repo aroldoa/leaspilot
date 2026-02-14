@@ -11,21 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectAvatarDir = path.join(__dirname, '..', 'uploads', 'avatars');
 const tmpAvatarDir = path.join(os.tmpdir(), 'leasepilot-uploads', 'avatars');
 const isServerless = __dirname.startsWith('/var/task') || process.env.VERCEL === '1';
-let avatarDir = tmpAvatarDir;
-if (!isServerless) {
-  try {
-    fs.mkdirSync(projectAvatarDir, { recursive: true });
-    avatarDir = projectAvatarDir;
-  } catch (err) {
-    try {
-      fs.mkdirSync(tmpAvatarDir, { recursive: true });
-    } catch (e) {}
-  }
-} else {
-  try {
-    fs.mkdirSync(tmpAvatarDir, { recursive: true });
-  } catch (e) {}
-}
+const avatarDir = isServerless ? tmpAvatarDir : projectAvatarDir;
 
 const avatarUpload = multer({
   storage: multer.diskStorage({
@@ -54,6 +40,9 @@ const router = express.Router();
 
 // Get current user
 router.get('/me', authenticateToken, async (req, res) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'users.js:GET/me',message:'entry',data:{hasPool:!!req.app.locals.pool,userId:req.userId},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+  // #endregion
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
@@ -67,6 +56,9 @@ router.get('/me', authenticateToken, async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (error) {
+    // #region agent log
+    fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'users.js:GET/me',message:'catch',data:{errorMessage:error?.message,errorCode:error?.code},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+    // #endregion
     console.error('Error fetching user:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -119,6 +111,9 @@ router.post('/me/avatar', authenticateToken, (req, res, next) => {
     next();
   });
 }, async (req, res) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'users.js:POST/me/avatar',message:'handler entry',data:{hasFile:!!req.file,userId:req.userId,hasPool:!!req.app.locals.pool},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+  // #endregion
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No image file provided' });
@@ -135,6 +130,9 @@ router.post('/me/avatar', authenticateToken, (req, res, next) => {
     );
     res.json(result.rows[0]);
   } catch (error) {
+    // #region agent log
+    fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'users.js:POST/me/avatar',message:'catch',data:{errorMessage:error?.message,errorCode:error?.code},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+    // #endregion
     console.error('Error saving avatar:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
