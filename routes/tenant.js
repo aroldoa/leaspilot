@@ -1,17 +1,29 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import { authenticateToken, requireTenant } from '../middleware/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadDir = path.join(__dirname, '..', 'uploads', 'maintenance');
-fs.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'leasepilot-uploads', 'maintenance')
+  : path.join(__dirname, '..', 'uploads', 'maintenance');
+try {
+  fs.mkdirSync(uploadDir, { recursive: true });
+} catch (err) {
+  if (err.code !== 'ENOENT' && err.code !== 'EEXIST') console.warn('Upload dir not created:', err.message);
+}
 
 const maintenanceUpload = multer({
   storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
+    destination: (req, file, cb) => {
+      try {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      } catch (e) {}
+      cb(null, uploadDir);
+    },
     filename: (req, file, cb) => {
       const ext = (path.extname(file.originalname) || '').toLowerCase();
       const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
