@@ -51,24 +51,30 @@ app.get('/status', (req, res) => {
     </body></html>
   `);
 });
+// Avatar upload dir must match routes/users.js: same path for write and read to avoid 404
+const isServerless = __dirname.startsWith('/var/task') || process.env.VERCEL === '1';
+const avatarDir = isServerless
+  ? path.join(os.tmpdir(), 'leasepilot-uploads', 'avatars')
+  : path.join(__dirname, 'uploads', 'avatars');
+try {
+  fs.mkdirSync(avatarDir, { recursive: true });
+} catch (e) {}
+// Serve avatar files from the same directory we upload to (before any static so path is correct)
+app.get('/uploads/avatars/:filename', (req, res, next) => {
+  const filename = path.basename(req.params.filename);
+  if (!filename || filename.includes('..')) return next();
+  const filePath = path.join(avatarDir, filename);
+  fs.stat(filePath, (err, stat) => {
+    if (err || !stat.isFile()) return next();
+    const ext = path.extname(filename).toLowerCase();
+    const types = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp' };
+    res.type(types[ext] || 'image/jpeg');
+    fs.createReadStream(filePath).pipe(res);
+  });
+});
 // Serve static files (HTML, JS, etc.) from project root
 app.use(express.static(__dirname));
-// On serverless (Vercel), avatars are stored in tmp; serve them from there before falling back to static
-const isServerless = __dirname.startsWith('/var/task') || process.env.VERCEL === '1';
-if (isServerless) {
-  const tmpAvatarsDir = path.join(os.tmpdir(), 'leasepilot-uploads', 'avatars');
-  app.get('/uploads/avatars/:filename', (req, res, next) => {
-    const filename = path.basename(req.params.filename);
-    if (!filename || filename.includes('..')) return next();
-    const filePath = path.join(tmpAvatarsDir, filename);
-    fs.stat(filePath, (err, stat) => {
-      if (err || !stat.isFile()) return next();
-      res.type(path.extname(filename) || 'image/jpeg');
-      fs.createReadStream(filePath).pipe(res);
-    });
-  });
-}
-// Serve uploaded files (avatars, maintenance photos)
+// Serve other uploaded files (e.g. maintenance photos)
 const uploadsPath = path.join(__dirname, 'uploads');
 app.use('/uploads', express.static(uploadsPath));
 
