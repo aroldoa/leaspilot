@@ -195,7 +195,7 @@ router.get('/verify', async (req, res) => {
     const pool = req.app.locals.pool;
 
     const result = await pool.query(
-      'SELECT id, email, name, role FROM users WHERE id = $1',
+      'SELECT id, email, name, role, avatar_url FROM users WHERE id = $1',
       [decoded.userId]
     );
 
