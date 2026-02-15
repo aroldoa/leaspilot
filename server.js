@@ -61,7 +61,7 @@ app.get('/uploads/avatars/:filename', (req, res, next) => {
   const filePath = path.join(avatarDir, filename);
   fs.stat(filePath, (err, stat) => {
     // #region agent log
-    (function(){const p=path.join(__dirname,'.cursor','debug.log');const payload={location:'server.js:GET /uploads/avatars/:filename',message:'stat result',data:{avatarDir,filename,filePath,fileExists:!(err||!stat||!stat.isFile()),statErr:err?String(err.message):null},timestamp:Date.now(),hypothesisId:'H1'};try{fs.mkdirSync(path.dirname(p),{recursive:true});fs.appendFileSync(p,JSON.stringify(payload)+'\n');}catch(e){}fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});}());
+    (function(){const p=path.join(__dirname,'.cursor','debug.log');const payload={location:'server.js:GET /uploads/avatars/:filename',message:'stat result',data:{avatarDir,filename,filePath,fileExists:!(err||!stat||!stat.isFile()),statErr:err?String(err.message):null},timestamp:Date.now(),hypothesisId:'H1'};if(!isProduction)console.error('[avatar]',payload.location,payload.data);try{fs.mkdirSync(path.dirname(p),{recursive:true});fs.appendFileSync(p,JSON.stringify(payload)+'\n');}catch(e){}fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});}());
     // #endregion
     if (err || !stat.isFile()) return next();
     const ext = path.extname(filename).toLowerCase();

@@ -4,6 +4,14 @@
 const API_BASE_URL = (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http'))
   ? `${window.location.origin}/api`
   : 'http://localhost:3000/api';
+// Origin for avatar/image URLs: use API host so uploads are served from the server that has the files (fixes 404 when app and API are on different origins)
+function getAvatarOrigin() {
+  if (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) {
+    const o = API_BASE_URL.replace(/\/api\/?$/, '');
+    if (o) return o;
+  }
+  return (typeof window !== 'undefined' && window.location && window.location.origin) || '';
+}
 
 // API Helper Functions
 const API = {
@@ -678,7 +686,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Update sidebar avatar so it stays consistent across all pages
     const defaultAvatar = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100';
     const avatarUrl = (user.avatar_url && user.avatar_url.trim())
-      ? (user.avatar_url.startsWith('/') ? (window.location.origin || '') + user.avatar_url : user.avatar_url)
+      ? (user.avatar_url.startsWith('/') ? getAvatarOrigin() + user.avatar_url : user.avatar_url)
       : defaultAvatar;
     document.querySelectorAll('[data-user-avatar]').forEach(img => {
       img.src = avatarUrl;
@@ -710,5 +718,6 @@ window.LeasePilot = {
   formatCurrency,
   formatDate,
   initIcons,
-  API
+  API,
+  getAvatarOrigin
 };

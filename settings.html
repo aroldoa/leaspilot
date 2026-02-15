@@ -240,7 +240,8 @@
 
             var defaultAvatar = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100';
             function avatarFullUrl(url) {
-                return (url && url.startsWith('/')) ? (window.location.origin || '') + url : (url || defaultAvatar);
+                var origin = (LeasePilot && LeasePilot.getAvatarOrigin) ? LeasePilot.getAvatarOrigin() : (window.location.origin || '');
+                return (url && url.startsWith('/')) ? origin + url : (url || defaultAvatar);
             }
             function setProfilePhotoSrc(url) {
                 var full = avatarFullUrl(url);
