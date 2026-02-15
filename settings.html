@@ -245,7 +245,6 @@
             }
             function setProfilePhotoSrc(url) {
                 var full = avatarFullUrl(url);
-                if (typeof fetch !== 'undefined') fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'settings.html:setProfilePhotoSrc',message:'avatar URL set',data:{inputUrl:url,fullUrl:full,origin:window.location.origin},timestamp:Date.now(),hypothesisId:'H3'})}).catch(function(){});
                 var fallback = function() { this.onerror = null; this.src = defaultAvatar; };
                 var el = document.getElementById('profilePhoto');
                 if (el) { el.src = full; el.onerror = fallback; }

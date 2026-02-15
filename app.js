@@ -137,9 +137,6 @@ async function checkAuth() {
   try {
     const response = await API.get('/auth/verify');
     if (response.user) {
-      // #region agent log
-      fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:checkAuth',message:'storing user after verify',data:{avatar_url:response.user.avatar_url,hasAvatarUrl:!!(response.user.avatar_url&&response.user.avatar_url.trim())},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
-      // #endregion
       localStorage.setItem('user', JSON.stringify(response.user));
       const role = (response.user.role || '').toLowerCase();
       const path = window.location.pathname || '';
