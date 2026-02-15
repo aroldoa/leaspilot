@@ -244,9 +244,10 @@
             }
             function setProfilePhotoSrc(url) {
                 var full = avatarFullUrl(url);
+                var fallback = function() { this.onerror = null; this.src = defaultAvatar; };
                 var el = document.getElementById('profilePhoto');
-                if (el) el.src = full;
-                document.querySelectorAll('[data-user-avatar]').forEach(function(img) { img.src = full; });
+                if (el) { el.src = full; el.onerror = fallback; }
+                document.querySelectorAll('[data-user-avatar]').forEach(function(img) { img.src = full; img.onerror = fallback; });
             }
 
             var dm = LeasePilot.DataManager;

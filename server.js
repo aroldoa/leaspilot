@@ -21,6 +21,7 @@ import contractorsRoutes from './routes/contractors.js';
 import contractorPortalRoutes from './routes/contractor.js';
 import smsRoutes from './routes/sms.js';
 import messagesRoutes from './routes/messages.js';
+import { avatarDir, ensureAvatarDir } from './lib/avatarDir.js';
 
 dotenv.config();
 
@@ -51,14 +52,8 @@ app.get('/status', (req, res) => {
     </body></html>
   `);
 });
-// Avatar upload dir must match routes/users.js: same path for write and read to avoid 404
-const isServerless = __dirname.startsWith('/var/task') || process.env.VERCEL === '1';
-const avatarDir = isServerless
-  ? path.join(os.tmpdir(), 'leasepilot-uploads', 'avatars')
-  : path.join(__dirname, 'uploads', 'avatars');
-try {
-  fs.mkdirSync(avatarDir, { recursive: true });
-} catch (e) {}
+// Avatar dir: single source of truth so upload (users.js) and serve use same path
+ensureAvatarDir();
 // Serve avatar files from the same directory we upload to (before any static so path is correct)
 app.get('/uploads/avatars/:filename', (req, res, next) => {
   const filename = path.basename(req.params.filename);

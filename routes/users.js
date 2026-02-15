@@ -1,17 +1,12 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import os from 'os';
-import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
 import { authenticateToken } from '../middleware/auth.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const projectAvatarDir = path.join(__dirname, '..', 'uploads', 'avatars');
-const tmpAvatarDir = path.join(os.tmpdir(), 'leasepilot-uploads', 'avatars');
-const isServerless = __dirname.startsWith('/var/task') || process.env.VERCEL === '1';
-const avatarDir = isServerless ? tmpAvatarDir : projectAvatarDir;
+import { avatarDir, ensureAvatarDir } from '../lib/avatarDir.js';
+ensureAvatarDir();
 
 const avatarUpload = multer({
   storage: multer.diskStorage({

@@ -679,6 +679,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       : defaultAvatar;
     document.querySelectorAll('[data-user-avatar]').forEach(img => {
       img.src = avatarUrl;
+      img.onerror = function () { this.onerror = null; this.src = defaultAvatar; };
     });
   }
   
