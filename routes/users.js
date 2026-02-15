@@ -5,17 +5,19 @@ import bcrypt from 'bcryptjs';
 import multer from 'multer';
 import { authenticateToken } from '../middleware/auth.js';
 
-import { avatarDir, ensureAvatarDir } from '../lib/avatarDir.js';
-ensureAvatarDir();
+function createUserRouter(avatarDir) {
+  try {
+    fs.mkdirSync(avatarDir, { recursive: true });
+  } catch (e) {}
 
-const avatarUpload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      try {
-        fs.mkdirSync(avatarDir, { recursive: true });
-      } catch (e) {}
-      cb(null, avatarDir);
-    },
+  const avatarUpload = multer({
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => {
+        try {
+          fs.mkdirSync(avatarDir, { recursive: true });
+        } catch (e) {}
+        cb(null, avatarDir);
+      },
     filename: (req, file, cb) => {
       const ext = (path.extname(file.originalname) || '').toLowerCase();
       const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
@@ -31,7 +33,7 @@ const avatarUpload = multer({
   limits: { fileSize: 2 * 1024 * 1024 }
 }).single('avatar');
 
-const router = express.Router();
+  const router = express.Router();
 
 // Get current user
 router.get('/me', authenticateToken, async (req, res) => {
@@ -129,7 +131,7 @@ router.post('/me/avatar', authenticateToken, (req, res, next) => {
     );
     const saved = result.rows[0];
     // #region agent log
-    (function(){const p=path.join(process.cwd(),'.cursor','debug.log');const payload={location:'users.js:POST/me/avatar',message:'upload success',data:{avatarDir,filename:req.file.filename,filePath:req.file.path,savedAvatarUrl:saved&&saved.avatar_url},timestamp:Date.now(),hypothesisId:'H4'};if(process.env.NODE_ENV!=='production')console.error('[avatar]',payload.location,payload.data);try{fs.mkdirSync(path.dirname(p),{recursive:true});fs.appendFileSync(p,JSON.stringify(payload)+'\n');}catch(e){}fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});}());
+    (function(){const payload={location:'users.js:POST/me/avatar',message:'upload success',data:{avatarDir,filename:req.file.filename,filePath:req.file.path,savedAvatarUrl:saved&&saved.avatar_url},timestamp:Date.now(),hypothesisId:'H4'};if(process.env.NODE_ENV!=='production')console.error('[avatar]',payload.location,payload.data);const p=path.join(process.cwd(),'.cursor','debug.log'),p2=path.join(process.cwd(),'avatar-debug.ndjson');try{fs.mkdirSync(path.dirname(p),{recursive:true});fs.appendFileSync(p,JSON.stringify(payload)+'\n');}catch(e){}try{fs.appendFileSync(p2,JSON.stringify(payload)+'\n');}catch(e){}fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});}());
     // #endregion
     res.json(saved);
   } catch (error) {
@@ -199,7 +201,10 @@ router.delete('/me', authenticateToken, async (req, res) => {
   }
 });
 
-export default router;
+  return router;
+}
+
+export default createUserRouter;
 
 
 

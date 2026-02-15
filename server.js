@@ -15,17 +15,23 @@ import propertyRoutes from './routes/properties.js';
 import tenantRoutes from './routes/tenants.js';
 import tenantPortalRoutes from './routes/tenant.js';
 import transactionRoutes from './routes/transactions.js';
-import userRoutes from './routes/users.js';
 import maintenanceRequestsRoutes from './routes/maintenance-requests.js';
 import contractorsRoutes from './routes/contractors.js';
 import contractorPortalRoutes from './routes/contractor.js';
 import smsRoutes from './routes/sms.js';
 import messagesRoutes from './routes/messages.js';
-import { avatarDir, ensureAvatarDir } from './lib/avatarDir.js';
+import createUserRouter from './routes/users.js';
 
 dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isServerless = __dirname.startsWith('/var/task') || process.env.VERCEL === '1';
+const serverAvatarDir = isServerless
+  ? path.join(os.tmpdir(), 'leasepilot-uploads', 'avatars')
+  : path.join(__dirname, 'uploads', 'avatars');
+try {
+  fs.mkdirSync(serverAvatarDir, { recursive: true });
+} catch (e) {}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,22 +58,27 @@ app.get('/status', (req, res) => {
     </body></html>
   `);
 });
-// Avatar dir: single source of truth so upload (users.js) and serve use same path
-ensureAvatarDir();
-// Serve avatar files from the same directory we upload to (before any static so path is correct)
+// Serve avatar files from the same directory we upload to (single source of truth: serverAvatarDir)
 app.get('/uploads/avatars/:filename', (req, res, next) => {
   const filename = path.basename(req.params.filename);
   if (!filename || filename.includes('..')) return next();
-  const filePath = path.join(avatarDir, filename);
-  fs.stat(filePath, (err, stat) => {
-    // #region agent log
-    (function(){const p=path.join(__dirname,'.cursor','debug.log');const payload={location:'server.js:GET /uploads/avatars/:filename',message:'stat result',data:{avatarDir,filename,filePath,fileExists:!(err||!stat||!stat.isFile()),statErr:err?String(err.message):null},timestamp:Date.now(),hypothesisId:'H1'};if(!isProduction)console.error('[avatar]',payload.location,payload.data);try{fs.mkdirSync(path.dirname(p),{recursive:true});fs.appendFileSync(p,JSON.stringify(payload)+'\n');}catch(e){}fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});}());
-    // #endregion
-    if (err || !stat.isFile()) return next();
+  const filePath = path.join(serverAvatarDir, filename);
+  const fallbackPath = path.join(__dirname, 'uploads', 'avatars', filename);
+  function tryServe(where, statErr) {
     const ext = path.extname(filename).toLowerCase();
     const types = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp' };
     res.type(types[ext] || 'image/jpeg');
-    fs.createReadStream(filePath).pipe(res);
+    fs.createReadStream(where).pipe(res);
+  }
+  fs.stat(filePath, (err, stat) => {
+    // #region agent log
+    (function(){const payload={location:'server.js:GET /uploads/avatars/:filename',message:'stat result',data:{serverAvatarDir,filename,filePath,fileExists:!(err||!stat||!stat.isFile()),statErr:err?String(err.message):null},timestamp:Date.now(),hypothesisId:'H1'};if(!isProduction)console.error('[avatar]',payload.location,payload.data);const p=path.join(__dirname,'.cursor','debug.log'),p2=path.join(__dirname,'avatar-debug.ndjson');try{fs.mkdirSync(path.dirname(p),{recursive:true});fs.appendFileSync(p,JSON.stringify(payload)+'\n');}catch(e){}try{fs.appendFileSync(p2,JSON.stringify(payload)+'\n');}catch(e){}fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});}());
+    // #endregion
+    if (!err && stat && stat.isFile()) return tryServe(filePath);
+    fs.stat(fallbackPath, (err2, stat2) => {
+      if (!err2 && stat2 && stat2.isFile()) return tryServe(fallbackPath);
+      return next();
+    });
   });
 });
 // Serve static files (HTML, JS, etc.) from project root
@@ -145,7 +156,7 @@ app.use('/api/contractor', requirePool, contractorPortalRoutes);
 app.use('/api/sms', requirePool, smsRoutes);
 app.use('/api/messages', requirePool, messagesRoutes);
 app.use('/api/transactions', requirePool, transactionRoutes);
-app.use('/api/users', requirePool, userRoutes);
+app.use('/api/users', requirePool, createUserRouter(serverAvatarDir));
 
 // 404 for unknown API routes
 app.use('/api', (req, res) => {
