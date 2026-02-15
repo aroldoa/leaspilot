@@ -1,5 +1,7 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -51,6 +53,21 @@ app.get('/status', (req, res) => {
 });
 // Serve static files (HTML, JS, etc.) from project root
 app.use(express.static(__dirname));
+// On serverless (Vercel), avatars are stored in tmp; serve them from there before falling back to static
+const isServerless = __dirname.startsWith('/var/task') || process.env.VERCEL === '1';
+if (isServerless) {
+  const tmpAvatarsDir = path.join(os.tmpdir(), 'leasepilot-uploads', 'avatars');
+  app.get('/uploads/avatars/:filename', (req, res, next) => {
+    const filename = path.basename(req.params.filename);
+    if (!filename || filename.includes('..')) return next();
+    const filePath = path.join(tmpAvatarsDir, filename);
+    fs.stat(filePath, (err, stat) => {
+      if (err || !stat.isFile()) return next();
+      res.type(path.extname(filename) || 'image/jpeg');
+      fs.createReadStream(filePath).pipe(res);
+    });
+  });
+}
 // Serve uploaded files (avatars, maintenance photos)
 const uploadsPath = path.join(__dirname, 'uploads');
 app.use('/uploads', express.static(uploadsPath));
