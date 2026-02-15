@@ -37,6 +37,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Required behind Vercel/reverse proxy so rate limiter and X-Forwarded-* are trusted
+app.set('trust proxy', 1);
+
+if ((process.env.VERCEL === '1' || process.env.VERCEL === 'true') && !process.env.BLOB_READ_WRITE_TOKEN) {
+  console.warn('⚠️ BLOB_READ_WRITE_TOKEN is not set. Profile avatars will not persist (serverless tmp is ephemeral). Add a Vercel Blob store and set the token to fix.');
+}
+
 // Security headers (CSP disabled to avoid breaking static HTML/scripts)
 app.use(helmet({ contentSecurityPolicy: false }));
 
