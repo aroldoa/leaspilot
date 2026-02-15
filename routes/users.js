@@ -3,43 +3,47 @@ import path from 'path';
 import fs from 'fs';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
+import { put as putBlob } from '@vercel/blob';
 import { authenticateToken } from '../middleware/auth.js';
 
+const useVercelBlob = !!process.env.BLOB_READ_WRITE_TOKEN;
+
 function createUserRouter(avatarDir) {
-  try {
-    fs.mkdirSync(avatarDir, { recursive: true });
-  } catch (e) {}
+  if (!useVercelBlob) {
+    try {
+      fs.mkdirSync(avatarDir, { recursive: true });
+    } catch (e) {}
+  }
 
   const avatarUpload = multer({
-    storage: multer.diskStorage({
-      destination: (req, file, cb) => {
-        try {
-          fs.mkdirSync(avatarDir, { recursive: true });
-        } catch (e) {}
-        cb(null, avatarDir);
-      },
-    filename: (req, file, cb) => {
-      const ext = (path.extname(file.originalname) || '').toLowerCase();
-      const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-      const safe = allowed.includes(ext) ? ext : '.jpg';
-      cb(null, `user-${req.userId}-${Date.now()}${safe}`);
-    }
-  }),
-  fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (allowed.includes(file.mimetype)) cb(null, true);
-    else cb(new Error('Only JPG, PNG, GIF or WebP images allowed (max 2MB)'), false);
-  },
-  limits: { fileSize: 2 * 1024 * 1024 }
-}).single('avatar');
+    storage: useVercelBlob
+      ? multer.memoryStorage()
+      : multer.diskStorage({
+          destination: (req, file, cb) => {
+            try {
+              fs.mkdirSync(avatarDir, { recursive: true });
+            } catch (e) {}
+            cb(null, avatarDir);
+          },
+          filename: (req, file, cb) => {
+            const ext = (path.extname(file.originalname) || '').toLowerCase();
+            const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+            const safe = allowed.includes(ext) ? ext : '.jpg';
+            cb(null, `user-${req.userId}-${Date.now()}${safe}`);
+          }
+        }),
+    fileFilter: (req, file, cb) => {
+      const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (allowed.includes(file.mimetype)) cb(null, true);
+      else cb(new Error('Only JPG, PNG, GIF or WebP images allowed (max 2MB)'), false);
+    },
+    limits: { fileSize: 2 * 1024 * 1024 }
+  }).single('avatar');
 
   const router = express.Router();
 
 // Get current user
 router.get('/me', authenticateToken, async (req, res) => {
-  // #region agent log
-  fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'users.js:GET/me',message:'entry',data:{hasPool:!!req.app.locals.pool,userId:req.userId},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
-  // #endregion
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
@@ -53,9 +57,6 @@ router.get('/me', authenticateToken, async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'users.js:GET/me',message:'catch',data:{errorMessage:error?.message,errorCode:error?.code},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
-    // #endregion
     console.error('Error fetching user:', error);
     const isProduction = process.env.NODE_ENV === 'production';
     res.status(500).json({
@@ -112,15 +113,20 @@ router.post('/me/avatar', authenticateToken, (req, res, next) => {
     next();
   });
 }, async (req, res) => {
-  // #region agent log
-  fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'users.js:POST/me/avatar',message:'handler entry',data:{hasFile:!!req.file,userId:req.userId,hasPool:!!req.app.locals.pool},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
-  // #endregion
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No image file provided' });
     }
     const pool = req.app.locals.pool;
-    const avatarUrl = '/uploads/avatars/' + req.file.filename;
+    let avatarUrl;
+    if (useVercelBlob && req.file.buffer) {
+      const ext = (path.extname(req.file.originalname) || '').toLowerCase() || '.jpg';
+      const pathname = `avatars/user-${req.userId}-${Date.now()}${ext}`;
+      const blob = await putBlob(pathname, req.file.buffer, { access: 'public' });
+      avatarUrl = blob.url;
+    } else {
+      avatarUrl = '/uploads/avatars/' + req.file.filename;
+    }
     await pool.query(
       'UPDATE users SET avatar_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       [avatarUrl, req.userId]
@@ -129,17 +135,8 @@ router.post('/me/avatar', authenticateToken, (req, res, next) => {
       'SELECT id, email, name, role, avatar_url FROM users WHERE id = $1',
       [req.userId]
     );
-    const saved = result.rows[0];
-    const expectedPath = path.join(avatarDir, req.file.filename);
-    const fileExistsAfterUpload = fs.existsSync(expectedPath);
-    // #region agent log
-    (function(){const payload={location:'users.js:POST/me/avatar',message:'upload success',data:{avatarDir,filename:req.file.filename,filePath:req.file.path,expectedPath,fileExistsAfterUpload,savedAvatarUrl:saved&&saved.avatar_url},timestamp:Date.now(),hypothesisId:'H4'};if(process.env.NODE_ENV!=='production')console.error('[avatar]',payload.location,payload.data);const p=path.join(process.cwd(),'.cursor','debug.log'),p2=path.join(process.cwd(),'avatar-debug.ndjson');try{fs.mkdirSync(path.dirname(p),{recursive:true});fs.appendFileSync(p,JSON.stringify(payload)+'\n');}catch(e){}try{fs.appendFileSync(p2,JSON.stringify(payload)+'\n');}catch(e){}fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});}());
-    // #endregion
-    res.json(saved);
+    res.json(result.rows[0]);
   } catch (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'users.js:POST/me/avatar',message:'catch',data:{errorMessage:error?.message,errorCode:error?.code},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
-    // #endregion
     console.error('Error saving avatar:', error);
     const isProduction = process.env.NODE_ENV === 'production';
     res.status(500).json({

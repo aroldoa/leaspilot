@@ -78,13 +78,10 @@ app.get('/uploads/avatars/:filename', (req, res, next) => {
     fs.createReadStream(where).pipe(res);
   }
   fs.stat(filePath, (err, stat) => {
-    // #region agent log
-    (function(){const payload={location:'server.js:GET /uploads/avatars/:filename',message:'stat result',data:{serverAvatarDir,filename,filePath,fileExists:!(err||!stat||!stat.isFile()),statErr:err?String(err.message):null},timestamp:Date.now(),hypothesisId:'H1'};if(!isProduction)console.error('[avatar]',payload.location,payload.data);const p=path.join(__dirname,'.cursor','debug.log'),p2=path.join(__dirname,'avatar-debug.ndjson');try{fs.mkdirSync(path.dirname(p),{recursive:true});fs.appendFileSync(p,JSON.stringify(payload)+'\n');}catch(e){}try{fs.appendFileSync(p2,JSON.stringify(payload)+'\n');}catch(e){}fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});}());
-    // #endregion
     if (!err && stat && stat.isFile()) return tryServe(filePath);
     fs.stat(fallbackPath, (err2, stat2) => {
       if (!err2 && stat2 && stat2.isFile()) return tryServe(fallbackPath);
-      return next();
+      next();
     });
   });
 });
@@ -171,7 +168,6 @@ app.get('/api/avatar/:filename', (req, res) => {
     if (!err && stat && stat.isFile()) return tryStream(primaryPath);
     fs.stat(fallbackPath, (err2, stat2) => {
       if (!err2 && stat2 && stat2.isFile()) return tryStream(fallbackPath);
-      if (!isProduction) console.error('[avatar] GET /api/avatar 404', { serverAvatarDir, primaryPath, fallbackPath, filename });
       res.status(404).end();
     });
   });
