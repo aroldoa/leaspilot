@@ -40,11 +40,18 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Security headers (CSP disabled to avoid breaking static HTML/scripts)
 app.use(helmet({ contentSecurityPolicy: false }));
 
-// CORS: allow production app and localhost (configurable via ALLOWED_ORIGINS)
+// CORS: allow production app and localhost; reflect request origin when it matches so proxy/redirect don't break
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
   : ['https://app.leasepilotai.com', 'http://localhost:3000', 'http://127.0.0.1:3000'];
-app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
+function corsOrigin(origin, cb) {
+  if (!origin) return cb(null, true);
+  const o = origin.replace(/\/$/, '');
+  if (ALLOWED_ORIGINS.some(allowed => allowed.replace(/\/$/, '') === o)) return cb(null, origin);
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(o) || /leasepilotai\.com$/i.test(o)) return cb(null, origin);
+  return cb(null, false);
+}
+app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json());
 // Root and status first so they always work
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
