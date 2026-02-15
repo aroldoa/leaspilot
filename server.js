@@ -109,6 +109,7 @@ const apiLimiter = rateLimit({
 app.use('/api/', (req, res, next) => {
   const p = req.path;
   if (p.startsWith('auth') || p.startsWith('/auth')) return next();
+  if (p.startsWith('avatar') || p.startsWith('/avatar')) return next();
   // Don't count GET /properties or GET /tenants (loaded on every page)
   if (req.method === 'GET' && (p.startsWith('properties') || p.startsWith('/properties') || p.startsWith('tenants') || p.startsWith('/tenants'))) return next();
   apiLimiter(req, res, next);
@@ -146,16 +147,25 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Stream avatar from serverAvatarDir so image requests always hit this server (fixes 404 when /uploads is served elsewhere)
-app.get('/api/avatar/:filename', (req, res, next) => {
+app.get('/api/avatar/:filename', (req, res) => {
   const filename = path.basename(req.params.filename);
   if (!filename || filename.includes('..')) return res.status(400).end();
-  const filePath = path.join(serverAvatarDir, filename);
-  fs.stat(filePath, (err, stat) => {
-    if (err || !stat || !stat.isFile()) return next();
+  const primaryPath = path.join(serverAvatarDir, filename);
+  const fallbackPath = path.join(__dirname, 'uploads', 'avatars', filename);
+
+  function tryStream(filePath) {
     const ext = path.extname(filename).toLowerCase();
     const types = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp' };
     res.type(types[ext] || 'image/jpeg');
     fs.createReadStream(filePath).pipe(res);
+  }
+
+  fs.stat(primaryPath, (err, stat) => {
+    if (!err && stat && stat.isFile()) return tryStream(primaryPath);
+    fs.stat(fallbackPath, (err2, stat2) => {
+      if (!err2 && stat2 && stat2.isFile()) return tryStream(fallbackPath);
+      res.status(404).end();
+    });
   });
 });
 
