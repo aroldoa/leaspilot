@@ -683,7 +683,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Update sidebar avatar so it stays consistent across all pages
     const defaultAvatar = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100';
     const avatarUrl = (user.avatar_url && user.avatar_url.trim())
-      ? (user.avatar_url.startsWith('/') ? getAvatarOrigin() + user.avatar_url : user.avatar_url)
+      ? (user.avatar_url.startsWith('/uploads/avatars/')
+          ? getAvatarOrigin() + '/api/avatar/' + user.avatar_url.split('/').pop()
+          : user.avatar_url.startsWith('/') ? getAvatarOrigin() + user.avatar_url : user.avatar_url)
       : defaultAvatar;
     document.querySelectorAll('[data-user-avatar]').forEach(img => {
       img.src = avatarUrl;
