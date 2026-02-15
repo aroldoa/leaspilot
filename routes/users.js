@@ -127,7 +127,11 @@ router.post('/me/avatar', authenticateToken, (req, res, next) => {
       'SELECT id, email, name, role, avatar_url FROM users WHERE id = $1',
       [req.userId]
     );
-    res.json(result.rows[0]);
+    const saved = result.rows[0];
+    // #region agent log
+    (function(){const p=path.join(process.cwd(),'.cursor','debug.log');const payload={location:'users.js:POST/me/avatar',message:'upload success',data:{avatarDir,filename:req.file.filename,filePath:req.file.path,savedAvatarUrl:saved&&saved.avatar_url},timestamp:Date.now(),hypothesisId:'H4'};try{fs.mkdirSync(path.dirname(p),{recursive:true});fs.appendFileSync(p,JSON.stringify(payload)+'\n');}catch(e){}fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});}());
+    // #endregion
+    res.json(saved);
   } catch (error) {
     // #region agent log
     fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'users.js:POST/me/avatar',message:'catch',data:{errorMessage:error?.message,errorCode:error?.code},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
