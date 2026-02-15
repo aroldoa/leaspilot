@@ -164,6 +164,7 @@ app.get('/api/avatar/:filename', (req, res) => {
     if (!err && stat && stat.isFile()) return tryStream(primaryPath);
     fs.stat(fallbackPath, (err2, stat2) => {
       if (!err2 && stat2 && stat2.isFile()) return tryStream(fallbackPath);
+      if (!isProduction) console.error('[avatar] GET /api/avatar 404', { serverAvatarDir, primaryPath, fallbackPath, filename });
       res.status(404).end();
     });
   });
