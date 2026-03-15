@@ -262,19 +262,19 @@ router.get('/usage', authenticateToken, requireSuperAdmin, async (req, res) => {
              COUNT(DISTINCT mr.id)::int  AS maintenance_requests,
              COUNT(DISTINCT m.id)::int   AS messages,
              COUNT(DISTINCT tr.id)::int  AS transactions,
-             MAX(GREATEST(
-               p.created_at,
-               t.created_at,
-               mr.created_at,
-               m.created_at,
-               tr.created_at
-             )) AS last_activity
+             GREATEST(
+               MAX(p.created_at),
+               MAX(t.created_at),
+               MAX(mr.created_at),
+               MAX(m.created_at),
+               MAX(tr.created_at)
+             ) AS last_activity
       FROM users u
-      LEFT JOIN properties          p  ON p.user_id  = u.id
-      LEFT JOIN tenants             t  ON t.user_id  = u.id
-      LEFT JOIN maintenance_requests mr ON mr.user_id = u.id
-      LEFT JOIN messages            m  ON m.sender_user_id = u.id
-      LEFT JOIN transactions        tr ON tr.user_id  = u.id
+      LEFT JOIN properties           p  ON p.user_id  = u.id
+      LEFT JOIN tenants              t  ON t.user_id  = u.id
+      LEFT JOIN maintenance_requests mr ON mr.property_id IN (SELECT id FROM properties WHERE user_id = u.id)
+      LEFT JOIN messages             m  ON m.sender_user_id = u.id
+      LEFT JOIN transactions         tr ON tr.user_id  = u.id
       WHERE u.role NOT IN ('super_admin','tenant','contractor')
       GROUP BY u.id
       ORDER BY properties DESC, tenants DESC
