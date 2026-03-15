@@ -370,15 +370,16 @@ body { font-family: 'Inter', sans-serif; }
                 <div id="documentsTab" class="tab-content hidden">
                     <div class="mb-4 flex items-center justify-between">
                         <h2 class="text-lg font-medium text-slate-900">Documents</h2>
-                        <button class="flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
+                        <input type="file" id="propertyDocumentInput" accept=".pdf,image/*,.doc,.docx" class="hidden">
+                        <button type="button" id="uploadDocumentBtn" class="flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
                             <i data-lucide="upload" class="h-4 w-4"></i> Upload Document
                         </button>
                     </div>
                     <div class="rounded-[2rem] border border-slate-100 bg-white overflow-hidden shadow-sm p-8">
-                        <div class="text-center py-12">
+                        <div id="propertyDocumentsList" class="text-center py-12">
                             <i data-lucide="file-text" class="h-12 w-12 mx-auto mb-4 text-slate-300"></i>
                             <p class="text-slate-500 mb-4">No documents uploaded yet</p>
-                            <p class="text-sm text-slate-400">Document management coming soon</p>
+                            <p class="text-sm text-slate-400">PDF, images, or Word documents (max 10MB)</p>
                         </div>
                     </div>
                 </div>
@@ -550,6 +551,8 @@ body { font-family: 'Inter', sans-serif; }
                 renderFinancialsTable();
             } else if (tabName === 'maintenance') {
                 loadMaintenanceRequests();
+            } else if (tabName === 'documents') {
+                loadPropertyDocuments();
             }
         }
 
@@ -720,6 +723,35 @@ body { font-family: 'Inter', sans-serif; }
                 if (typeof lucide !== 'undefined') lucide.createIcons();
             } catch (e) {
                 container.innerHTML = '<p class="text-slate-400 text-sm">Unable to load maintenance requests.</p>';
+            }
+        }
+
+        // Load and render property documents
+        async function loadPropertyDocuments() {
+            const listEl = document.getElementById('propertyDocumentsList');
+            if (!listEl || !currentProperty) return;
+            try {
+                const docs = await LeasePilot.API.get('/properties/' + currentProperty.id + '/documents');
+                if (!docs.length) {
+                    listEl.innerHTML = '<i data-lucide="file-text" class="h-12 w-12 mx-auto mb-4 text-slate-300"></i><p class="text-slate-500 mb-4">No documents uploaded yet</p><p class="text-sm text-slate-400">PDF, images, or Word documents (max 10MB)</p>';
+                } else {
+                    const origin = (typeof window !== 'undefined' && window.location.origin) ? window.location.origin : '';
+                    listEl.innerHTML = '<div class="text-left space-y-2">' + docs.map(function(d) {
+                        const url = d.file_url ? (d.file_url.startsWith('http') ? d.file_url : origin + d.file_url) : null;
+                        const name = (d.name || 'Document').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        const date = d.created_at ? new Date(d.created_at).toLocaleDateString() : '';
+                        if (url) {
+                            return '<a href="' + url + '" target="_blank" rel="noopener" class="flex items-center justify-between py-3 px-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors group">' +
+                                '<div class="flex items-center gap-3"><i data-lucide="file-text" class="h-4 w-4 text-slate-500"></i><span class="text-sm font-medium text-slate-900">' + name + '</span></div>' +
+                                '<span class="text-xs text-slate-400">' + date + '</span><i data-lucide="download" class="h-4 w-4 text-slate-400 group-hover:text-slate-600"></i></a>';
+                        }
+                        return '<div class="flex items-center justify-between py-3 px-3 rounded-xl border border-slate-100">' +
+                            '<div class="flex items-center gap-3"><i data-lucide="file-text" class="h-4 w-4 text-slate-300"></i><span class="text-sm text-slate-500">' + name + '</span></div><span class="text-xs text-slate-400">Not available</span></div>';
+                    }).join('') + '</div>';
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } catch (e) {
+                listEl.innerHTML = '<p class="text-slate-400 text-sm">Unable to load documents.</p>';
             }
         }
 
@@ -1373,6 +1405,26 @@ body { font-family: 'Inter', sans-serif; }
             console.log('✅ LeasePilot loaded');
             await LeasePilot.checkAuth();
             await loadProperty();
+
+            // Upload document: button opens file picker; on file selected, upload and refresh list
+            var docInput = document.getElementById('propertyDocumentInput');
+            var uploadDocBtn = document.getElementById('uploadDocumentBtn');
+            if (uploadDocBtn && docInput) {
+                uploadDocBtn.addEventListener('click', function() { docInput.click(); });
+                docInput.addEventListener('change', async function() {
+                    var file = this.files && this.files[0];
+                    this.value = '';
+                    if (!file || !currentProperty) return;
+                    try {
+                        await LeasePilot.API.uploadPropertyDocument(currentProperty.id, file);
+                        if (LeasePilot.Toast) LeasePilot.Toast.show('Document uploaded.', 'success');
+                        await loadPropertyDocuments();
+                    } catch (err) {
+                        var msg = (err && err.message) ? err.message : 'Upload failed.';
+                        if (LeasePilot.Toast) LeasePilot.Toast.show(msg, 'error');
+                    }
+                });
+            }
         })();
         
         lucide.createIcons({

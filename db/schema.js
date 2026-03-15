@@ -141,6 +141,17 @@ export async function initializeDatabase(pool) {
       )
     `);
 
+    // Documents per property (manager-uploaded; leases, inspections, etc.)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS property_documents (
+        id SERIAL PRIMARY KEY,
+        property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        file_url TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Add balance column to tenants if not exists (for rent balance display)
     await pool.query(`
       ALTER TABLE tenants ADD COLUMN IF NOT EXISTS balance DECIMAL(10,2) DEFAULT 0
@@ -177,6 +188,9 @@ export async function initializeDatabase(pool) {
     `);
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_tenant_documents_tenant_id ON tenant_documents(tenant_id)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_property_documents_property_id ON property_documents(property_id)
     `);
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_tenants_portal_user_id ON tenants(portal_user_id)

@@ -103,6 +103,22 @@ const API = {
       throw new Error(data.error || `Upload failed (${response.status})`);
     }
     return await response.json();
+  },
+
+  async uploadPropertyDocument(propertyId, file, name) {
+    const formData = new FormData();
+    formData.append('file', file, file.name || 'document');
+    if (name) formData.append('name', name);
+    const response = await fetch(`${API_BASE_URL}/properties/${propertyId}/documents`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || `Upload failed (${response.status})`);
+    }
+    return await response.json();
   }
 };
 
