@@ -148,9 +148,16 @@ router.post('/', authenticateToken, requireRole('Portfolio Manager'), async (req
 // Update tenant
 router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
-    const {
-      first_name, last_name, email, phone, property_id, unit, status, lease_start, lease_end
-    } = req.body;
+    const body = req.body || {};
+    const first_name = (body.first_name ?? '').toString().trim();
+    const last_name = (body.last_name ?? '').toString().trim();
+    const email = (body.email ?? '').toString().trim() || null;
+    const phone = (body.phone ?? '').toString().trim() || null;
+    const property_id = body.property_id === '' || body.property_id == null ? null : body.property_id;
+    const unit = body.unit !== undefined && body.unit !== null ? (String(body.unit).trim() || null) : null;
+    const status = (body.status ?? 'active').toString().trim() || 'active';
+    const lease_start = (body.lease_start ?? '').toString().trim() || null;
+    const lease_end = (body.lease_end ?? '').toString().trim() || null;
 
     const pool = req.app.locals.pool;
     const result = await pool.query(

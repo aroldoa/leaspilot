@@ -130,7 +130,7 @@
                 // Cookie is set by the server; just cache the user profile locally
                 localStorage.setItem('user', JSON.stringify(data.user));
                 const role = (data.user && (data.user.role || '').toLowerCase()) || '';
-                const redirectUrl = role === 'tenant' ? 'tenant/dashboard.html' : (role === 'contractor' ? 'contractor/messages.html' : 'index.html');
+                const redirectUrl = role === 'tenant' ? 'tenant/dashboard.html' : (role === 'contractor' ? 'contractor/messages.html' : (role === 'super_admin' ? 'admin.html' : 'index.html'));
                 window.location.href = redirectUrl;
             } catch (error) {
                 console.error('❌ Login error:', error);
@@ -157,7 +157,7 @@
                     const data = await response.json();
                     if (data.user) {
                         const role = (data.user.role || '').toLowerCase();
-                        const redirectUrl = role === 'tenant' ? 'tenant/dashboard.html' : (role === 'contractor' ? 'contractor/messages.html' : 'index.html');
+                        const redirectUrl = role === 'tenant' ? 'tenant/dashboard.html' : (role === 'contractor' ? 'contractor/messages.html' : (role === 'super_admin' ? 'admin.html' : 'index.html'));
                         window.location.href = redirectUrl;
                     }
                 } else {

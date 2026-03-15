@@ -34,6 +34,23 @@ export async function initializeDatabase(pool) {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    await pool.query(`
+      ALTER TABLE properties ADD COLUMN IF NOT EXISTS number_of_units INTEGER DEFAULT 1
+    `);
+
+    // Property units (unit # or letter per property — for multifamily, condo, apartment, commercial)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS property_units (
+        id SERIAL PRIMARY KEY,
+        property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+        unit_label VARCHAR(100) NOT NULL,
+        display_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_property_units_property_id ON property_units(property_id)
+    `).catch(() => {});
 
     // Create tenants table
     await pool.query(`

@@ -12,7 +12,8 @@
     "check": "node check-server.js",
     "seed": "node db/seed.js",
     "assign": "node db/assign-to-user.js",
-    "set-password": "node db/set-password.js"
+    "set-password": "node db/set-password.js",
+    "create-admin": "node scripts/create-super-admin.js"
   },
   "keywords": [
     "property-management",

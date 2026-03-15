@@ -215,6 +215,17 @@ body { font-family: 'Inter', sans-serif; }
                         </select>
                     </div>
                 </div>
+                <div id="propertyUnitsSection" class="hidden space-y-4 p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Number of units</label>
+                        <input type="number" name="number_of_units" id="propertyNumberUnits" min="1" value="1" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Unit numbers or letters</label>
+                        <input type="text" name="units_list" id="propertyUnitsList" placeholder="e.g. 101, 102, 103 or A, B, C, D" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                        <p class="mt-1 text-xs text-slate-500">Comma-separated list of unit identifiers</p>
+                    </div>
+                </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Address</label>
                     <input type="text" name="address" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
@@ -600,8 +611,17 @@ body { font-family: 'Inter', sans-serif; }
                 submitBtn.textContent = 'Add Property';
                 form.reset();
                 document.getElementById('propertyId').value = '';
+                document.getElementById('propertyNumberUnits').value = '1';
+                document.getElementById('propertyUnitsList').value = '';
             }
+            togglePropertyUnitsSection();
             LeasePilot.Modal.open('addPropertyModal');
+        }
+
+        function togglePropertyUnitsSection() {
+            var type = document.getElementById('propertyType').value;
+            var section = document.getElementById('propertyUnitsSection');
+            if (section) section.classList.toggle('hidden', type === 'Single Family');
         }
 
         // Load property for editing
@@ -612,6 +632,11 @@ body { font-family: 'Inter', sans-serif; }
                     document.getElementById('propertyId').value = property.id;
                     document.querySelector('input[name="name"]').value = property.name || '';
                     document.getElementById('propertyType').value = property.type || 'Apartment';
+                    var numUnits = property.number_of_units != null ? (Number(property.number_of_units) || 1) : 1;
+                    document.getElementById('propertyNumberUnits').value = String(Math.max(1, numUnits));
+                    var unitsList = (property.units && property.units.length) ? property.units.map(function(u) { return u.unit_label || u; }).join(', ') : '';
+                    document.getElementById('propertyUnitsList').value = unitsList;
+                    togglePropertyUnitsSection();
                     document.querySelector('input[name="address"]').value = property.address || '';
                     document.querySelector('input[name="city"]').value = property.city || '';
                     document.querySelector('input[name="state"]').value = property.state || '';
@@ -652,10 +677,16 @@ body { font-family: 'Inter', sans-serif; }
             e.preventDefault();
             const formData = new FormData(e.target);
             const propertyId = formData.get('id');
+            const type = formData.get('type');
+            var isSingleFamily = type === 'Single Family';
+            var unitsList = document.getElementById('propertyUnitsList').value;
+            var units = isSingleFamily ? [] : (unitsList ? unitsList.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : []);
+            var number_of_units = isSingleFamily ? 1 : (parseInt(document.getElementById('propertyNumberUnits').value, 10) || 1);
+            number_of_units = Math.max(1, Number(number_of_units) || 1);
             const property = {
                 id: propertyId || undefined,
                 name: formData.get('name'),
-                type: formData.get('type'),
+                type: type,
                 address: formData.get('address'),
                 city: formData.get('city'),
                 state: formData.get('state'),
@@ -665,7 +696,9 @@ body { font-family: 'Inter', sans-serif; }
                 sqft: parseInt(formData.get('sqft')) || 0,
                 rent: parseFloat(formData.get('rent')) || 0,
                 image_url: formData.get('image') || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800&h=500',
-                status: formData.get('status') || 'vacant'
+                status: formData.get('status') || 'vacant',
+                number_of_units: number_of_units,
+                units: units
             };
             
             try {
@@ -681,6 +714,8 @@ body { font-family: 'Inter', sans-serif; }
                 console.error('Save property error:', error);
             }
         });
+
+        document.getElementById('propertyType')?.addEventListener('change', togglePropertyUnitsSection);
 
         // Load properties on page load
         (async () => {

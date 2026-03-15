@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin - LeasePilot AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@0.469.0"></script>
+  <script src="app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #F3F5F7; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .tab-btn { transition: all 0.15s; }
+    .tab-btn.active { background: #0f172a; color: #fff; }
+    .tab-btn:not(.active) { color: #64748b; }
+    .tab-btn:not(.active):hover { background: #f1f5f9; color: #0f172a; }
+  </style>
+</head>
+<body class="bg-[#F3F5F7] text-slate-900 antialiased">
+<div class="min-h-screen flex flex-col">
+
+  <!-- Top bar -->
+  <header class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shrink-0">
+    <div class="flex items-center gap-4">
+      <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-8 brightness-0 invert">
+      <div class="h-5 w-px bg-slate-700"></div>
+      <span class="text-sm font-semibold text-slate-300 tracking-wide uppercase">Super Admin</span>
+    </div>
+    <button onclick="LeasePilot.logout()" class="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors">
+      <i data-lucide="log-out" class="h-4 w-4"></i> Sign out
+    </button>
+  </header>
+
+  <main class="flex-1 max-w-7xl mx-auto w-full px-6 py-10 md:px-10">
+
+    <!-- Page header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-medium tracking-tight text-slate-900">Admin Dashboard</h1>
+      <p class="mt-1.5 text-sm text-slate-500">Manage all landlord and tenant accounts across LeasePilot.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Landlords</p>
+        <p class="text-4xl font-semibold text-slate-900" id="statLandlords">—</p>
+      </div>
+      <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Tenant Accounts</p>
+        <p class="text-4xl font-semibold text-slate-900" id="statTenants">—</p>
+      </div>
+      <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Properties</p>
+        <p class="text-4xl font-semibold text-slate-900" id="statProperties">—</p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-1 bg-white rounded-full p-1 border border-slate-200 shadow-sm inline-flex mb-6">
+      <button class="tab-btn active rounded-full px-5 py-2 text-sm font-medium" data-tab="landlords">Landlords</button>
+      <button class="tab-btn rounded-full px-5 py-2 text-sm font-medium" data-tab="tenants">Tenant Accounts</button>
+    </div>
+
+    <!-- Landlords table -->
+    <div id="panelLandlords" class="tab-panel">
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 class="text-base font-semibold text-slate-900">Landlord Accounts</h2>
+          <div class="relative">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"></i>
+            <input id="landlordSearch" type="search" placeholder="Search…" class="h-9 w-48 rounded-full border border-slate-200 pl-9 pr-4 text-sm focus:outline-none focus:border-slate-400">
+          </div>
+        </div>
+        <div id="landlordsTable" class="overflow-x-auto">
+          <p class="py-12 text-center text-slate-400 text-sm">Loading…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tenants table -->
+    <div id="panelTenants" class="tab-panel hidden">
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 class="text-base font-semibold text-slate-900">Tenant Portal Accounts</h2>
+          <div class="relative">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"></i>
+            <input id="tenantSearch" type="search" placeholder="Search…" class="h-9 w-48 rounded-full border border-slate-200 pl-9 pr-4 text-sm focus:outline-none focus:border-slate-400">
+          </div>
+        </div>
+        <div id="tenantsTable" class="overflow-x-auto">
+          <p class="py-12 text-center text-slate-400 text-sm">Loading…</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Confirm delete modal -->
+<div id="deleteModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/40">
+  <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onclick="event.stopPropagation()">
+    <div class="flex items-start gap-4 mb-5">
+      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+        <i data-lucide="trash-2" class="h-5 w-5 text-red-600"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-semibold text-slate-900">Delete account</h3>
+        <p class="text-sm text-slate-500 mt-1" id="deleteModalDesc">This will permanently delete the account and all associated data.</p>
+      </div>
+    </div>
+    <div class="flex gap-3 justify-end">
+      <button type="button" id="deleteCancelBtn" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
+      <button type="button" id="deleteConfirmBtn" class="rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function() {
+  var w = 0;
+  while (typeof LeasePilot === 'undefined' && w < 100) { await new Promise(function(r) { setTimeout(r, 50); }); w++; }
+  if (typeof LeasePilot === 'undefined') return;
+  await LeasePilot.checkAuth();
+  lucide.createIcons();
+
+  var allLandlords = [];
+  var allTenants   = [];
+  var pendingDeleteId = null;
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  function esc(s) {
+    if (s == null) return '';
+    var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+  }
+
+  function fmtDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function api(path, opts) {
+    return fetch(LeasePilot.API && LeasePilot.API._base ? LeasePilot.API._base + path : '/api' + path, Object.assign({ credentials: 'include' }, opts))
+      .then(function(r) { return r.json(); });
+  }
+
+  // ── Load stats ──────────────────────────────────────────────────────────────
+
+  LeasePilot.API.get('/admin/stats').then(function(data) {
+    document.getElementById('statLandlords').textContent  = data.landlords  ?? '—';
+    document.getElementById('statTenants').textContent    = data.tenants    ?? '—';
+    document.getElementById('statProperties').textContent = data.properties ?? '—';
+  }).catch(function() {});
+
+  // ── Landlords ───────────────────────────────────────────────────────────────
+
+  function renderLandlords(rows) {
+    var el = document.getElementById('landlordsTable');
+    if (!rows || rows.length === 0) {
+      el.innerHTML = '<p class="py-12 text-center text-slate-400 text-sm">No landlord accounts yet.</p>';
+      return;
+    }
+    el.innerHTML =
+      '<table class="w-full text-sm">' +
+        '<thead>' +
+          '<tr class="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wide">' +
+            '<th class="px-6 py-3 text-left">Name</th>' +
+            '<th class="px-6 py-3 text-left">Email</th>' +
+            '<th class="px-6 py-3 text-left">Role</th>' +
+            '<th class="px-6 py-3 text-left">Properties</th>' +
+            '<th class="px-6 py-3 text-left">Tenants</th>' +
+            '<th class="px-6 py-3 text-left">Joined</th>' +
+            '<th class="px-6 py-3 text-left">Actions</th>' +
+          '</tr>' +
+        '</thead>' +
+        '<tbody class="divide-y divide-slate-50">' +
+        rows.map(function(u) {
+          return '<tr class="hover:bg-slate-50 transition-colors">' +
+            '<td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">' + esc(u.name) + '</td>' +
+            '<td class="px-6 py-4 text-slate-500">' + esc(u.email) + '</td>' +
+            '<td class="px-6 py-4"><span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">' + esc(u.role) + '</span></td>' +
+            '<td class="px-6 py-4 text-slate-700">' + (u.property_count || 0) + '</td>' +
+            '<td class="px-6 py-4 text-slate-700">' + (u.tenant_count || 0) + '</td>' +
+            '<td class="px-6 py-4 text-slate-400 whitespace-nowrap">' + fmtDate(u.created_at) + '</td>' +
+            '<td class="px-6 py-4">' +
+              '<div class="flex items-center gap-2">' +
+                '<button class="impersonate-btn rounded-full bg-slate-900 text-white px-3 py-1.5 text-xs font-medium hover:bg-slate-700 flex items-center gap-1" data-id="' + u.id + '" data-name="' + esc(u.name) + '">' +
+                  '<i data-lucide="log-in" class="h-3 w-3"></i> Login as' +
+                '</button>' +
+                '<button class="delete-user-btn rounded-full border border-red-200 text-red-600 px-3 py-1.5 text-xs font-medium hover:bg-red-50 flex items-center gap-1" data-id="' + u.id + '" data-name="' + esc(u.name) + '">' +
+                  '<i data-lucide="trash-2" class="h-3 w-3"></i> Delete' +
+                '</button>' +
+              '</div>' +
+            '</td>' +
+          '</tr>';
+        }).join('') +
+        '</tbody>' +
+      '</table>';
+    lucide.createIcons();
+    wireTableActions(el);
+  }
+
+  LeasePilot.API.get('/admin/landlords').then(function(data) {
+    allLandlords = data || [];
+    renderLandlords(allLandlords);
+  }).catch(function() {
+    document.getElementById('landlordsTable').innerHTML = '<p class="py-8 text-center text-red-400 text-sm">Failed to load landlords.</p>';
+  });
+
+  document.getElementById('landlordSearch').addEventListener('input', function() {
+    var q = this.value.trim().toLowerCase();
+    renderLandlords(q ? allLandlords.filter(function(u) {
+      return (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q);
+    }) : allLandlords);
+  });
+
+  // ── Tenants ─────────────────────────────────────────────────────────────────
+
+  function renderTenants(rows) {
+    var el = document.getElementById('tenantsTable');
+    if (!rows || rows.length === 0) {
+      el.innerHTML = '<p class="py-12 text-center text-slate-400 text-sm">No tenant portal accounts yet.</p>';
+      return;
+    }
+    el.innerHTML =
+      '<table class="w-full text-sm">' +
+        '<thead>' +
+          '<tr class="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wide">' +
+            '<th class="px-6 py-3 text-left">Tenant</th>' +
+            '<th class="px-6 py-3 text-left">Login email</th>' +
+            '<th class="px-6 py-3 text-left">Property</th>' +
+            '<th class="px-6 py-3 text-left">Unit</th>' +
+            '<th class="px-6 py-3 text-left">Manager</th>' +
+            '<th class="px-6 py-3 text-left">Status</th>' +
+            '<th class="px-6 py-3 text-left">Joined</th>' +
+            '<th class="px-6 py-3 text-left">Actions</th>' +
+          '</tr>' +
+        '</thead>' +
+        '<tbody class="divide-y divide-slate-50">' +
+        rows.map(function(t) {
+          var statusClass = t.lease_status === 'active' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-600';
+          var hasPortal = !!t.user_id;
+          return '<tr class="hover:bg-slate-50 transition-colors">' +
+            '<td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">' + esc(t.first_name + ' ' + t.last_name) + '</td>' +
+            '<td class="px-6 py-4 text-slate-500">' + (hasPortal ? esc(t.email) : '<span class="text-slate-300 italic text-xs">No portal account</span>') + '</td>' +
+            '<td class="px-6 py-4 text-slate-700">' + esc(t.property_name || '—') + '</td>' +
+            '<td class="px-6 py-4 text-slate-500">' + esc(t.unit || '—') + '</td>' +
+            '<td class="px-6 py-4 text-slate-500">' + esc(t.manager_name || '—') + '</td>' +
+            '<td class="px-6 py-4"><span class="rounded-full px-2.5 py-0.5 text-xs font-medium ' + statusClass + '">' + esc(t.lease_status || 'active') + '</span></td>' +
+            '<td class="px-6 py-4 text-slate-400 whitespace-nowrap">' + fmtDate(t.created_at) + '</td>' +
+            '<td class="px-6 py-4">' +
+              (hasPortal
+                ? '<button class="impersonate-btn rounded-full bg-slate-900 text-white px-3 py-1.5 text-xs font-medium hover:bg-slate-700 flex items-center gap-1" data-id="' + t.user_id + '" data-name="' + esc(t.first_name + ' ' + t.last_name) + '"><i data-lucide="log-in" class="h-3 w-3"></i> Login as</button>'
+                : '<span class="text-xs text-slate-300">—</span>') +
+            '</td>' +
+          '</tr>';
+        }).join('') +
+        '</tbody>' +
+      '</table>';
+    lucide.createIcons();
+    wireTableActions(el);
+  }
+
+  LeasePilot.API.get('/admin/tenants').then(function(data) {
+    allTenants = data || [];
+    renderTenants(allTenants);
+  }).catch(function() {
+    document.getElementById('tenantsTable').innerHTML = '<p class="py-8 text-center text-red-400 text-sm">Failed to load tenants.</p>';
+  });
+
+  document.getElementById('tenantSearch').addEventListener('input', function() {
+    var q = this.value.trim().toLowerCase();
+    renderTenants(q ? allTenants.filter(function(t) {
+      return (t.first_name + ' ' + t.last_name).toLowerCase().includes(q) ||
+             (t.email || '').toLowerCase().includes(q) ||
+             (t.property_name || '').toLowerCase().includes(q) ||
+             (t.manager_name || '').toLowerCase().includes(q);
+    }) : allTenants);
+  });
+
+  // ── Action wiring ────────────────────────────────────────────────────────────
+
+  function wireTableActions(container) {
+    container.querySelectorAll('.impersonate-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var userId = this.getAttribute('data-id');
+        var name   = this.getAttribute('data-name');
+        if (!confirm('Log in as "' + name + '"?\n\nYou will be redirected to their account. Logout to return to admin.')) return;
+        LeasePilot.API.post('/admin/impersonate/' + userId, {})
+          .then(function(data) {
+            var role = (data.user && data.user.role || '').toLowerCase();
+            if (role === 'tenant') window.location.href = 'tenant/dashboard.html';
+            else if (role === 'contractor') window.location.href = 'contractor/messages.html';
+            else window.location.href = 'index.html';
+          })
+          .catch(function(err) {
+            LeasePilot.Toast.show(err.message || 'Failed to impersonate', 'error');
+          });
+      });
+    });
+
+    container.querySelectorAll('.delete-user-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        pendingDeleteId = this.getAttribute('data-id');
+        var name = this.getAttribute('data-name');
+        document.getElementById('deleteModalDesc').textContent =
+          'Permanently delete "' + name + '" and all their data (properties, tenants, transactions)? This cannot be undone.';
+        var modal = document.getElementById('deleteModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      });
+    });
+  }
+
+  // Delete modal buttons
+  document.getElementById('deleteCancelBtn').addEventListener('click', function() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    document.getElementById('deleteModal').classList.remove('flex');
+    pendingDeleteId = null;
+  });
+  document.getElementById('deleteConfirmBtn').addEventListener('click', function() {
+    if (!pendingDeleteId) return;
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Deleting…';
+    LeasePilot.API.delete('/admin/users/' + pendingDeleteId)
+      .then(function() {
+        document.getElementById('deleteModal').classList.add('hidden');
+        document.getElementById('deleteModal').classList.remove('flex');
+        LeasePilot.Toast.show('Account deleted');
+        allLandlords = allLandlords.filter(function(u) { return String(u.id) !== String(pendingDeleteId); });
+        allTenants   = allTenants.filter(function(t) { return String(t.user_id) !== String(pendingDeleteId); });
+        renderLandlords(allLandlords);
+        renderTenants(allTenants);
+        // Refresh stats
+        LeasePilot.API.get('/admin/stats').then(function(data) {
+          document.getElementById('statLandlords').textContent  = data.landlords;
+          document.getElementById('statTenants').textContent    = data.tenants;
+          document.getElementById('statProperties').textContent = data.properties;
+        });
+      })
+      .catch(function(err) {
+        LeasePilot.Toast.show(err.message || 'Failed to delete', 'error');
+      })
+      .finally(function() {
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+        pendingDeleteId = null;
+      });
+  });
+  document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) { this.classList.add('hidden'); this.classList.remove('flex'); }
+  });
+
+  // ── Tabs ─────────────────────────────────────────────────────────────────────
+
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tab = this.getAttribute('data-tab');
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.add('hidden'); });
+      this.classList.add('active');
+      document.getElementById('panel' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('hidden');
+    });
+  });
+
+})();
+</script>
+</body>
+</html>

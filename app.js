@@ -50,7 +50,9 @@ const API = {
         if (response.status === 401 || response.status === 403) {
           localStorage.removeItem('user');
           const p = (typeof window !== 'undefined' && window.location.pathname) || '';
-          window.location.href = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
+          if (!p.includes('admin.html')) {
+            window.location.href = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
+          }
         }
         throw err;
       }
@@ -136,6 +138,12 @@ async function checkAuth() {
       const path = window.location.pathname || '';
       const isTenantPage = path.includes('/tenant/');
       const isContractorPage = path.includes('/contractor/');
+      const isAdminPage = path.includes('admin.html');
+      // Super admin: redirect to admin portal unless already there
+      if (role === 'super_admin') {
+        if (!isAdminPage) { window.location.href = path.includes('/tenant/') || path.includes('/contractor/') ? '../admin.html' : 'admin.html'; return false; }
+        return true;
+      }
       if (role === 'tenant' && !isTenantPage) { window.location.href = 'tenant/dashboard.html'; return false; }
       if (role === 'contractor' && !isContractorPage) { window.location.href = 'contractor/messages.html'; return false; }
       if (role !== 'tenant' && isTenantPage) { window.location.href = '../index.html'; return false; }
@@ -147,7 +155,9 @@ async function checkAuth() {
     if (status === 401 || status === 403) {
       localStorage.removeItem('user');
       const p = (typeof window !== 'undefined' && window.location.pathname) || '';
-      window.location.href = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
+      if (!p.includes('admin.html')) {
+        window.location.href = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
+      }
       return false;
     }
     // Network/server errors don't kill the session

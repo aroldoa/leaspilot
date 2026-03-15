@@ -55,7 +55,7 @@ router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req,
   }
 });
 
-// Get single property
+// Get single property (with units list)
 router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
@@ -69,7 +69,16 @@ router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
       return res.status(404).json({ error: 'Property not found' });
     }
 
-    res.json(result.rows[0]);
+    const property = result.rows[0];
+    const unitsResult = await pool.query(
+      `SELECT id, unit_label, display_order FROM property_units 
+       WHERE property_id = $1 ORDER BY display_order ASC, id ASC`,
+      [req.params.id]
+    );
+    property.units = unitsResult.rows.map(u => ({ id: u.id, unit_label: u.unit_label }));
+    if (property.number_of_units == null) property.number_of_units = 1;
+    else property.number_of_units = Math.max(1, parseInt(property.number_of_units, 10) || 1);
+    res.json(property);
   } catch (error) {
     console.error('Error fetching property:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -81,19 +90,36 @@ router.post('/', authenticateToken, requireRole('Portfolio Manager'), async (req
   try {
     const {
       name, type, address, city, state, zip,
-      bedrooms, bathrooms, sqft, rent, image_url, status
+      bedrooms, bathrooms, sqft, rent, image_url, status,
+      number_of_units, units
     } = req.body;
 
     const pool = req.app.locals.pool;
+    const numUnits = number_of_units != null ? parseInt(number_of_units, 10) : 1;
     const result = await pool.query(
       `INSERT INTO properties 
-       (user_id, name, type, address, city, state, zip, bedrooms, bathrooms, sqft, rent, image_url, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       (user_id, name, type, address, city, state, zip, bedrooms, bathrooms, sqft, rent, image_url, status, number_of_units)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
-      [req.userId, name, type, address, city, state, zip, bedrooms || 0, bathrooms || 0, sqft || 0, rent || 0, image_url, status || 'vacant']
+      [req.userId, name, type, address, city, state, zip, bedrooms || 0, bathrooms || 0, sqft || 0, rent || 0, image_url, status || 'vacant', isNaN(numUnits) ? 1 : Math.max(1, numUnits)]
     );
 
-    res.status(201).json(result.rows[0]);
+    const property = result.rows[0];
+    const unitLabels = Array.isArray(units) ? units : (typeof units === 'string' && units ? units.split(',').map(s => s.trim()).filter(Boolean) : []);
+    for (let i = 0; i < unitLabels.length; i++) {
+      const label = String(unitLabels[i]).slice(0, 100);
+      if (label) await pool.query(
+        `INSERT INTO property_units (property_id, unit_label, display_order) VALUES ($1, $2, $3)`,
+        [property.id, label, i]
+      );
+    }
+
+    const unitsResult = await pool.query(
+      `SELECT id, unit_label FROM property_units WHERE property_id = $1 ORDER BY display_order ASC, id ASC`,
+      [property.id]
+    );
+    property.units = unitsResult.rows.map(u => ({ id: u.id, unit_label: u.unit_label }));
+    res.status(201).json(property);
   } catch (error) {
     console.error('Error creating property:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -103,27 +129,61 @@ router.post('/', authenticateToken, requireRole('Portfolio Manager'), async (req
 // Update property
 router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
-    const {
-      name, type, address, city, state, zip,
-      bedrooms, bathrooms, sqft, rent, image_url, status
-    } = req.body;
-
+    const body = req.body || {};
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('PUT /properties/:id body keys:', Object.keys(body), 'id=', req.params.id);
+    }
+    const name = body.name ?? '';
+    const type = body.type ?? '';
+    const address = body.address ?? '';
+    const city = body.city ?? '';
+    const state = body.state ?? '';
+    const zip = body.zip ?? '';
+    const bedrooms = body.bedrooms != null ? parseInt(body.bedrooms, 10) : 0;
+    const bathrooms = body.bathrooms != null ? parseFloat(body.bathrooms) : 0;
+    const sqft = body.sqft != null ? parseInt(body.sqft, 10) : 0;
+    const rent = body.rent != null ? parseFloat(body.rent) : 0;
+    const image_url = body.image_url ?? null;
+    const status = body.status ?? 'vacant';
     const pool = req.app.locals.pool;
+    const rawNumUnits = body.number_of_units;
+    const numUnits = (rawNumUnits != null && rawNumUnits !== '') ? parseInt(rawNumUnits, 10) : 1;
+    const safeNumUnits = (typeof numUnits === 'number' && !isNaN(numUnits) && numUnits >= 1) ? numUnits : 1;
+    const units = body.units;
+
     const result = await pool.query(
       `UPDATE properties 
        SET name = $1, type = $2, address = $3, city = $4, state = $5, zip = $6,
            bedrooms = $7, bathrooms = $8, sqft = $9, rent = $10, image_url = $11,
-           status = $12, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $13 AND user_id = $14
+           status = $12, number_of_units = $13, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $14 AND user_id = $15
        RETURNING *`,
-      [name, type, address, city, state, zip, bedrooms, bathrooms, sqft, rent, image_url, status, req.params.id, req.userId]
+      [name, type, address, city, state, zip, isNaN(bedrooms) ? 0 : bedrooms, isNaN(bathrooms) ? 0 : bathrooms, isNaN(sqft) ? 0 : sqft, isNaN(rent) ? 0 : rent, image_url, status, safeNumUnits, req.params.id, req.userId]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Property not found' });
     }
 
-    res.json(result.rows[0]);
+    // Replace property_units
+    await pool.query('DELETE FROM property_units WHERE property_id = $1', [req.params.id]);
+    const unitLabels = Array.isArray(units) ? units : (typeof units === 'string' && units ? units.split(',').map(s => s.trim()).filter(Boolean) : []);
+    for (let i = 0; i < unitLabels.length; i++) {
+      const label = String(unitLabels[i]).slice(0, 100);
+      if (label) await pool.query(
+        `INSERT INTO property_units (property_id, unit_label, display_order) VALUES ($1, $2, $3)`,
+        [req.params.id, label, i]
+      );
+    }
+
+    const property = result.rows[0];
+    const unitsResult = await pool.query(
+      `SELECT id, unit_label FROM property_units WHERE property_id = $1 ORDER BY display_order ASC, id ASC`,
+      [req.params.id]
+    );
+    property.units = unitsResult.rows.map(u => ({ id: u.id, unit_label: u.unit_label }));
+    property.number_of_units = safeNumUnits;
+    res.json(property);
   } catch (error) {
     console.error('Error updating property:', error);
     res.status(500).json({ error: 'Internal server error' });

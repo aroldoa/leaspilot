@@ -8,305 +8,538 @@
   <script src="https://unpkg.com/lucide@0.469.0"></script>
   <script src="app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>body { font-family: 'Inter', sans-serif; } .hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }</style>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .thread-item.active { background: #f1f5f9; }
+    .thread-item:not(.active):hover { background: #f8fafc; }
+    #replyBody { field-sizing: content; min-height: 44px; max-height: 120px; }
+  </style>
 </head>
 <body class="bg-[#F3F5F7] text-slate-900 antialiased">
-  <div class="flex h-screen overflow-hidden">
-    <aside class="hidden md:flex w-72 flex-col justify-between border-r border-slate-200 bg-white p-6">
-      <div>
-        <a href="index.html" class="flex items-center mb-10">
-          <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-12">
-        </a>
-        <nav class="space-y-1">
-          <a href="index.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-            <i data-lucide="layout-grid" class="h-5 w-5"></i> Dashboard
-          </a>
-          <a href="properties.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-            <i data-lucide="home" class="h-5 w-5"></i> Properties
-          </a>
-          <a href="tenants.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-            <i data-lucide="users" class="h-5 w-5"></i> Tenants
-          </a>
-          <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-            <i data-lucide="wrench" class="h-5 w-5"></i> Maintenance
-          </a>
-          <a href="contractors.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-            <i data-lucide="hard-hat" class="h-5 w-5"></i> Contractors
-          </a>
-          <a href="messages.html" class="flex items-center gap-3 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition-colors">
-            <i data-lucide="message-square" class="h-5 w-5 text-slate-900"></i> Messages
-          </a>
-          <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-            <i data-lucide="wallet" class="h-5 w-5"></i> Financials
-          </a>
-          <a href="settings.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-            <i data-lucide="settings" class="h-5 w-5"></i> Settings
-          </a>
-        </nav>
-      </div>
-      <div class="flex items-center gap-3 border-t border-slate-100 pt-5">
-        <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80">
-          <img data-user-avatar src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
-          <div class="flex flex-col flex-1">
-            <span class="text-sm font-medium" data-user-name></span>
-            <span class="text-xs text-slate-500">Portfolio Manager</span>
-          </div>
-        </a>
-        <button onclick="LeasePilot.logout()" class="text-slate-400 hover:text-slate-600" title="Logout"><i data-lucide="log-out" class="h-4 w-4"></i></button>
-      </div>
-    </aside>
-    <main class="flex-1 overflow-y-auto hide-scrollbar">
-      <div class="mx-auto max-w-7xl px-6 py-8 md:px-10 md:py-12">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 class="text-3xl font-medium tracking-tight text-slate-900">Messages</h1>
-            <p class="mt-2 text-sm text-slate-500">Send in-app messages to tenants and contractors. Optionally send a copy via SMS.</p>
-          </div>
-          <button type="button" id="newMessageBtn" class="rounded-full bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 inline-flex items-center gap-2">
-            <i data-lucide="plus" class="h-4 w-4"></i> New message
-          </button>
-        </div>
-        <div class="mt-6 flex gap-2">
-          <button type="button" id="filterAll" class="rounded-full px-4 py-2 text-sm font-medium bg-slate-100 text-slate-900">All</button>
-          <button type="button" id="filterTenant" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Tenants</button>
-          <button type="button" id="filterContractor" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Contractors</button>
-        </div>
-        <div class="mt-6 rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div id="messagesList" class="p-6">
-            <p class="text-slate-400 text-sm py-8 px-6">Loading...</p>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
+<div class="flex h-screen overflow-hidden">
 
-  <!-- New message modal -->
-  <div id="newMessageModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/40" aria-hidden="true">
-    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+  <!-- App sidebar -->
+  <aside id="mobileSidebar" class="hidden md:flex w-72 flex-col justify-between border-r border-slate-200 bg-white p-6 fixed md:relative inset-y-0 left-0 z-40 shrink-0">
+    <div>
+      <a href="index.html" class="flex items-center mb-10">
+        <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-12">
+      </a>
+      <nav class="space-y-1">
+        <a href="index.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="layout-grid" class="h-5 w-5"></i> Dashboard</a>
+        <a href="properties.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="home" class="h-5 w-5"></i> Properties</a>
+        <a href="tenants.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="users" class="h-5 w-5"></i> Tenants</a>
+        <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="wrench" class="h-5 w-5"></i> Maintenance</a>
+        <a href="contractors.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="hard-hat" class="h-5 w-5"></i> Contractors</a>
+        <a href="messages.html" class="flex items-center gap-3 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900"><i data-lucide="message-square" class="h-5 w-5"></i> Messages</a>
+        <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="wallet" class="h-5 w-5"></i> Financials</a>
+        <a href="settings.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="settings" class="h-5 w-5"></i> Settings</a>
+      </nav>
+    </div>
+    <div class="flex items-center gap-3 border-t border-slate-100 pt-5">
+      <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity">
+        <img data-user-avatar src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
+        <div class="flex flex-col flex-1">
+          <span class="text-sm font-medium" data-user-name></span>
+          <span class="text-xs text-slate-500">Portfolio Manager</span>
+        </div>
+      </a>
+      <button onclick="LeasePilot.logout()" class="text-slate-400 hover:text-slate-600" title="Logout"><i data-lucide="log-out" class="h-4 w-4"></i></button>
+    </div>
+  </aside>
+
+  <!-- Main: two-panel messages layout -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- Mobile header -->
+    <div class="flex md:hidden items-center justify-between bg-white px-4 py-3 border-b border-slate-100 shrink-0">
+      <a href="index.html"><img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-8"></a>
+      <button onclick="document.getElementById('mobileSidebar').classList.toggle('hidden')" class="rounded-full p-2 text-slate-500 hover:bg-slate-100">
+        <i data-lucide="menu" class="h-5 w-5"></i>
+      </button>
+    </div>
+
+    <!-- Two-panel content -->
+    <div class="flex flex-1 overflow-hidden">
+
+      <!-- LEFT: Thread list -->
+      <div id="threadListPanel" class="flex flex-col w-full md:w-80 shrink-0 bg-white border-r border-slate-100 overflow-hidden">
+
+        <!-- Panel header -->
+        <div class="px-4 pt-5 pb-3 border-b border-slate-100 shrink-0">
+          <div class="flex items-center justify-between mb-3">
+            <h1 class="text-lg font-semibold text-slate-900">Messages</h1>
+            <button type="button" id="newMessageBtn" class="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 inline-flex items-center gap-1.5">
+              <i data-lucide="plus" class="h-3.5 w-3.5"></i> New
+            </button>
+          </div>
+          <!-- Filter tabs -->
+          <div class="flex gap-1">
+            <button type="button" class="msg-filter active rounded-full px-3 py-1.5 text-xs font-medium" data-filter="">All</button>
+            <button type="button" class="msg-filter rounded-full px-3 py-1.5 text-xs font-medium" data-filter="tenant">Tenants</button>
+            <button type="button" class="msg-filter rounded-full px-3 py-1.5 text-xs font-medium" data-filter="contractor">Contractors</button>
+          </div>
+        </div>
+
+        <!-- Thread list -->
+        <div id="threadList" class="flex-1 overflow-y-auto hide-scrollbar divide-y divide-slate-50">
+          <p class="py-12 text-center text-slate-400 text-sm">Loading…</p>
+        </div>
+      </div>
+
+      <!-- RIGHT: Thread view -->
+      <div id="threadViewPanel" class="hidden md:flex flex-col flex-1 overflow-hidden bg-[#F8FAFC] min-w-0">
+
+        <!-- Empty state (shown when no thread selected) -->
+        <div id="threadEmptyState" class="flex flex-col items-center justify-center flex-1 text-center p-8">
+          <div class="h-16 w-16 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center mb-4">
+            <i data-lucide="message-square" class="h-8 w-8 text-slate-300"></i>
+          </div>
+          <p class="font-medium text-slate-600">Select a conversation</p>
+          <p class="text-sm text-slate-400 mt-1">Choose a thread from the list, or start a new message.</p>
+        </div>
+
+        <!-- Thread content (hidden until thread selected) -->
+        <div id="threadContent" class="hidden flex flex-col flex-1 overflow-hidden">
+
+          <!-- Thread header -->
+          <div id="threadHeader" class="bg-white border-b border-slate-100 px-5 py-4 shrink-0">
+            <!-- filled by JS -->
+          </div>
+
+          <!-- Messages scroll area -->
+          <div id="threadMessages" class="flex-1 overflow-y-auto hide-scrollbar px-5 py-5 space-y-5">
+            <!-- filled by JS -->
+          </div>
+
+          <!-- Reply input -->
+          <div class="bg-white border-t border-slate-100 px-5 py-4 shrink-0">
+            <div class="flex gap-3 items-end">
+              <textarea id="replyBody" rows="1" class="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none resize-none" placeholder="Write a reply… (Enter to send, Shift+Enter for new line)"></textarea>
+              <button id="replyBtn" class="rounded-2xl bg-slate-900 text-white px-4 py-3 text-sm font-medium hover:bg-slate-800 shrink-0 flex items-center gap-2">
+                <i data-lucide="send" class="h-4 w-4"></i><span class="hidden sm:inline">Send</span>
+              </button>
+            </div>
+            <label class="flex items-center gap-2 mt-2 cursor-pointer select-none">
+              <input type="checkbox" id="replySms" class="rounded border-slate-300 h-3.5 w-3.5">
+              <span class="text-xs text-slate-400">Also send via SMS</span>
+            </label>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- New message modal -->
+<div id="newMessageModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/40" aria-hidden="true">
+  <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-5">
       <h3 class="text-lg font-semibold text-slate-900">New message</h3>
-      <div class="mt-4 space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Send to</label>
-          <select id="msgRecipientType" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-slate-900 focus:border-slate-400 focus:outline-none">
-            <option value="tenant">Tenant</option>
-            <option value="contractor">Contractor</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Recipient</label>
-          <select id="msgRecipientId" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-slate-900 focus:border-slate-400 focus:outline-none">
-            <option value="">Select…</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Subject *</label>
-          <input type="text" id="msgSubject" required class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none" placeholder="Subject">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Message</label>
-          <textarea id="msgBody" rows="4" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none" placeholder="Your message..."></textarea>
-        </div>
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" id="msgSendSms" class="rounded border-slate-300">
-          <span class="text-sm text-slate-700">Also send via SMS (if they have a phone number)</span>
-        </label>
+      <button type="button" onclick="closeNewMessageModal()" class="rounded-full p-2 text-slate-400 hover:bg-slate-100"><i data-lucide="x" class="h-4 w-4"></i></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">Send to</label>
+        <select id="msgRecipientType" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 focus:border-slate-400 focus:outline-none text-sm bg-white">
+          <option value="tenant">Tenant</option>
+          <option value="contractor">Contractor</option>
+        </select>
       </div>
-      <div class="mt-6 flex gap-3 justify-end">
-        <button type="button" onclick="closeNewMessageModal()" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
-        <button type="button" id="msgSubmit" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Send</button>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">Recipient</label>
+        <select id="msgRecipientId" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 focus:border-slate-400 focus:outline-none text-sm bg-white">
+          <option value="">Select…</option>
+        </select>
       </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">Subject</label>
+        <input type="text" id="msgSubject" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none text-sm" placeholder="Subject">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">Message</label>
+        <textarea id="msgBody" rows="4" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none text-sm resize-none" placeholder="Your message…"></textarea>
+      </div>
+      <label class="flex items-center gap-2 cursor-pointer select-none">
+        <input type="checkbox" id="msgSendSms" class="rounded border-slate-300">
+        <span class="text-sm text-slate-600">Also send via SMS</span>
+      </label>
+    </div>
+    <div class="mt-6 flex gap-3 justify-end">
+      <button type="button" onclick="closeNewMessageModal()" class="rounded-full px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
+      <button type="button" id="msgSubmit" class="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800">Send</button>
     </div>
   </div>
+</div>
 
-  <script>
-    (async function() {
-      var w = 0;
-      while (typeof LeasePilot === 'undefined' && w < 100) { await new Promise(function(r) { setTimeout(r, 50); }); w++; }
-      if (typeof LeasePilot === 'undefined') return;
-      await LeasePilot.checkAuth();
+<style>
+  .msg-filter { color: #64748b; transition: all 0.15s; }
+  .msg-filter:hover:not(.active) { background: #f1f5f9; color: #0f172a; }
+  .msg-filter.active { background: #0f172a; color: #fff; }
+</style>
+
+<script>
+(async function() {
+  var w = 0;
+  while (typeof LeasePilot === 'undefined' && w < 100) { await new Promise(function(r) { setTimeout(r, 50); }); w++; }
+  if (typeof LeasePilot === 'undefined') return;
+  await LeasePilot.checkAuth();
+  lucide.createIcons();
+  if (LeasePilot.DataManager && LeasePilot.DataManager.markRepliesRead) {
+    LeasePilot.DataManager.markRepliesRead().catch(function() {});
+  }
+
+  var allThreads = [];
+  var selectedThreadId = null;
+  var currentFilter = '';
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  function esc(s) {
+    if (s == null) return '';
+    var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+  }
+
+  function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    var s = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+    if (s < 60) return 'now';
+    if (s < 3600) return Math.floor(s / 60) + 'm';
+    if (s < 86400) return Math.floor(s / 3600) + 'h';
+    if (s < 604800) return Math.floor(s / 86400) + 'd';
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  function fullDate(dateStr) {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
+  function getInitials(name) {
+    if (!name) return '?';
+    var parts = name.trim().split(/\s+/);
+    return parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
+  }
+
+  function getRecipientName(m) {
+    return m.recipient_type === 'tenant'
+      ? ([m.tenant_first_name, m.tenant_last_name].filter(Boolean).join(' ') || 'Tenant')
+      : (m.contractor_name || 'Contractor');
+  }
+
+  function getRecipientSubtitle(m) {
+    return m.recipient_type === 'tenant'
+      ? (m.tenant_property_name || '')
+      : (m.contractor_company || '');
+  }
+
+  function getLastMessage(m) {
+    var replies = m.replies || [];
+    if (replies.length > 0) {
+      var last = replies[replies.length - 1];
+      return { body: last.body || '', fromManager: !!last.from_manager, time: last.created_at };
+    }
+    return { body: m.body || '', fromManager: true, time: m.created_at };
+  }
+
+  function hasUnread(m) {
+    return (m.replies || []).some(function(r) { return !r.from_manager; });
+  }
+
+  function avatarColors(recipientType) {
+    return recipientType === 'tenant'
+      ? { bg: 'bg-emerald-100', text: 'text-emerald-700' }
+      : { bg: 'bg-amber-100', text: 'text-amber-700' };
+  }
+
+  // ── Thread list ───────────────────────────────────────────────────────────
+
+  function renderThreadList() {
+    var el = document.getElementById('threadList');
+    var threads = currentFilter
+      ? allThreads.filter(function(m) { return m.recipient_type === currentFilter; })
+      : allThreads;
+
+    if (threads.length === 0) {
+      el.innerHTML = '<div class="py-16 text-center px-4">' +
+        '<div class="mx-auto h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-3"><i data-lucide="message-square" class="h-6 w-6 text-slate-400"></i></div>' +
+        '<p class="text-sm font-medium text-slate-600">No messages yet</p>' +
+        '<p class="text-xs text-slate-400 mt-1">Send a message to a tenant or contractor.</p>' +
+        '</div>';
       lucide.createIcons();
-      // Mark replies as read so notification bell clears
-      if (LeasePilot.DataManager && LeasePilot.DataManager.markRepliesRead) {
-        LeasePilot.DataManager.markRepliesRead().catch(function() {});
-      }
+      return;
+    }
 
-      var currentFilter = '';
+    el.innerHTML = threads.map(function(m) {
+      var name = getRecipientName(m);
+      var subtitle = getRecipientSubtitle(m);
+      var initials = getInitials(name);
+      var colors = avatarColors(m.recipient_type);
+      var lastMsg = getLastMessage(m);
+      var unread = hasUnread(m);
+      var isActive = m.id === selectedThreadId;
+      var typeLabel = m.recipient_type === 'tenant' ? 'Tenant' : 'Contractor';
 
-      function esc(s) {
-        if (s == null) return '';
-        var d = document.createElement('div');
-        d.textContent = s;
-        return d.innerHTML;
-      }
+      return '<button class="thread-item w-full flex items-start gap-3 px-4 py-4 text-left transition-colors' + (isActive ? ' active' : '') + '" data-id="' + m.id + '">' +
+        '<div class="relative shrink-0 mt-0.5">' +
+          '<div class="h-10 w-10 rounded-full ' + colors.bg + ' ' + colors.text + ' flex items-center justify-center text-sm font-semibold">' + initials + '</div>' +
+          (unread ? '<span class="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-blue-500 border-2 border-white"></span>' : '') +
+        '</div>' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="flex items-center justify-between gap-2">' +
+            '<p class="text-sm ' + (unread ? 'font-semibold' : 'font-medium') + ' text-slate-900 truncate">' + esc(name) + '</p>' +
+            '<span class="text-xs text-slate-400 shrink-0">' + timeAgo(lastMsg.time) + '</span>' +
+          '</div>' +
+          '<p class="text-xs text-slate-500 truncate mt-0.5">' + esc(m.subject) + '</p>' +
+          '<p class="text-xs text-slate-400 truncate mt-0.5">' + (lastMsg.fromManager ? 'You: ' : '') + esc(lastMsg.body) + '</p>' +
+        '</div>' +
+      '</button>';
+    }).join('');
 
-      function formatDate(d) {
-        if (!d) return '';
-        return new Date(d).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
-      }
+    lucide.createIcons();
 
-      function loadMessages() {
-        var el = document.getElementById('messagesList');
-        var q = currentFilter ? '?recipient_type=' + currentFilter : '';
-        LeasePilot.DataManager.getMessages(currentFilter || undefined)
-          .then(function(list) {
-            if (!list || list.length === 0) {
-              el.innerHTML = '<div class="py-12 px-6 text-center text-slate-500"><i data-lucide="message-square" class="h-12 w-12 mx-auto mb-4 text-slate-300"></i><p>No messages yet.</p><p class="text-sm mt-1">Send a message to a tenant or contractor above.</p></div>';
-            } else {
-              el.innerHTML = list.map(function(m) {
-                var to = m.recipient_type === 'tenant'
-                  ? (esc(m.tenant_first_name + ' ' + m.tenant_last_name) || 'Tenant') + (m.tenant_property_name ? ' · ' + esc(m.tenant_property_name) : '')
-                  : (esc(m.contractor_name) || 'Contractor') + (m.contractor_company ? ' · ' + esc(m.contractor_company) : '');
-                var replies = m.replies || [];
-                var repliesHtml = '';
-                if (replies.length) {
-                  repliesHtml = '<div class="mt-4 pt-4 border-t border-slate-200 ml-14">' +
-                    '<p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-3">Replies</p>' +
-                    '<div class="space-y-3">';
-                  replies.forEach(function(r) {
-                    var fromLabel = r.from_manager ? 'You' : (r.from_tenant ? (r.tenant_name || 'Tenant') : (r.contractor_name || 'Contractor'));
-                    var bubbleClass = r.from_manager ? 'rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm' : (r.from_tenant ? 'rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm' : 'rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm');
-                    repliesHtml += '<div class="' + bubbleClass + '">' +
-                      '<span class="font-medium text-slate-700">' + esc(fromLabel) + '</span>' +
-                      ' <span class="text-slate-400 text-xs">' + formatDate(r.created_at) + '</span>' +
-                      '<p class="text-slate-600 whitespace-pre-wrap mt-1.5">' + esc(r.body) + '</p>' +
-                    '</div>';
-                  });
-                  repliesHtml += '</div></div>';
-                }
-                var rootId = m.id;
-                repliesHtml += '<div class="mt-4 pt-4 border-t border-slate-200 ml-14">' +
-                  '<p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Reply</p>' +
-                  '<textarea class="manager-reply-body w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-slate-100 outline-none" rows="2" placeholder="Reply to ' + to + '..." data-root-id="' + rootId + '"></textarea>' +
-                  '<label class="flex items-center gap-2 mt-2 cursor-pointer"><input type="checkbox" class="manager-reply-sms rounded border-slate-300" data-root-id="' + rootId + '"> <span class="text-xs text-slate-600">Also send via SMS</span></label>' +
-                  '<button type="button" class="manager-reply-btn mt-2 rounded-xl bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800" data-root-id="' + rootId + '">Send reply</button>' +
-                '</div>';
-                return '<div class="message-thread-card px-6 py-5 mb-8 last:mb-0 rounded-xl border border-slate-200 bg-white" data-root-id="' + rootId + '">' +
-                  '<div class="flex items-center gap-4">' +
-                    '<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">' +
-                      '<i data-lucide="' + (m.recipient_type === 'tenant' ? 'user' : 'hard-hat') + '" class="h-5 w-5"></i>' +
-                    '</div>' +
-                    '<div class="min-w-0 flex-1">' +
-                      '<p class="font-medium text-slate-900">' + esc(m.subject) + '</p>' +
-                      '<p class="text-sm text-slate-500">To: ' + to + '</p>' +
-                      (m.body ? '<p class="text-sm text-slate-600 mt-1 line-clamp-2">' + esc(m.body) + '</p>' : '') +
-                    '</div>' +
-                    '<span class="text-xs text-slate-400 shrink-0">' + formatDate(m.created_at) + '</span>' +
-                  '</div>' +
-                  repliesHtml +
-                '</div>';
-              }).join('');
-            }
-            lucide.createIcons();
-            el.querySelectorAll('.manager-reply-btn').forEach(function(btn) {
-              btn.addEventListener('click', function() {
-                var rootId = btn.getAttribute('data-root-id');
-                var card = btn.closest('.message-thread-card');
-                var textarea = card ? card.querySelector('.manager-reply-body') : null;
-                var smsCheck = card ? card.querySelector('.manager-reply-sms') : null;
-                var body = textarea ? textarea.value.trim() : '';
-                if (!body) {
-                  if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Enter a message.', 'error');
-                  return;
-                }
-                var sendSms = smsCheck ? smsCheck.checked : false;
-                btn.disabled = true;
-                LeasePilot.DataManager.replyToThread(rootId, body, sendSms)
-                  .then(function() {
-                    if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Reply sent.');
-                    if (textarea) textarea.value = '';
-                    loadMessages();
-                  })
-                  .catch(function(err) {
-                    if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show(err.message || 'Failed to send reply.', 'error');
-                  })
-                  .finally(function() { btn.disabled = false; });
-              });
-            });
-          })
-          .catch(function() {
-            el.innerHTML = '<p class="py-8 px-6 text-slate-500 text-sm">Unable to load messages.</p>';
-          });
-      }
-
-      function openNewMessageModal() {
-        document.getElementById('msgRecipientType').value = 'tenant';
-        document.getElementById('msgRecipientId').value = '';
-        document.getElementById('msgSubject').value = '';
-        document.getElementById('msgBody').value = '';
-        document.getElementById('msgSendSms').checked = false;
-        fillRecipientOptions();
-        document.getElementById('newMessageModal').classList.remove('hidden');
-        document.getElementById('newMessageModal').classList.add('flex');
-      }
-      window.closeNewMessageModal = function() {
-        document.getElementById('newMessageModal').classList.add('hidden');
-        document.getElementById('newMessageModal').classList.remove('flex');
-      };
-
-      function fillRecipientOptions() {
-        var type = document.getElementById('msgRecipientType').value;
-        var sel = document.getElementById('msgRecipientId');
-        sel.innerHTML = '<option value="">Select…</option>';
-        if (type === 'tenant') {
-          LeasePilot.DataManager.getTenants().then(function(tenants) {
-            (tenants || []).forEach(function(t) {
-              var label = [t.first_name, t.last_name].filter(Boolean).join(' ') + (t.property_name ? ' · ' + t.property_name : '');
-              sel.appendChild(new Option(label || 'Tenant', t.id));
-            });
-          }).catch(function() {});
-        } else {
-          LeasePilot.DataManager.getContractors().then(function(contractors) {
-            (contractors || []).forEach(function(c) {
-              var label = [c.name, c.company].filter(Boolean).join(' · ') || 'Contractor';
-              sel.appendChild(new Option(label, c.id));
-            });
-          }).catch(function() {});
-        }
-      }
-      document.getElementById('msgRecipientType').addEventListener('change', fillRecipientOptions);
-
-      document.getElementById('msgSubmit').onclick = function() {
-        var type = document.getElementById('msgRecipientType').value;
-        var id = document.getElementById('msgRecipientId').value;
-        var subject = document.getElementById('msgSubject').value.trim();
-        var body = document.getElementById('msgBody').value.trim();
-        var sendSms = document.getElementById('msgSendSms').checked;
-        if (!subject) {
-          if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Subject is required', 'error');
-          return;
-        }
-        if (!id) {
-          if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Select a recipient', 'error');
-          return;
-        }
-        var btn = this;
-        btn.disabled = true;
-        LeasePilot.DataManager.sendMessage({
-          recipient_type: type,
-          recipient_id: id,
-          subject: subject,
-          body: body || undefined,
-          send_sms: sendSms
-        }).then(function() {
-          closeNewMessageModal();
-          loadMessages();
-          if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Message sent');
-        }).catch(function(err) {
-          if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show(err.message || 'Failed to send', 'error');
-        }).finally(function() { btn.disabled = false; });
-      };
-
-      document.getElementById('newMessageModal').addEventListener('click', function(e) {
-        if (e.target === this) closeNewMessageModal();
+    el.querySelectorAll('.thread-item').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        openThread(parseInt(this.getAttribute('data-id'), 10));
       });
+    });
+  }
 
-      document.getElementById('newMessageBtn').onclick = openNewMessageModal;
-      document.getElementById('filterAll').onclick = function() { currentFilter = ''; document.getElementById('filterAll').className = 'rounded-full px-4 py-2 text-sm font-medium bg-slate-100 text-slate-900'; document.getElementById('filterTenant').className = document.getElementById('filterContractor').className = 'rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100'; loadMessages(); };
-      document.getElementById('filterTenant').onclick = function() { currentFilter = 'tenant'; document.getElementById('filterTenant').className = 'rounded-full px-4 py-2 text-sm font-medium bg-slate-100 text-slate-900'; document.getElementById('filterAll').className = document.getElementById('filterContractor').className = 'rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100'; loadMessages(); };
-      document.getElementById('filterContractor').onclick = function() { currentFilter = 'contractor'; document.getElementById('filterContractor').className = 'rounded-full px-4 py-2 text-sm font-medium bg-slate-100 text-slate-900'; document.getElementById('filterAll').className = document.getElementById('filterTenant').className = 'rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100'; loadMessages(); };
+  // ── Thread view ───────────────────────────────────────────────────────────
 
+  function openThread(id) {
+    selectedThreadId = id;
+    var thread = allThreads.find(function(m) { return m.id === id; });
+    if (!thread) return;
+
+    // Update active state in list
+    document.querySelectorAll('.thread-item').forEach(function(btn) {
+      btn.classList.toggle('active', parseInt(btn.getAttribute('data-id'), 10) === id);
+    });
+
+    renderThreadView(thread);
+
+    // Mobile: swap panels
+    if (window.innerWidth < 768) {
+      document.getElementById('threadListPanel').classList.add('hidden');
+      var vp = document.getElementById('threadViewPanel');
+      vp.classList.remove('hidden');
+      vp.classList.add('flex');
+    }
+  }
+
+  function renderThreadView(thread) {
+    var name = getRecipientName(thread);
+    var subtitle = getRecipientSubtitle(thread);
+    var initials = getInitials(name);
+    var colors = avatarColors(thread.recipient_type);
+    var typeLabel = thread.recipient_type === 'tenant' ? 'Tenant' : 'Contractor';
+    var typeBadge = thread.recipient_type === 'tenant'
+      ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+      : 'bg-amber-50 text-amber-700 border border-amber-100';
+
+    // Show thread content, hide empty state
+    document.getElementById('threadEmptyState').classList.add('hidden');
+    document.getElementById('threadContent').classList.remove('hidden');
+    document.getElementById('threadContent').classList.add('flex');
+
+    // Header
+    document.getElementById('threadHeader').innerHTML =
+      '<div class="flex items-center gap-3">' +
+        '<button id="backToListBtn" class="md:hidden rounded-full p-1.5 text-slate-500 hover:bg-slate-100 mr-1"><i data-lucide="arrow-left" class="h-5 w-5"></i></button>' +
+        '<div class="h-10 w-10 shrink-0 rounded-full ' + colors.bg + ' ' + colors.text + ' flex items-center justify-center text-sm font-semibold">' + initials + '</div>' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="flex items-center gap-2 flex-wrap">' +
+            '<p class="font-semibold text-slate-900">' + esc(name) + '</p>' +
+            '<span class="rounded-full px-2 py-0.5 text-xs font-medium ' + typeBadge + '">' + typeLabel + '</span>' +
+          '</div>' +
+          (subtitle ? '<p class="text-xs text-slate-500 mt-0.5 truncate">' + esc(subtitle) + '</p>' : '') +
+        '</div>' +
+      '</div>' +
+      '<p class="mt-3 text-sm font-medium text-slate-800">' + esc(thread.subject) + '</p>';
+
+    // Build messages: root + replies
+    var bubbleBg = thread.recipient_type === 'tenant'
+      ? 'bg-white border border-emerald-100'
+      : 'bg-white border border-amber-100';
+
+    var msgs = [];
+    if (thread.body) {
+      msgs.push({ body: thread.body, fromManager: true, senderName: 'You', time: thread.created_at });
+    }
+    (thread.replies || []).forEach(function(r) {
+      msgs.push({
+        body: r.body,
+        fromManager: !!r.from_manager,
+        senderName: r.from_manager ? 'You' : (r.tenant_name || r.contractor_name || name),
+        time: r.created_at
+      });
+    });
+
+    document.getElementById('threadMessages').innerHTML = msgs.map(function(msg) {
+      if (msg.fromManager) {
+        return '<div class="flex flex-col items-end">' +
+          '<div class="max-w-[75%] rounded-2xl rounded-tr-sm bg-slate-900 text-white px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap">' + esc(msg.body) + '</div>' +
+          '<span class="text-xs text-slate-400 mt-1.5 flex items-center gap-1"><i data-lucide="check" class="h-3 w-3"></i> You · ' + timeAgo(msg.time) + '</span>' +
+        '</div>';
+      } else {
+        return '<div class="flex flex-col items-start">' +
+          '<div class="max-w-[75%] rounded-2xl rounded-tl-sm ' + bubbleBg + ' text-slate-800 px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap">' + esc(msg.body) + '</div>' +
+          '<span class="text-xs text-slate-400 mt-1.5">' + esc(msg.senderName) + ' · ' + timeAgo(msg.time) + '</span>' +
+        '</div>';
+      }
+    }).join('') || '<p class="text-center text-sm text-slate-400 py-8">No messages yet.</p>';
+
+    lucide.createIcons();
+
+    // Scroll to bottom
+    var msgEl = document.getElementById('threadMessages');
+    msgEl.scrollTop = msgEl.scrollHeight;
+
+    // Wire back button (mobile)
+    var backBtn = document.getElementById('backToListBtn');
+    if (backBtn) {
+      backBtn.addEventListener('click', function() {
+        var vp = document.getElementById('threadViewPanel');
+        vp.classList.add('hidden');
+        vp.classList.remove('flex');
+        document.getElementById('threadListPanel').classList.remove('hidden');
+        selectedThreadId = null;
+        document.querySelectorAll('.thread-item').forEach(function(b) { b.classList.remove('active'); });
+      });
+    }
+
+    // Wire reply send
+    var replyBtn = document.getElementById('replyBtn');
+    var replyBody = document.getElementById('replyBody');
+    var replySms = document.getElementById('replySms');
+
+    function sendReply() {
+      var body = replyBody.value.trim();
+      if (!body) { LeasePilot.Toast.show('Enter a message', 'error'); return; }
+      var sendSms = replySms.checked;
+      replyBtn.disabled = true;
+      LeasePilot.DataManager.replyToThread(thread.id, body, sendSms)
+        .then(function() {
+          replyBody.value = '';
+          LeasePilot.Toast.show('Reply sent');
+          loadMessages();
+        })
+        .catch(function(err) {
+          LeasePilot.Toast.show(err.message || 'Failed to send reply', 'error');
+        })
+        .finally(function() { replyBtn.disabled = false; });
+    }
+
+    replyBtn.onclick = sendReply;
+    replyBody.onkeydown = function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
+    };
+  }
+
+  // ── Load messages ─────────────────────────────────────────────────────────
+
+  function loadMessages() {
+    document.getElementById('threadList').innerHTML = '<p class="py-12 text-center text-slate-400 text-sm">Loading…</p>';
+    LeasePilot.DataManager.getMessages(currentFilter || undefined)
+      .then(function(list) {
+        allThreads = list || [];
+        renderThreadList();
+        // Refresh open thread if still in list
+        if (selectedThreadId != null) {
+          var thread = allThreads.find(function(m) { return m.id === selectedThreadId; });
+          if (thread) renderThreadView(thread);
+        }
+      })
+      .catch(function() {
+        document.getElementById('threadList').innerHTML = '<p class="py-8 text-center text-slate-500 text-sm">Unable to load messages.</p>';
+      });
+  }
+
+  // ── Filter tabs ───────────────────────────────────────────────────────────
+
+  document.querySelectorAll('.msg-filter').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      currentFilter = this.getAttribute('data-filter');
+      document.querySelectorAll('.msg-filter').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
       loadMessages();
-    })();
-  </script>
+    });
+  });
+
+  // ── New message modal ─────────────────────────────────────────────────────
+
+  function openNewMessageModal() {
+    document.getElementById('msgRecipientType').value = 'tenant';
+    document.getElementById('msgRecipientId').value = '';
+    document.getElementById('msgSubject').value = '';
+    document.getElementById('msgBody').value = '';
+    document.getElementById('msgSendSms').checked = false;
+    fillRecipientOptions();
+    var modal = document.getElementById('newMessageModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  window.closeNewMessageModal = function() {
+    var modal = document.getElementById('newMessageModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  };
+
+  function fillRecipientOptions() {
+    var type = document.getElementById('msgRecipientType').value;
+    var sel = document.getElementById('msgRecipientId');
+    sel.innerHTML = '<option value="">Select…</option>';
+    if (type === 'tenant') {
+      LeasePilot.DataManager.getTenants().then(function(tenants) {
+        (tenants || []).forEach(function(t) {
+          var label = [t.first_name, t.last_name].filter(Boolean).join(' ') + (t.property_name ? ' · ' + t.property_name : '');
+          sel.appendChild(new Option(label || 'Tenant', t.id));
+        });
+      }).catch(function() {});
+    } else {
+      LeasePilot.DataManager.getContractors().then(function(contractors) {
+        (contractors || []).forEach(function(c) {
+          var label = [c.name, c.company].filter(Boolean).join(' · ') || 'Contractor';
+          sel.appendChild(new Option(label, c.id));
+        });
+      }).catch(function() {});
+    }
+  }
+  document.getElementById('msgRecipientType').addEventListener('change', fillRecipientOptions);
+
+  document.getElementById('newMessageBtn').addEventListener('click', openNewMessageModal);
+  document.getElementById('newMessageModal').addEventListener('click', function(e) {
+    if (e.target === this) closeNewMessageModal();
+  });
+
+  document.getElementById('msgSubmit').addEventListener('click', function() {
+    var type = document.getElementById('msgRecipientType').value;
+    var id = document.getElementById('msgRecipientId').value;
+    var subject = document.getElementById('msgSubject').value.trim();
+    var body = document.getElementById('msgBody').value.trim();
+    var sendSms = document.getElementById('msgSendSms').checked;
+    if (!subject) { LeasePilot.Toast.show('Subject is required', 'error'); return; }
+    if (!id) { LeasePilot.Toast.show('Select a recipient', 'error'); return; }
+    var btn = this;
+    btn.disabled = true;
+    LeasePilot.DataManager.sendMessage({ recipient_type: type, recipient_id: id, subject: subject, body: body || undefined, send_sms: sendSms })
+      .then(function() {
+        closeNewMessageModal();
+        loadMessages();
+        LeasePilot.Toast.show('Message sent');
+      })
+      .catch(function(err) {
+        LeasePilot.Toast.show(err.message || 'Failed to send', 'error');
+      })
+      .finally(function() { btn.disabled = false; });
+  });
+
+  loadMessages();
+})();
+</script>
 </body>
 </html>
