@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - LeasePilot AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.469.0"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -123,8 +123,8 @@
             const password = document.getElementById('password').value;
             const company = document.getElementById('company').value;
 
-            if (password.length < 8) {
-                alert('Password must be at least 8 characters');
+            if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+                alert('Password must be at least 8 characters and contain an uppercase letter and a number');
                 return;
             }
 
@@ -132,6 +132,7 @@
                 const response = await fetch(`${window.location.origin}/api/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ email, password, name, company })
                 });
 
@@ -141,7 +142,6 @@
                 }
 
                 const data = await response.json();
-                localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
                 window.location.href = 'index.html';
             } catch (error) {
@@ -150,23 +150,11 @@
             }
         });
 
-        // Check if already logged in
-        const token = localStorage.getItem('token');
-        if (token) {
-            fetch(`${window.location.origin}/api/auth/verify`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.user) {
-                    window.location.href = 'index.html';
-                }
-            })
-            .catch(() => {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-            });
-        }
+        // Check if already logged in via cookie
+        fetch(`${window.location.origin}/api/auth/verify`, { credentials: 'include' })
+            .then(res => res.ok ? res.json() : null)
+            .then(data => { if (data && data.user) window.location.href = 'index.html'; })
+            .catch(() => {});
     </script>
 </body>
 </html>

@@ -173,7 +173,10 @@ router.put('/me/password', authenticateToken, async (req, res) => {
     }
 
     // Hash new password
-    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters and contain an uppercase letter and a number' });
+    }
+    const newPasswordHash = await bcrypt.hash(newPassword, 12);
 
     // Update password
     await pool.query(

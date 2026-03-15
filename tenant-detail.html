@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tenant Details - LeasePilot AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.469.0"></script>
     <script src="app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
@@ -64,7 +64,7 @@ body { font-family: 'Inter', sans-serif; }
                     <div class="relative z-10">
                         <p class="mb-2 text-lg font-medium tracking-tight text-slate-900">Upgrade to Pro</p>
                         <p class="mb-4 text-sm text-slate-700">Unlock advanced AI forecasting for your portfolio.</p>
-                        <button class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
+                        <button onclick="window.location.href='settings.html'" class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
                             View Plans
                         </button>
                     </div>
@@ -774,7 +774,8 @@ body { font-family: 'Inter', sans-serif; }
             try {
                 const response = await fetch(`${window.location.origin}/api/tenants/${currentTenant.id}/invite`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ email, password })
                 });
                 const data = await response.json().catch(() => ({}));

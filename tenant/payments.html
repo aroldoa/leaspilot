@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payments - Tenant Portal | LeasePilot</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@0.469.0"></script>
   <script src="../app.js"></script>
   <script src="notifications.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -65,8 +65,25 @@
       };
       try {
         const list = await LeasePilot.API.get('/tenant/payments');
-        if (list && list.length) document.getElementById('paymentHistory').innerHTML = list.map(p => '<div class="py-2 border-b border-slate-50">' + (p.description || p.amount) + ' – ' + (p.transaction_date || '') + '</div>').join('');
-      } catch (e) {}
+        const el = document.getElementById('paymentHistory');
+        if (!list || !list.length) {
+          el.innerHTML = '<p class="text-slate-400 text-sm">No payment history yet.</p>';
+        } else {
+          el.innerHTML = list.map(function(p) {
+            var amt = p.amount != null ? '$' + Math.abs(parseFloat(p.amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+            var date = p.transaction_date ? new Date(p.transaction_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+            var desc = p.description || 'Payment';
+            var status = (p.status || 'cleared').toLowerCase();
+            var statusHtml = status === 'pending'
+              ? '<span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Pending</span>'
+              : '<span class="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">Cleared</span>';
+            return '<div class="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">'
+              + '<div><p class="text-sm font-medium text-slate-900">' + desc + '</p><p class="text-xs text-slate-400">' + date + '</p></div>'
+              + '<div class="flex items-center gap-3">' + statusHtml + '<span class="text-sm font-medium text-slate-900">' + amt + '</span></div>'
+              + '</div>';
+          }).join('');
+        }
+      } catch (e) { document.getElementById('paymentHistory').innerHTML = '<p class="text-slate-400 text-sm">Unable to load payment history.</p>'; }
     })();
   </script>
 </body>

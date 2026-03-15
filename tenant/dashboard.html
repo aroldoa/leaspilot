@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - Tenant Portal | LeasePilot</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@0.469.0"></script>
   <script src="../app.js"></script>
   <script src="notifications.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -254,16 +254,6 @@
       }
       try {
         const list = await API.get('/tenant/maintenance?t=' + Date.now());
-        // #region agent log
-        (function(){
-          var first = list && list[0];
-          var isAssignedFromStatus = first && first.status && String(first.status).toLowerCase() === 'assigned';
-          var isAssignedFromFields = first && (!!(first.assigned_contractor_id != null && first.assigned_contractor_id !== '' && first.assigned_contractor_id !== 0) || !!(first.contractor_name && first.contractor_name.trim()));
-          var isAssigned = isAssignedFromStatus || isAssignedFromFields;
-          var descSnippet = first && first.description ? String(first.description).slice(-80) : '';
-          fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H2,H5',location:'tenant/dashboard.html:maintenance list',message:'Dashboard received maintenance list',data:{listLength:list?list.length:0,firstKeys:first?Object.keys(first):[],firstStatus:first?first.status:undefined,firstDescriptionEnd:descSnippet,computedIsAssigned:isAssigned},timestamp:Date.now()})}).catch(function(){});
-        })();
-        // #endregion
         renderMaintenanceList(list);
       } catch (e) { document.getElementById('maintenanceList').innerHTML = '<p class="text-slate-500 py-2">Unable to load. <a href="maintenance.html" class="text-slate-600 hover:underline">Go to Maintenance</a></p>'; }
 

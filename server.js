@@ -4,8 +4,10 @@ import fs from 'fs';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
+import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { createPool } from './db/pool.js';
 import { initializeDatabase } from './db/schema.js';
@@ -41,25 +43,43 @@ const isProduction = process.env.NODE_ENV === 'production';
 app.set('trust proxy', 1);
 
 if ((process.env.VERCEL === '1' || process.env.VERCEL === 'true') && !process.env.BLOB_READ_WRITE_TOKEN) {
-  console.warn('⚠️ BLOB_READ_WRITE_TOKEN is not set. Profile avatars will not persist (serverless tmp is ephemeral). Add a Vercel Blob store and set the token to fix.');
+  console.warn('⚠️ BLOB_READ_WRITE_TOKEN is not set. Profile avatars will not persist.');
 }
 
-// Security headers (CSP disabled to avoid breaking static HTML/scripts)
-app.use(helmet({ contentSecurityPolicy: false }));
+// Security headers
+// CSP is disabled because the app uses inline onclick handlers and CDN scripts throughout
+// all HTML pages. Enabling strict CSP requires refactoring all pages to use external
+// event listeners and adding nonces — tracked as a future hardening task.
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
 
-// CORS: allow production app and localhost; reflect request origin when it matches so proxy/redirect don't break
+// CORS — exact whitelist only; no regex fallback
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
-  : ['https://app.leasepilotai.com', 'http://localhost:3000', 'http://127.0.0.1:3000'];
+  : [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'https://leaspilot.vercel.app',
+      'https://www.leasepilotai.com',
+      'https://app.leasepilotai.com',
+    ];
+
 function corsOrigin(origin, cb) {
+  // Allow requests with no origin (server-to-server, curl, mobile apps)
   if (!origin) return cb(null, true);
   const o = origin.replace(/\/$/, '');
-  if (ALLOWED_ORIGINS.some(allowed => allowed.replace(/\/$/, '') === o)) return cb(null, origin);
-  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(o) || /leasepilotai\.com$/i.test(o)) return cb(null, origin);
+  if (ALLOWED_ORIGINS.some(allowed => allowed.replace(/\/$/, '') === o)) {
+    return cb(null, origin);
+  }
   return cb(null, false);
 }
 app.use(cors({ origin: corsOrigin, credentials: true }));
-app.use(express.json());
+app.use(compression());
+app.use(cookieParser());
+app.use(express.json({ limit: '1mb' }));
+
 // Root and status first so they always work
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/status', (req, res) => {
@@ -67,18 +87,18 @@ app.get('/status', (req, res) => {
     <!DOCTYPE html><html><head><meta charset="utf-8"><title>LeasePilot</title></head>
     <body style="font-family:sans-serif;max-width:600px;margin:2rem auto;padding:1rem;">
       <h1>Server is running</h1>
-      <p>If you see this, the server is working.</p>
       <p><a href="/">Open the app</a> &middot; <a href="/api/health">API health</a></p>
     </body></html>
   `);
 });
-// Serve avatar files from the same directory we upload to (single source of truth: serverAvatarDir)
+
+// Serve avatar files
 app.get('/uploads/avatars/:filename', (req, res, next) => {
   const filename = path.basename(req.params.filename);
   if (!filename || filename.includes('..')) return next();
   const filePath = path.join(serverAvatarDir, filename);
   const fallbackPath = path.join(__dirname, 'uploads', 'avatars', filename);
-  function tryServe(where, statErr) {
+  function tryServe(where) {
     const ext = path.extname(filename).toLowerCase();
     const types = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp' };
     res.type(types[ext] || 'image/jpeg');
@@ -92,47 +112,44 @@ app.get('/uploads/avatars/:filename', (req, res, next) => {
     });
   });
 });
-// Serve static files (HTML, JS, etc.) from project root
+
+// Serve static files from project root
 app.use(express.static(__dirname));
-// Serve other uploaded files (e.g. maintenance photos)
-const uploadsPath = path.join(__dirname, 'uploads');
-app.use('/uploads', express.static(uploadsPath));
+// Serve uploaded files (maintenance photos, etc.)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Request logging (verbose only in development to avoid leaking request details in production logs)
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    if (!isProduction) {
-      const ms = Date.now() - start;
-      console.log(`${req.method} ${req.originalUrl} ${res.statusCode} ${ms}ms`);
-    }
+// Request logging (development only)
+if (!isProduction) {
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      console.log(`${req.method} ${req.originalUrl} ${res.statusCode} ${Date.now() - start}ms`);
+    });
+    next();
   });
-  next();
-});
+}
 
-// General API rate limit (300 req/15 min per IP). Auth and read-only data loads are skipped so normal use never hits 429.
+// General API rate limit — 200 req / 15 min per IP
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: 200,
   standardHeaders: true,
   legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again later.' },
 });
+// Apply to all /api routes except auth (auth has its own per-endpoint limiters)
 app.use('/api/', (req, res, next) => {
-  const p = req.path;
-  if (p.startsWith('auth') || p.startsWith('/auth')) return next();
-  if (p.startsWith('avatar') || p.startsWith('/avatar')) return next();
-  // Don't count GET /properties or GET /tenants (loaded on every page)
-  if (req.method === 'GET' && (p.startsWith('properties') || p.startsWith('/properties') || p.startsWith('tenants') || p.startsWith('/tenants'))) return next();
+  if (req.path.startsWith('/auth') || req.path.startsWith('auth')) return next();
   apiLimiter(req, res, next);
 });
 
-// Initialize database connection (null when DATABASE_URL is missing)
+// Initialize database
 const pool = createPool();
 app.locals.pool = pool;
 
 if (pool) {
   initializeDatabase(pool).then(() => {
-    console.log('✅ Database initialized successfully');
+    console.log('✅ Database initialized');
   }).catch(err => {
     console.error('❌ Database initialization failed:', err);
   });
@@ -140,7 +157,7 @@ if (pool) {
   console.warn('⚠️ DATABASE_URL not set; API will return 503 for database-dependent routes');
 }
 
-// Health check (no DB required; reports DB status)
+// Health check
 app.get('/api/health', async (req, res) => {
   const payload = { status: 'ok', message: 'LeasePilot AI API is running' };
   if (!pool) {
@@ -150,14 +167,14 @@ app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
     payload.db = 'connected';
-  } catch (err) {
+  } catch {
     payload.db = 'error';
     payload.status = 'degraded';
   }
   res.json(payload);
 });
 
-// Stream avatar from serverAvatarDir so image requests always hit this server (fixes 404 when /uploads is served elsewhere)
+// Avatar stream endpoint
 app.get('/api/avatar/:filename', (req, res) => {
   const filename = path.basename(req.params.filename);
   if (!filename || filename.includes('..')) return res.status(400).end();
@@ -180,7 +197,7 @@ app.get('/api/avatar/:filename', (req, res) => {
   });
 });
 
-// API routes (require DB)
+// API routes
 app.use('/api/auth', requirePool, authRoutes);
 app.use('/api/properties', requirePool, propertyRoutes);
 app.use('/api/tenants', requirePool, tenantRoutes);
@@ -198,24 +215,19 @@ app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
-// Central error handler (no stack trace in production)
+// Central error handler
 app.use((err, req, res, next) => {
-  // #region agent log
-  fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server.js:errorHandler',message:'unhandled',data:{errorMessage:err?.message,path:req?.path},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
-  // #endregion
-  console.error('Unhandled error:', err);
+  console.error('Unhandled error:', isProduction ? err.message : err);
   res.status(500).json({
     error: isProduction ? 'Internal server error' : err.message,
-    ...(isProduction ? {} : { stack: err.stack }),
   });
 });
 
-// Start server only when not in Vercel serverless
+// Start server (not in Vercel serverless)
 if (process.env.VERCEL !== '1') {
   try {
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
-      console.log(`📊 API available at http://localhost:${PORT}/api`);
     });
   } catch (err) {
     console.error('❌ Server failed to start:', err);
@@ -228,10 +240,8 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled rejection at:', promise, 'reason:', reason);
+process.on('unhandledRejection', (reason) => {
+  console.error('❌ Unhandled rejection:', reason);
 });
 
 export default app;
-
-

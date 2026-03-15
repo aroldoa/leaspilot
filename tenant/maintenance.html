@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Maintenance - Tenant Portal | LeasePilot</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@0.469.0"></script>
   <script src="../app.js"></script>
   <script src="notifications.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -131,7 +131,7 @@
               var base = window.location.origin || '';
               photosGridHtml = '<div class="flex flex-wrap gap-2">' + urls.map(function(u) {
                 var src = u.startsWith('http') ? u : (base + (u.startsWith('/') ? u : '/' + u));
-                return '<a href="' + src + '" target="_blank" rel="noopener"><img src="' + src + '" alt="Photo" class="h-24 w-24 rounded-xl object-cover border border-slate-200 hover:opacity-90 transition"></a>';
+                return '<a href="' + src + '" target="_blank" rel="noopener"><img src="' + src + '" alt="Photo" class="h-24 w-24 rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" loading="lazy"></a>';
               }).join('') + '</div>';
             }
           } catch (e) {}
@@ -222,13 +222,12 @@
         var submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true;
         try {
-          var token = localStorage.getItem('token');
           var base = (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http'))
             ? window.location.origin + '/api'
             : 'http://localhost:3000/api';
           var res = await fetch(base + '/tenant/maintenance', {
             method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token },
+            credentials: 'include',
             body: fd
           });
           if (!res.ok) {

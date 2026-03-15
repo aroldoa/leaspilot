@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tenants - LeasePilot AI</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://unpkg.com/lucide@0.469.0"></script>
     <script src="app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
@@ -65,7 +65,7 @@ body { font-family: 'Inter', sans-serif; }
                     <div class="relative z-10">
                         <p class="mb-2 text-lg font-medium tracking-tight text-slate-900">Upgrade to Pro</p>
                         <p class="mb-4 text-sm text-slate-700">Unlock advanced AI forecasting for your portfolio.</p>
-                        <button class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
+                        <button onclick="window.location.href='settings.html'" class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
                             View Plans
                         </button>
                     </div>
@@ -76,7 +76,7 @@ body { font-family: 'Inter', sans-serif; }
                     <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity">
                         <img data-user-avatar src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
                         <div class="flex flex-col flex-1">
-                            <span class="text-sm font-medium" data-user-name>Sarah Jenkins</span>
+                            <span class="text-sm font-medium" data-user-name></span>
                         <span class="text-xs text-slate-500">Portfolio Manager</span>
                     </div>
                     </a>
@@ -559,7 +559,7 @@ body { font-family: 'Inter', sans-serif; }
                         
                         const initials = `${tenant.first_name?.[0] || ''}${tenant.last_name?.[0] || ''}`.toUpperCase();
                         const avatar = tenant.image_url ? 
-                            `<img src="${tenant.image_url}" class="h-10 w-10 rounded-full object-cover ring-2 ring-white" alt="">` :
+                            `<img src="${tenant.image_url}" class="h-10 w-10 rounded-full object-cover ring-2 ring-white" loading="lazy" alt="">` :
                             `<div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white">${initials}</div>`;
                         
                         const leaseEndDate = tenant.lease_end ? 
@@ -700,8 +700,7 @@ body { font-family: 'Inter', sans-serif; }
                     throw new Error('LeasePilot library failed to load.');
                 }
                 await LeasePilot.checkAuth();
-                await loadProperties();
-                await loadTenants();
+                await Promise.all([loadProperties(), loadTenants()]);
                 initTenantsPage();
                 const params = new URLSearchParams(window.location.search);
                 const editId = params.get('edit');

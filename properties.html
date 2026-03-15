@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Properties - LeasePilot AI</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://unpkg.com/lucide@0.469.0"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
@@ -64,7 +64,7 @@ body { font-family: 'Inter', sans-serif; }
                     <div class="relative z-10">
                         <p class="mb-2 text-lg font-medium tracking-tight text-slate-900">Upgrade to Pro</p>
                         <p class="mb-4 text-sm text-slate-700">Unlock advanced AI forecasting for your portfolio.</p>
-                        <button class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
+                        <button onclick="window.location.href='settings.html'" class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
                             View Plans
                         </button>
                     </div>
@@ -75,7 +75,7 @@ body { font-family: 'Inter', sans-serif; }
                     <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity">
                         <img data-user-avatar src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
                         <div class="flex flex-col flex-1">
-                            <span class="text-sm font-medium" data-user-name>Sarah Jenkins</span>
+                            <span class="text-sm font-medium" data-user-name></span>
                         <span class="text-xs text-slate-500">Portfolio Manager</span>
                     </div>
                     </a>
@@ -107,7 +107,7 @@ body { font-family: 'Inter', sans-serif; }
                         <p class="mt-2 text-sm text-slate-500">Manage your portfolio, track occupancy, and optimize performance.</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                        <button onclick="exportPropertiesCSV()" class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
                             <i data-lucide="download" class="h-4 w-4"></i>
                             Export
                         </button>
@@ -171,10 +171,10 @@ body { font-family: 'Inter', sans-serif; }
                         Showing <span id="paginationRange" class="font-medium text-slate-900">0</span> of <span id="paginationTotal" class="font-medium text-slate-900">0</span> properties
                     </div>
                     <div class="flex gap-2">
-                        <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors" disabled="">
+                        <button id="prevPageBtn" onclick="changePage(-1)" class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors" disabled>
                             <i data-lucide="chevron-left" class="h-3 w-3"></i> Previous
                         </button>
-                        <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                        <button id="nextPageBtn" onclick="changePage(1)" class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
                             Next <i data-lucide="chevron-right" class="h-3 w-3"></i>
                         </button>
                     </div>
@@ -304,6 +304,26 @@ body { font-family: 'Inter', sans-serif; }
         let statusFilter = 'all';
         let searchQuery = '';
         let viewMode = 'grid'; // 'grid' | 'list'
+        let currentPage = 1;
+        const PAGE_SIZE = 9;
+
+        function changePage(delta) {
+            currentPage += delta;
+            applyFiltersAndRender();
+        }
+
+        function exportPropertiesCSV() {
+            const filtered = getFilteredProperties();
+            const rows = [['Name', 'Address', 'City', 'State', 'ZIP', 'Type', 'Status', 'Bedrooms', 'Bathrooms', 'Sq Ft', 'Monthly Rent']];
+            filtered.forEach(function(p) {
+                rows.push([p.name || '', p.address || '', p.city || '', p.state || '', p.zip || '', p.type || '', p.status || '', p.bedrooms || '', p.bathrooms || '', p.sqft || '', p.rent || '']);
+            });
+            const csv = rows.map(function(r) { return r.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+            const a = document.createElement('a');
+            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+            a.download = 'properties.csv';
+            a.click();
+        }
 
         function closePropertyModal() {
             if (returnToDetailId) {
@@ -336,6 +356,7 @@ body { font-family: 'Inter', sans-serif; }
 
         function setActiveFilter(status) {
             statusFilter = status;
+            currentPage = 1;
             document.querySelectorAll('.filter-tab').forEach(btn => {
                 const isActive = (btn.getAttribute('data-status') || '') === statusFilter;
                 btn.className = 'filter-tab whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium transition-colors ' +
@@ -390,8 +411,15 @@ body { font-family: 'Inter', sans-serif; }
                 grid.className = 'grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3';
             }
 
+            const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+            const pageStart = (currentPage - 1) * PAGE_SIZE;
+            const pageEnd = Math.min(pageStart + PAGE_SIZE, filtered.length);
+            const paged = filtered.slice(pageStart, pageEnd);
+
             grid.innerHTML = '';
-            filtered.forEach(property => {
+            paged.forEach(property => {
                 const el = viewMode === 'list' ? createPropertyListItem(property) : createPropertyCard(property);
                 grid.appendChild(el);
             });
@@ -414,8 +442,15 @@ body { font-family: 'Inter', sans-serif; }
 
             const rangeEl = document.getElementById('paginationRange');
             const totalEl = document.getElementById('paginationTotal');
-            if (rangeEl) rangeEl.textContent = filtered.length;
+            if (rangeEl) rangeEl.textContent = filtered.length > 0 ? (pageStart + 1) + '–' + pageEnd : '0';
             if (totalEl) totalEl.textContent = filtered.length;
+
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            if (prevBtn) prevBtn.disabled = currentPage <= 1;
+            if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+            const paginationBar = document.getElementById('paginationBar');
+            if (paginationBar) paginationBar.style.display = filtered.length <= PAGE_SIZE ? 'none' : '';
 
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
@@ -464,9 +499,9 @@ body { font-family: 'Inter', sans-serif; }
             card.innerHTML = `
                 <div class="relative h-48 w-full overflow-hidden">
                     <a href="property-detail.html?id=${property.id}" class="block h-full w-full cursor-pointer">
-                        <img src="${property.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800&h=500'}" 
-                             class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                             alt="${property.name}">
+                        <img src="${property.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800&h=500'}"
+                             class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                             loading="lazy" alt="${property.name}">
                     </a>
                     <div class="absolute right-4 top-4 z-10">
                         <span class="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-medium ${status.text} backdrop-blur-md shadow-sm">
@@ -521,7 +556,7 @@ body { font-family: 'Inter', sans-serif; }
             row.className = 'flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 transition-all hover:shadow-md hover:border-slate-200';
             row.innerHTML = `
                 <a href="property-detail.html?id=${property.id}" class="flex-shrink-0 h-24 w-32 rounded-xl overflow-hidden bg-slate-100">
-                    <img src="${property.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800&h=500'}" class="h-full w-full object-cover" alt="${property.name}">
+                    <img src="${property.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800&h=500'}" class="h-full w-full object-cover" loading="lazy" alt="${property.name}">
                 </a>
                 <div class="flex-1 min-w-0">
                     <div class="flex flex-wrap items-center gap-2">
@@ -676,10 +711,6 @@ body { font-family: 'Inter', sans-serif; }
                 }
                 
                 console.log('✅ Authentication successful');
-                
-                // Check token
-                const token = localStorage.getItem('token');
-                console.log('🎫 Token exists:', !!token);
                 
                 // Load properties
                 console.log('📋 Loading properties...');

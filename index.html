@@ -3,7 +3,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LeasePilot AI - Intelligent Property Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.469.0"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
@@ -30,7 +30,7 @@
 
   <div class="flex h-screen overflow-hidden">
       <!-- Sidebar -->
-      <aside class="hidden md:flex w-72 flex-col justify-between border-r border-slate-200 bg-white p-6">
+      <aside id="mobileSidebar" class="hidden md:flex w-72 flex-col justify-between border-r border-slate-200 bg-white p-6 fixed md:relative inset-y-0 left-0 z-40">
           <div>
               <div class="flex items-center gap-3 mb-10">
                   <a href="index.html" class="flex items-center">
@@ -79,7 +79,7 @@
                   <div class="relative z-10">
                       <p class="mb-2 text-lg font-medium tracking-tight text-slate-900">Upgrade to Pro</p>
                       <p class="mb-4 text-sm text-slate-700">Unlock advanced AI forecasting for your portfolio.</p>
-                      <button class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
+                      <button onclick="window.location.href='settings.html'" class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
                           View Plans
                       </button>
             </div>
@@ -91,7 +91,7 @@
                   <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity">
                       <img data-user-avatar src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
                       <div class="flex flex-col flex-1">
-                          <span class="text-sm font-medium" data-user-name>Sarah Jenkins</span>
+                          <span class="text-sm font-medium" data-user-name></span>
                           <span class="text-xs text-slate-500">Portfolio Manager</span>
             </div>
           </a>
@@ -111,7 +111,7 @@
                       <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-10">
               </a>
             </div>
-              <button class="text-slate-500"><i data-lucide="menu" class="h-6 w-6"></i></button>
+              <button onclick="document.getElementById('mobileSidebar').classList.toggle('hidden')" class="text-slate-500"><i data-lucide="menu" class="h-6 w-6"></i></button>
               </div>
               
           <div class="mx-auto max-w-7xl px-6 py-8 md:px-10 md:py-12">
@@ -146,7 +146,7 @@
                           <i data-lucide="bell" class="h-5 w-5"></i>
                           <span data-notification-count class="hidden absolute -top-0.5 -right-0.5 min-w-[1.25rem] h-5 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-medium">0</span>
             </a>
-                      <button class="flex h-12 items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
+                      <button onclick="window.location.href='properties.html'" class="flex h-12 items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
                           <i data-lucide="plus" class="h-4 w-4"></i>
                           Add Property
             </button>
@@ -162,36 +162,19 @@
             <div>
                               <h3 class="text-sm font-medium text-slate-500 mb-1">Total Revenue (YTD)</h3>
                               <div class="flex items-baseline gap-2">
-                                  <span class="text-4xl font-medium tracking-tight text-slate-900">$1,240,500</span>
-                                  <span class="rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-600 flex items-center gap-0.5">
-                                      <i data-lucide="trending-up" class="h-3 w-3"></i> 12.5%
+                                  <span id="dashRevenue" class="text-4xl font-medium tracking-tight text-slate-900">—</span>
+                                  <span id="dashRevenueGrowth" class="rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-600 flex items-center gap-0.5 hidden">
+                                      <i data-lucide="trending-up" class="h-3 w-3"></i> <span id="dashRevenueGrowthVal"></span>
                                   </span>
             </div>
             </div>
-                          <button class="rounded-full border border-slate-200 px-4 py-2 text-xs font-medium hover:bg-slate-50">View Report</button>
+                          <a href="financials.html" class="rounded-full border border-slate-200 px-4 py-2 text-xs font-medium hover:bg-slate-50">View Report</a>
         </div>
 
-                      <!-- Abstract Chart Representation -->
-                      <div class="flex items-end gap-3 h-48 w-full">
-                          <div class="w-full bg-slate-50 rounded-t-xl h-[40%] hover:h-[45%] transition-all duration-500 relative group">
-                              <div class="absolute bottom-0 w-full bg-slate-200 rounded-t-xl h-0 group-hover:h-full transition-all duration-500"></div>
-          </div>
-                          <div class="w-full bg-slate-50 rounded-t-xl h-[60%] hover:h-[65%] transition-all duration-500 relative group">
-                               <div class="absolute bottom-0 w-full bg-[#EBC7B6] rounded-t-xl h-0 group-hover:h-full transition-all duration-500"></div>
-            </div>
-                          <div class="w-full bg-slate-50 rounded-t-xl h-[55%] hover:h-[60%] transition-all duration-500 relative group">
-                              <div class="absolute bottom-0 w-full bg-slate-200 rounded-t-xl h-0 group-hover:h-full transition-all duration-500"></div>
-            </div>
-                          <div class="w-full bg-slate-50 rounded-t-xl h-[80%] hover:h-[85%] transition-all duration-500 relative group">
-                              <div class="absolute bottom-0 w-full bg-slate-900 rounded-t-xl h-0 group-hover:h-full transition-all duration-500"></div>
-          </div>
-                          <div class="w-full bg-slate-50 rounded-t-xl h-[70%] hover:h-[75%] transition-all duration-500 relative group">
-                              <div class="absolute bottom-0 w-full bg-slate-300 rounded-t-xl h-0 group-hover:h-full transition-all duration-500"></div>
-        </div>
-                          <div class="w-full bg-slate-50 rounded-t-xl h-[90%] hover:h-[95%] transition-all duration-500 relative group">
-                              <div class="absolute bottom-0 w-full bg-slate-900 rounded-t-xl h-0 group-hover:h-full transition-all duration-500"></div>
-          </div>
-        </div>
+                      <!-- Chart Representation (filled dynamically) -->
+                      <div id="dashRevenueChart" class="flex items-end gap-3 h-48 w-full">
+                          <div class="w-full text-center text-xs text-slate-400 self-center">Loading chart...</div>
+                      </div>
 
                       <div class="mt-4 flex gap-8">
                           <div class="flex items-center gap-2">
@@ -209,14 +192,14 @@
                   <div class="col-span-1 md:col-span-4 rounded-[2rem] bg-white p-8 shadow-sm border border-slate-100 flex flex-col justify-between">
         <div>
                           <h3 class="text-sm font-medium text-slate-500 mb-1">Occupancy Rate</h3>
-                          <span class="text-3xl font-medium tracking-tight text-slate-900">98%</span>
+                          <span id="dashOccupancy" class="text-3xl font-medium tracking-tight text-slate-900">—</span>
           </div>
 
                       <div class="relative mx-auto my-6 flex h-40 w-40 items-center justify-center">
                           <!-- Circular Progress -->
                           <svg class="h-full w-full -rotate-90 transform" viewBox="0 0 36 36">
                               <path class="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2"></path>
-                              <path class="text-slate-900" stroke-dasharray="98, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2"></path>
+                              <path id="dashOccupancyRing" class="text-slate-900" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2"></path>
                           </svg>
                           <div class="absolute flex flex-col items-center">
                               <span class="text-xs text-slate-400">Target 95%</span>
@@ -224,12 +207,10 @@
         </div>
 
                       <div class="flex items-center justify-between">
-                          <div class="flex -space-x-2">
-                              <img class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&amp;fit=crop&amp;q=80&amp;w=64&amp;h=64" alt="">
-                              <img class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&amp;fit=crop&amp;q=80&amp;w=64&amp;h=64" alt="">
-                              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-600 ring-2 ring-white">+42</div>
+                          <div class="flex items-center gap-2">
+                              <i data-lucide="users" class="h-5 w-5 text-slate-400"></i>
+                              <span class="text-xs text-slate-500"><span id="dashActiveTenants">—</span> active tenants</span>
             </div>
-                          <span class="text-xs text-slate-500">Satisfied investors</span>
           </div>
           </div>
 
@@ -245,8 +226,8 @@
                                   <i data-lucide="sparkles" class="h-3 w-3"></i>
                                   AI Recommendation
           </div>
-                              <h3 class="text-2xl font-medium tracking-tight mb-2">Review Pending Leases</h3>
-                              <p class="text-slate-400 text-base leading-relaxed">LeasePilot has identified 3 lease agreements that match your high-value criteria but require manual approval for custom clauses.</p>
+                              <h3 class="text-2xl font-medium tracking-tight mb-2" id="aiCardTitle">Review Pending Leases</h3>
+                              <p class="text-slate-400 text-base leading-relaxed" id="aiCardDesc">Loading your portfolio summary...</p>
           </div>
                           <div class="flex gap-4">
                               <a href="tenants.html" class="rounded-full bg-white px-6 py-3 text-sm font-medium text-slate-900 hover:bg-slate-100 transition-colors inline-block">
@@ -346,25 +327,135 @@
                 try {
                     await LeasePilot.checkAuth();
                     hideLoading();
+                    // --- Fetch all dashboard data in parallel ---
+                    var _dashTxns = [], _dashProps = [], _dashTenants = [], _dashMaint = [];
+                    try {
+                        var _results = await Promise.all([
+                            LeasePilot.DataManager.getTransactions(),
+                            LeasePilot.DataManager.getProperties(),
+                            LeasePilot.DataManager.getTenants(),
+                            LeasePilot.DataManager.getMaintenanceRequests()
+                        ]);
+                        _dashTxns = _results[0] || [];
+                        _dashProps = _results[1] || [];
+                        _dashTenants = _results[2] || [];
+                        _dashMaint = _results[3] || [];
+                    } catch (err) {
+                        console.error('Dashboard data fetch error:', err);
+                    }
+
+                    // --- Maintenance request list ---
                     var listEl = document.getElementById('dashboardMaintenanceList');
                     if (listEl) {
-                        try {
-                            var requests = await LeasePilot.DataManager.getMaintenanceRequests();
-                            if (!requests || requests.length === 0) {
-                                listEl.innerHTML = '<p class="text-slate-400">No maintenance requests from tenants yet.</p>';
-                            } else {
-                                listEl.innerHTML = requests.map(function(r) {
-                                    var tenantName = [r.tenant_first_name, r.tenant_last_name].filter(Boolean).join(' ') || 'Tenant';
-                                    var propLink = r.property_id ? '<a href="property-detail.html?id=' + r.property_id + '" class="text-slate-900 font-medium hover:underline">' + (r.property_name || 'Property') + '</a>' : (r.property_name || '—');
-                                    var date = r.created_at ? new Date(r.created_at).toLocaleDateString() : '';
-                                    var status = (r.status || 'open').toLowerCase();
-                                    var statusClass = status === 'open' ? 'bg-amber-50 text-amber-700' : status === 'in_progress' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700';
-                                    return '<div class="flex items-center justify-between py-2 border-b border-slate-50 last:border-0"><div><p class="font-medium text-slate-900">' + (r.subject || 'Request') + '</p><p class="text-slate-500">' + tenantName + (r.tenant_unit ? ' · Unit ' + r.tenant_unit : '') + ' · ' + propLink + '</p></div><span class="rounded-full px-2 py-0.5 text-xs font-medium ' + statusClass + '">' + (r.status || 'open') + '</span><span class="text-slate-400 text-xs">' + date + '</span></div>';
-                                }).join('');
-                            }
-                        } catch (err) {
-                            listEl.innerHTML = '<p class="text-slate-400">Unable to load maintenance requests.</p>';
+                        if (_dashMaint.length === 0) {
+                            listEl.innerHTML = '<p class="text-slate-400">No maintenance requests from tenants yet.</p>';
+                        } else {
+                            listEl.innerHTML = _dashMaint.map(function(r) {
+                                var tenantName = [r.tenant_first_name, r.tenant_last_name].filter(Boolean).join(' ') || 'Tenant';
+                                var propLink = r.property_id ? '<a href="property-detail.html?id=' + r.property_id + '" class="text-slate-900 font-medium hover:underline">' + (r.property_name || 'Property') + '</a>' : (r.property_name || '—');
+                                var date = r.created_at ? new Date(r.created_at).toLocaleDateString() : '';
+                                var status = (r.status || 'open').toLowerCase();
+                                var statusClass = status === 'open' ? 'bg-amber-50 text-amber-700' : status === 'in_progress' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700';
+                                return '<div class="flex items-center justify-between py-2 border-b border-slate-50 last:border-0"><div><p class="font-medium text-slate-900">' + (r.subject || 'Request') + '</p><p class="text-slate-500">' + tenantName + (r.tenant_unit ? ' · Unit ' + r.tenant_unit : '') + ' · ' + propLink + '</p></div><span class="rounded-full px-2 py-0.5 text-xs font-medium ' + statusClass + '">' + (r.status || 'open') + '</span><span class="text-slate-400 text-xs">' + date + '</span></div>';
+                            }).join('');
                         }
+                    }
+
+                    // --- Dashboard Stats ---
+                    try {
+                        var txns = _dashTxns;
+                        var props = _dashProps;
+
+                        // Revenue (YTD)
+                        var now = new Date();
+                        var ytdStart = new Date(now.getFullYear(), 0, 1);
+                        var prevStart = new Date(now.getFullYear() - 1, 0, 1);
+                        var prevEnd = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+
+                        function sumIncome(list, from, to) {
+                            return list.filter(function(t) {
+                                if (t.type !== 'income') return false;
+                                var d = t.transaction_date ? new Date(t.transaction_date) : null;
+                                return d && d >= from && d <= to;
+                            }).reduce(function(s, t) { return s + parseFloat(t.amount || 0); }, 0);
+                        }
+
+                        var revenueYTD = sumIncome(txns, ytdStart, now);
+                        var revenuePrev = sumIncome(txns, prevStart, prevEnd);
+                        var dashRev = document.getElementById('dashRevenue');
+                        var dashRevGrowth = document.getElementById('dashRevenueGrowth');
+                        var dashRevGrowthVal = document.getElementById('dashRevenueGrowthVal');
+                        if (dashRev) dashRev.textContent = '$' + revenueYTD.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                        if (dashRevGrowth && revenuePrev > 0 && revenueYTD > 0) {
+                            var growth = ((revenueYTD - revenuePrev) / revenuePrev * 100);
+                            dashRevGrowthVal.textContent = (growth >= 0 ? '+' : '') + growth.toFixed(1) + '%';
+                            dashRevGrowth.classList.remove('hidden');
+                        }
+
+                        // Occupancy
+                        var total = props.length;
+                        var occupied = props.filter(function(p) { return (p.status || '').toLowerCase() === 'occupied'; }).length;
+                        var rate = total > 0 ? Math.round(occupied / total * 100) : 0;
+                        var dashOcc = document.getElementById('dashOccupancy');
+                        var dashRing = document.getElementById('dashOccupancyRing');
+                        if (dashOcc) dashOcc.textContent = rate + '%';
+                        if (dashRing) dashRing.setAttribute('stroke-dasharray', rate + ', 100');
+
+                        // Active tenants count
+                        var activeTenantCount = _dashTenants.filter(function(t) { return (t.status || '').toLowerCase() === 'active'; }).length;
+                        var dashAt = document.getElementById('dashActiveTenants');
+                        if (dashAt) dashAt.textContent = activeTenantCount;
+
+                        // Revenue chart — last 6 months of income
+                        var months = [];
+                        for (var i = 5; i >= 0; i--) {
+                            var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                            months.push({ label: d.toLocaleString('en-US', { month: 'short' }), year: d.getFullYear(), month: d.getMonth() });
+                        }
+                        var monthlyIncome = months.map(function(m) {
+                            return txns.filter(function(t) {
+                                if (t.type !== 'income') return false;
+                                var d = t.transaction_date ? new Date(t.transaction_date) : null;
+                                return d && d.getFullYear() === m.year && d.getMonth() === m.month;
+                            }).reduce(function(s, t) { return s + parseFloat(t.amount || 0); }, 0);
+                        });
+                        var maxIncome = Math.max.apply(null, monthlyIncome) || 1;
+                        var barColors = ['bg-slate-200', 'bg-[#EBC7B6]', 'bg-slate-200', 'bg-slate-900', 'bg-slate-300', 'bg-slate-900'];
+                        var chart = document.getElementById('dashRevenueChart');
+                        if (chart) {
+                            chart.innerHTML = months.map(function(m, i) {
+                                var pct = Math.round(monthlyIncome[i] / maxIncome * 90);
+                                var isCurrentMonth = i === months.length - 1;
+                                var labelClass = isCurrentMonth ? 'text-slate-900 font-medium' : 'text-slate-400';
+                                return '<div class="w-full flex flex-col items-center gap-1 h-full justify-end">'
+                                    + '<div class="w-full flex items-end justify-center h-full">'
+                                    + '<div class="w-full rounded-t-xl transition-all duration-700 relative group ' + barColors[i] + '" style="height:' + Math.max(pct, 4) + '%">'
+                                    + '<div class="absolute bottom-0 w-full ' + barColors[i] + ' rounded-t-xl opacity-0 group-hover:opacity-30 transition-all duration-500 h-full"></div>'
+                                    + '</div></div>'
+                                    + '<span class="text-[10px] font-medium ' + labelClass + '">' + m.label + '</span>'
+                                    + '</div>';
+                            }).join('');
+                        }
+
+                        // AI card — summarize open maintenance + vacant properties
+                        var openMaint = _dashMaint.filter(function(r) { return (r.status || '').toLowerCase() === 'open'; });
+                        var vacant = props.filter(function(p) { return (p.status || '').toLowerCase() === 'vacant'; });
+                        var aiTitle = document.getElementById('aiCardTitle');
+                        var aiDesc = document.getElementById('aiCardDesc');
+                        if (aiTitle && aiDesc) {
+                            if (openMaint.length > 0) {
+                                aiTitle.textContent = openMaint.length + ' Open Maintenance Request' + (openMaint.length !== 1 ? 's' : '');
+                                aiDesc.textContent = openMaint.length + ' maintenance request' + (openMaint.length !== 1 ? 's require' : ' requires') + ' your attention.' + (vacant.length > 0 ? ' Also, ' + vacant.length + ' propert' + (vacant.length !== 1 ? 'ies are' : 'y is') + ' vacant and available to list.' : '');
+                            } else if (vacant.length > 0) {
+                                aiTitle.textContent = vacant.length + ' Vacant Propert' + (vacant.length !== 1 ? 'ies' : 'y');
+                                aiDesc.textContent = vacant.length + ' propert' + (vacant.length !== 1 ? 'ies are' : 'y is') + ' vacant. Consider listing ' + (vacant.length !== 1 ? 'them' : 'it') + ' to maximize your rental income.';
+                            } else {
+                                aiTitle.textContent = 'Portfolio Looking Good';
+                                aiDesc.textContent = 'All properties are occupied and no open maintenance requests. Your portfolio is running smoothly.';
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Dashboard stats error:', err);
                     }
 
                     var dashboardPropertiesBody = document.getElementById('dashboardPropertiesBody');
@@ -409,21 +500,15 @@
                             var tenantHtml = t ? '<div class="flex items-center gap-2"><div class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] font-medium text-slate-500">' + esc(ini) + '</div><span>' + esc((t.first_name || '') + ' ' + (t.last_name || '').trim()) + '</span></div>' : '<span class="text-slate-400 italic text-xs">—</span>';
                             var actionHtml = t ? '<button class="rounded-full border border-slate-200 p-2 text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all" onclick="event.stopPropagation()"><i data-lucide="more-horizontal" class="h-4 w-4"></i></button>' : '<button class="rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white hover:bg-slate-800 transition-all" onclick="event.stopPropagation(); window.location.href=\'property-detail.html?id=' + id + '\'">List Now</button>';
                             var imgSrc = (p.image_url || '').trim() ? esc(p.image_url) : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=100&h=100';
-                            return '<tr onclick="window.location.href=\'property-detail.html?id=' + id + '\'" class="group hover:bg-slate-50/50 transition-colors cursor-pointer"><td class="whitespace-nowrap px-6 py-4"><div class="flex items-center gap-4"><div class="h-12 w-12 overflow-hidden rounded-xl bg-slate-100"><img src="' + imgSrc + '" class="h-full w-full object-cover" alt=""></div><div><div class="font-medium text-slate-900">' + name + '</div><div class="text-xs text-slate-500">' + esc(subtitle) + '</div></div></div></td><td class="whitespace-nowrap px-6 py-4"><span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ' + statusClass + '"><span class="h-1.5 w-1.5 rounded-full ' + (status === 'occupied' ? 'bg-green-600' : status === 'maintenance' ? 'bg-amber-600' : 'bg-slate-400') + '"></span>' + statusLabel + '</span></td><td class="whitespace-nowrap px-6 py-4 text-slate-900 font-medium">' + rent + '</td><td class="whitespace-nowrap px-6 py-4">' + tenantHtml + '</td><td class="whitespace-nowrap px-6 py-4 text-right" onclick="event.stopPropagation()">' + actionHtml + '</td></tr>';
+                            return '<tr onclick="window.location.href=\'property-detail.html?id=' + id + '\'" class="group hover:bg-slate-50/50 transition-colors cursor-pointer"><td class="whitespace-nowrap px-6 py-4"><div class="flex items-center gap-4"><div class="h-12 w-12 overflow-hidden rounded-xl bg-slate-100"><img src="' + imgSrc + '" class="h-full w-full object-cover" loading="lazy" alt=""></div><div><div class="font-medium text-slate-900">' + name + '</div><div class="text-xs text-slate-500">' + esc(subtitle) + '</div></div></div></td><td class="whitespace-nowrap px-6 py-4"><span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ' + statusClass + '"><span class="h-1.5 w-1.5 rounded-full ' + (status === 'occupied' ? 'bg-green-600' : status === 'maintenance' ? 'bg-amber-600' : 'bg-slate-400') + '"></span>' + statusLabel + '</span></td><td class="whitespace-nowrap px-6 py-4 text-slate-900 font-medium">' + rent + '</td><td class="whitespace-nowrap px-6 py-4">' + tenantHtml + '</td><td class="whitespace-nowrap px-6 py-4 text-right" onclick="event.stopPropagation()">' + actionHtml + '</td></tr>';
                         }).join('');
                         if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
                     }
                     if (dashboardPropertiesBody) {
-                        try {
-                            var props = await LeasePilot.DataManager.getProperties();
-                            var tenants = await LeasePilot.DataManager.getTenants();
-                            var byProp = {};
-                            (tenants || []).forEach(function (t) { var pid = t.property_id != null ? String(t.property_id) : null; if (pid) { if (!byProp[pid]) byProp[pid] = []; byProp[pid].push(t); } });
-                            dashboardPropertiesData = (props || []).map(function (p) { var key = p.id != null ? String(p.id) : ''; var list = byProp[key] || []; return { property: p, tenant: list[0] || null }; });
-                            renderDashboardProperties();
-                        } catch (err) {
-                            dashboardPropertiesBody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 text-sm">Unable to load properties.</td></tr>';
-                        }
+                        var byProp = {};
+                        _dashTenants.forEach(function (t) { var pid = t.property_id != null ? String(t.property_id) : null; if (pid) { if (!byProp[pid]) byProp[pid] = []; byProp[pid].push(t); } });
+                        dashboardPropertiesData = _dashProps.map(function (p) { var key = p.id != null ? String(p.id) : ''; var list = byProp[key] || []; return { property: p, tenant: list[0] || null }; });
+                        renderDashboardProperties();
                     }
                     function onDashboardSearchInput() {
                         renderDashboardProperties();
@@ -460,7 +545,7 @@
                             var name = esc(p.name || 'Property');
                             var address = esc([p.address, p.city, p.state, p.zip].filter(Boolean).join(', ') || '—');
                             var imgSrc = (p.image_url || '').trim() ? esc(p.image_url) : defaultImg;
-                            return '<a href="property-detail.html?id=' + id + '" class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"><div class="h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-slate-100"><img src="' + imgSrc + '" alt="" class="h-full w-full object-cover"></div><div class="min-w-0 flex-1"><p class="font-medium text-slate-900 truncate">' + name + '</p><p class="text-xs text-slate-500 truncate">' + address + '</p></div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-300 shrink-0"></i></a>';
+                            return '<a href="property-detail.html?id=' + id + '" class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"><div class="h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-slate-100"><img src="' + imgSrc + '" alt="" class="h-full w-full object-cover" loading="lazy"></div><div class="min-w-0 flex-1"><p class="font-medium text-slate-900 truncate">' + name + '</p><p class="text-xs text-slate-500 truncate">' + address + '</p></div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-300 shrink-0"></i></a>';
                         }).join('');
                         drop.classList.remove('hidden');
                         if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();

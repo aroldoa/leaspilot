@@ -115,9 +115,6 @@ router.post('/pay', (req, res) => {
 router.get('/maintenance', async (req, res) => {
   try {
     const pool = req.app.locals.pool;
-    // #region agent log
-    fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H1,H4',location:'tenant.js:GET/maintenance',message:'Tenant maintenance GET entry',data:{tenantId:req.tenantId},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     const result = await pool.query(
       `SELECT mr.id, mr.subject, mr.description, mr.status, mr.priority, mr.issue_type, mr.photo_urls,
               mr.assigned_contractor_id, mr.created_at, mr.updated_at,
@@ -129,9 +126,6 @@ router.get('/maintenance', async (req, res) => {
       [req.tenantId]
     );
     const rawRows = result.rows || [];
-    // #region agent log
-    fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H1',location:'tenant.js:GET/maintenance',message:'Tenant maintenance raw DB rows',data:{rowCount:rawRows.length,sample:rawRows[0]?{id:rawRows[0].id,assigned_contractor_id:rawRows[0].assigned_contractor_id,contractor_name:rawRows[0].contractor_name}:null},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     // Build each row explicitly so assignment/contractor fields are always in the JSON (no reliance on spread/pg row shape)
     const rows = rawRows.map((r) => {
       const aid = r.assigned_contractor_id;
@@ -160,15 +154,6 @@ router.get('/maintenance', async (req, res) => {
       };
     });
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-    // #region agent log
-    const first = rows[0];
-    const sentKeys = first ? Object.keys(first) : [];
-    console.log('[DEBUG] GET /tenant/maintenance response:', { rowCount: rows.length, firstRowKeys: sentKeys, firstAssignedId: first ? first.assigned_contractor_id : null, firstContractorName: first ? first.contractor_name : null });
-    try {
-      const logPath = path.join(__dirname, '..', 'debug-maintenance.log');
-      fs.appendFileSync(logPath, JSON.stringify({ hypothesisId: 'H5', location: 'tenant.js:GET/maintenance', message: 'Server sending rows', data: { rowCount: rows.length, firstRowKeys: sentKeys, firstAssignedId: first ? first.assigned_contractor_id : null, firstContractorName: first ? first.contractor_name : null }, timestamp: Date.now() }) + '\n');
-    } catch (e) {}
-    // #endregion
     res.json(rows);
   } catch (error) {
     console.error('Tenant maintenance list error:', error);

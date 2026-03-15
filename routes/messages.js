@@ -204,8 +204,14 @@ router.post('/reply', authenticateToken, requireRole('Portfolio Manager'), async
 
     if (send_sms) {
       const recipientId = r.recipient_tenant_id || r.recipient_contractor_id;
-      const table = r.recipient_type === 'tenant' ? 'tenants' : 'contractors';
-      const phoneRow = await pool.query(`SELECT phone FROM ${table} WHERE id = $1`, [recipientId]);
+      const phoneTable = { tenant: 'tenants', contractor: 'contractors' }[r.recipient_type];
+      if (!phoneTable) throw new Error('Invalid recipient_type');
+      const phoneRow = await pool.query(
+        phoneTable === 'tenants'
+          ? 'SELECT phone FROM tenants WHERE id = $1'
+          : 'SELECT phone FROM contractors WHERE id = $1',
+        [recipientId]
+      );
       const phone = phoneRow.rows[0]?.phone;
       if (phone && String(phone).trim()) {
         const smsBody = bodyText.slice(0, 1600);

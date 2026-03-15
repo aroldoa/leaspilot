@@ -264,6 +264,29 @@ export async function initializeDatabase(pool) {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT
     `);
 
+    // Performance indexes: date-range filters, status filters, unread message lookups
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date DESC)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_transactions_user_type ON transactions(user_id, type)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_properties_status ON properties(status)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_tenants_status ON tenants(status)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_maintenance_requests_status ON maintenance_requests(status)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_maintenance_requests_property_id ON maintenance_requests(property_id)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_messages_read_at ON messages(read_at)
+    `).catch(() => {});
+
     console.log('✅ Database schema created successfully');
   } catch (error) {
     console.error('Error initializing database:', error);

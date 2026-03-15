@@ -16,24 +16,17 @@ function getAvatarOrigin() {
 // API Helper Functions
 const API = {
   async request(endpoint, options = {}) {
-    const token = localStorage.getItem('token');
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers
     };
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
     try {
-      console.log(`🌐 API Request: ${options.method || 'GET'} ${API_BASE_URL}${endpoint}`);
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
-        headers
+        headers,
+        credentials: 'include', // send httpOnly auth cookie automatically
       });
-
-      console.log(`📡 Response status: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
         let errorMessage = `Request failed with status ${response.status}`;
@@ -51,12 +44,10 @@ const API = {
         if (response.status === 503) {
           errorMessage = errorMessage.includes('unavailable') ? errorMessage : 'Service unavailable. The database may be disconnected.';
         }
-        console.error('❌ API Error:', { status: response.status, error: errorMessage });
         const err = new Error(errorMessage);
         err.status = response.status;
-        // Session expired or invalid: clear and send to login so user doesn't see "empty" data
+        // Session expired or invalid: clear local cache and redirect to login
         if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem('token');
           localStorage.removeItem('user');
           const p = (typeof window !== 'undefined' && window.location.pathname) || '';
           window.location.href = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
@@ -64,13 +55,10 @@ const API = {
         throw err;
       }
 
-      const data = await response.json();
-      console.log(`✅ API Success:`, data);
-      return data;
-  } catch (error) {
-    console.error('❌ API Error:', error);
-    throw error;
-  }
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
   },
 
   get(endpoint) {
@@ -103,13 +91,11 @@ const API = {
   },
 
   async uploadAvatar(file) {
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('Not logged in');
     const formData = new FormData();
     formData.append('avatar', file, file.name || 'avatar.jpg');
     const response = await fetch(`${API_BASE_URL}/users/me/avatar`, {
       method: 'POST',
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      credentials: 'include',
       body: formData
     });
     if (!response.ok) {
@@ -120,18 +106,10 @@ const API = {
   }
 };
 
-// Authentication Check
+// Authentication Check — relies on httpOnly cookie sent automatically by browser
 async function checkAuth() {
-  // Skip auth check on login/signup pages
   if (window.location.pathname.includes('login.html') || window.location.pathname.includes('signup.html')) {
     return true;
-  }
-
-  const token = localStorage.getItem('token');
-  if (!token) {
-    const p = window.location.pathname || '';
-    window.location.href = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
-    return false;
   }
 
   try {
@@ -142,37 +120,23 @@ async function checkAuth() {
       const path = window.location.pathname || '';
       const isTenantPage = path.includes('/tenant/');
       const isContractorPage = path.includes('/contractor/');
-      if (role === 'tenant' && !isTenantPage) {
-        window.location.href = 'tenant/dashboard.html';
-        return false;
-      }
-      if (role === 'contractor' && !isContractorPage) {
-        window.location.href = 'contractor/messages.html';
-        return false;
-      }
-      if (role !== 'tenant' && isTenantPage) {
-        window.location.href = '../index.html';
-        return false;
-      }
-      if (role !== 'contractor' && isContractorPage) {
-        window.location.href = '../index.html';
-        return false;
-      }
+      if (role === 'tenant' && !isTenantPage) { window.location.href = 'tenant/dashboard.html'; return false; }
+      if (role === 'contractor' && !isContractorPage) { window.location.href = 'contractor/messages.html'; return false; }
+      if (role !== 'tenant' && isTenantPage) { window.location.href = '../index.html'; return false; }
+      if (role !== 'contractor' && isContractorPage) { window.location.href = '../index.html'; return false; }
       return true;
     }
   } catch (error) {
-    // Only clear session and redirect on explicit auth failure (401/403).
-    // Network errors, 5xx, 503, 429 etc. do not invalidate the token.
     const status = error && error.status;
     if (status === 401 || status === 403) {
-      localStorage.removeItem('token');
       localStorage.removeItem('user');
       const p = (typeof window !== 'undefined' && window.location.pathname) || '';
       window.location.href = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
       return false;
     }
-    if (typeof window !== 'undefined' && window.LeasePilot && window.LeasePilot.Toast && window.LeasePilot.Toast.show) {
-      window.LeasePilot.Toast.show('Could not verify session. You can keep using the app or refresh to try again.', 'error');
+    // Network/server errors don't kill the session
+    if (typeof window !== 'undefined' && window.LeasePilot?.Toast?.show) {
+      window.LeasePilot.Toast.show('Could not verify session. Refresh to try again.', 'error');
     }
     return true;
   }
@@ -184,12 +148,16 @@ function getCurrentUser() {
   return userStr ? JSON.parse(userStr) : null;
 }
 
-// Logout
+// Logout — clear local state immediately, fire cookie-clear request, then redirect
 function logout() {
-  localStorage.removeItem('token');
   localStorage.removeItem('user');
+  Object.keys(_cache).forEach(function(k) { delete _cache[k]; });
   const p = (typeof window !== 'undefined' && window.location.pathname) || '';
-  window.location.href = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
+  const loginUrl = (p.includes('/tenant/') || p.includes('/contractor/')) ? '../login.html' : 'login.html';
+  // keepalive=true lets the browser finish the request even after page navigation
+  fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include', keepalive: true })
+    .catch(function() {});
+  window.location.href = loginUrl;
 }
 
 // Initialize Lucide icons
@@ -203,14 +171,31 @@ function initIcons() {
   }
 }
 
+// In-memory TTL cache for read-heavy endpoints (5 minute TTL)
+const _cache = {};
+const CACHE_TTL = 5 * 60 * 1000;
+function cacheGet(key) {
+  const entry = _cache[key];
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL) { delete _cache[key]; return null; }
+  return entry.data;
+}
+function cacheSet(key, data) { _cache[key] = { data, ts: Date.now() }; }
+function cacheInvalidate(prefix) {
+  Object.keys(_cache).forEach(function(k) { if (k.startsWith(prefix)) delete _cache[k]; });
+}
+
 // Data Management
 const DataManager = {
   // Properties
   async getProperties() {
+    const hit = cacheGet('properties');
+    if (hit) return hit;
     try {
-      return await API.get('/properties');
+      const data = await API.get('/properties');
+      cacheSet('properties', data);
+      return data;
     } catch (error) {
-      console.error('Error fetching properties:', error);
       if (error.status !== 401 && error.status !== 403 && typeof window !== 'undefined' && window.LeasePilot?.Toast?.show) {
         window.LeasePilot.Toast.show(error.message || 'Failed to load properties.', 'error');
       }
@@ -229,20 +214,22 @@ const DataManager = {
   
   async saveProperty(property) {
     try {
-      if (property.id) {
-        return await API.put(`/properties/${property.id}`, property);
-      } else {
-        return await API.post('/properties', property);
-      }
+      const result = property.id
+        ? await API.put(`/properties/${property.id}`, property)
+        : await API.post('/properties', property);
+      cacheInvalidate('properties');
+      return result;
     } catch (error) {
       console.error('Error saving property:', error);
       throw error;
     }
   },
-  
+
   async deleteProperty(id) {
     try {
-      return await API.delete(`/properties/${id}`);
+      const result = await API.delete(`/properties/${id}`);
+      cacheInvalidate('properties');
+      return result;
     } catch (error) {
       console.error('Error deleting property:', error);
       throw error;
@@ -251,10 +238,13 @@ const DataManager = {
   
   // Tenants
   async getTenants() {
+    const hit = cacheGet('tenants');
+    if (hit) return hit;
     try {
-      return await API.get('/tenants');
+      const data = await API.get('/tenants');
+      cacheSet('tenants', data);
+      return data;
     } catch (error) {
-      console.error('Error fetching tenants:', error);
       if (error.status !== 401 && error.status !== 403 && typeof window !== 'undefined' && window.LeasePilot?.Toast?.show) {
         window.LeasePilot.Toast.show(error.message || 'Failed to load tenants.', 'error');
       }
@@ -272,6 +262,8 @@ const DataManager = {
   },
   
   async saveTenant(tenant) {
+    cacheInvalidate('tenants');
+    cacheInvalidate('properties');
     try {
       const rawId = tenant.propertyId ?? tenant.property_id;
       const apiTenant = {
@@ -299,7 +291,10 @@ const DataManager = {
   
   async deleteTenant(id) {
     try {
-      return await API.delete(`/tenants/${id}`);
+      const result = await API.delete(`/tenants/${id}`);
+      cacheInvalidate('tenants');
+      cacheInvalidate('properties');
+      return result;
     } catch (error) {
       console.error('Error deleting tenant:', error);
       throw error;
@@ -308,8 +303,12 @@ const DataManager = {
   
   // Transactions
   async getTransactions() {
+    const hit = cacheGet('transactions');
+    if (hit) return hit;
     try {
-      return await API.get('/transactions');
+      const data = await API.get('/transactions');
+      cacheSet('transactions', data);
+      return data;
     } catch (error) {
       console.error('Error fetching transactions:', error);
       return [];
@@ -326,6 +325,7 @@ const DataManager = {
   },
   
   async saveTransaction(transaction) {
+    cacheInvalidate('transactions');
     try {
       // Convert to API format
       const apiTransaction = {
@@ -351,7 +351,9 @@ const DataManager = {
   
   async deleteTransaction(id) {
     try {
-      return await API.delete(`/transactions/${id}`);
+      const result = await API.delete(`/transactions/${id}`);
+      cacheInvalidate('transactions');
+      return result;
     } catch (error) {
       console.error('Error deleting transaction:', error);
       throw error;
@@ -380,8 +382,12 @@ const DataManager = {
 
   // Contractors (manager's vendor list)
   async getContractors() {
+    const hit = cacheGet('contractors');
+    if (hit) return hit;
     try {
-      return await API.get('/contractors');
+      const data = await API.get('/contractors');
+      cacheSet('contractors', data);
+      return data;
     } catch (error) {
       console.error('Error fetching contractors:', error);
       throw error;
@@ -389,7 +395,9 @@ const DataManager = {
   },
   async createContractor(data) {
     try {
-      return await API.post('/contractors', data);
+      const result = await API.post('/contractors', data);
+      cacheInvalidate('contractors');
+      return result;
     } catch (error) {
       console.error('Error creating contractor:', error);
       throw error;
@@ -397,7 +405,9 @@ const DataManager = {
   },
   async updateContractor(id, data) {
     try {
-      return await API.patch('/contractors/' + encodeURIComponent(id), data);
+      const result = await API.patch('/contractors/' + encodeURIComponent(id), data);
+      cacheInvalidate('contractors');
+      return result;
     } catch (error) {
       console.error('Error updating contractor:', error);
       throw error;
@@ -405,7 +415,9 @@ const DataManager = {
   },
   async deleteContractor(id) {
     try {
-      return await API.delete('/contractors/' + encodeURIComponent(id));
+      const result = await API.delete('/contractors/' + encodeURIComponent(id));
+      cacheInvalidate('contractors');
+      return result;
     } catch (error) {
       console.error('Error deleting contractor:', error);
       throw error;
@@ -550,8 +562,6 @@ const DataManager = {
   },
   async uploadAvatar(file) {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Not logged in');
       const formData = new FormData();
       formData.append('avatar', file, file.name || 'avatar.jpg');
       const API_BASE = (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http'))
@@ -559,7 +569,7 @@ const DataManager = {
         : 'http://localhost:3000/api';
       const response = await fetch(`${API_BASE}/users/me/avatar`, {
         method: 'POST',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        credentials: 'include',
         body: formData
       });
       if (!response.ok) {
@@ -582,7 +592,10 @@ const Modal = {
       modal.classList.remove('hidden');
       modal.classList.add('flex');
       document.body.style.overflow = 'hidden';
-      initIcons();
+      // Only init icons inside this modal, not the entire page
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons({ attrs: { 'stroke-width': 1.5 }, nameAttr: 'data-lucide', rootElement: modal });
+      }
     }
   },
   
@@ -618,6 +631,13 @@ const Modal = {
   }
 };
 
+// Inline SVGs for toast icons — avoids triggering a full-page lucide.createIcons() scan
+const _toastIcons = {
+  success: '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+  error: '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  info: '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+};
+
 // Toast Notifications
 const Toast = {
   show: function(message, type = 'success') {
@@ -628,18 +648,17 @@ const Toast = {
       'bg-slate-900 text-white'
     }`;
     toast.style.transform = 'translateX(400px)';
-    toast.innerHTML = `
-      <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'info'}" class="h-5 w-5"></i>
-      <span>${message}</span>
-    `;
+    const iconDiv = document.createElement('div');
+    iconDiv.innerHTML = _toastIcons[type] || _toastIcons.info;
+    const msgSpan = document.createElement('span');
+    msgSpan.textContent = message;
+    toast.appendChild(iconDiv.firstChild || iconDiv);
+    toast.appendChild(msgSpan);
     document.body.appendChild(toast);
-    initIcons();
-    
+
     // Animate in
-    setTimeout(() => {
-      toast.style.transform = 'translateX(0)';
-    }, 10);
-    
+    setTimeout(() => { toast.style.transform = 'translateX(0)'; }, 10);
+
     // Animate out and remove
     setTimeout(() => {
       toast.style.opacity = '0';

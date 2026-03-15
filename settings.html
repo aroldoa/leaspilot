@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings - LeasePilot AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.469.0"></script>
     <script src="app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
@@ -67,7 +67,7 @@
                     <div class="relative z-10">
                         <p class="mb-2 text-lg font-medium tracking-tight text-slate-900">Upgrade to Pro</p>
                         <p class="mb-4 text-sm text-slate-700">Unlock advanced AI forecasting for your portfolio.</p>
-                        <button class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
+                        <button onclick="window.location.href='settings.html'" class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
                             View Plans
                         </button>
                     </div>
@@ -77,7 +77,7 @@
                 <div class="flex items-center gap-3 border-t border-slate-100 pt-5">
                     <img data-user-avatar src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
                     <div class="flex flex-col flex-1">
-                        <span class="text-sm font-medium" data-user-name>Sarah Jenkins</span>
+                        <span class="text-sm font-medium" data-user-name></span>
                         <span class="text-xs text-slate-500">Portfolio Manager</span>
                     </div>
                     <button onclick="LeasePilot.logout()" class="text-slate-400 hover:text-slate-600" title="Logout">
@@ -123,11 +123,11 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
-                                <input type="text" id="userName" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none" value="Sarah Jenkins">
+                                <input type="text" id="userName" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none" value="">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-2">Email</label>
-                                <input type="email" id="userEmail" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none" value="sarah@example.com">
+                                <input type="email" id="userEmail" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none" value="">
                             </div>
                         </div>
                         <div>
@@ -136,6 +136,29 @@
                         </div>
                         <button type="button" id="saveProfileBtn" onclick="saveProfile()" class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
                             Save Changes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Change Password -->
+                <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-6">Change Password</h2>
+                    <div class="space-y-4 max-w-md">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Current Password</label>
+                            <input type="password" id="currentPassword" autocomplete="current-password" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none" placeholder="••••••••">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">New Password</label>
+                            <input type="password" id="newPassword" autocomplete="new-password" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none" placeholder="••••••••">
+                            <p class="mt-1.5 text-xs text-slate-400">Min. 8 characters, one uppercase letter, one number.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Confirm New Password</label>
+                            <input type="password" id="confirmPassword" autocomplete="new-password" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none" placeholder="••••••••">
+                        </div>
+                        <button type="button" id="changePasswordBtn" class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
+                            Update Password
                         </button>
                     </div>
                 </div>
@@ -186,7 +209,7 @@
                                 <p class="text-sm font-medium text-slate-900">Current Plan</p>
                                 <p class="text-xs text-slate-500">Free Plan</p>
                             </div>
-                            <button class="rounded-xl bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800">
+                            <button onclick="LeasePilot.Toast && LeasePilot.Toast.show('Plan upgrades coming soon.', 'info')" class="rounded-xl bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800">
                                 Upgrade
                             </button>
                         </div>
@@ -195,7 +218,7 @@
                                 <p class="text-sm font-medium text-slate-900">Payment Method</p>
                                 <p class="text-xs text-slate-500">No payment method on file</p>
                             </div>
-                            <button class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                            <button onclick="LeasePilot.Toast && LeasePilot.Toast.show('Payment integration coming soon.', 'info')" class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
                                 Add Card
                             </button>
                         </div>
@@ -219,7 +242,7 @@
                 </div>
                 
                 <footer class="mt-12 pt-8 text-center md:text-left border-t border-slate-200">
-                    <p class="text-xs text-slate-400">© 2024 LeasePilot AI Inc.</p>
+                    <p class="text-xs text-slate-400">© <span id="footerYear"></span> LeasePilot AI Inc.</p>
                 </footer>
 
             </div>
@@ -228,6 +251,8 @@
 
     <script>
         lucide.createIcons({ attrs: { 'stroke-width': 1.5 } });
+        var fyEl = document.getElementById('footerYear');
+        if (fyEl) fyEl.textContent = new Date().getFullYear();
 
         (async function() {
             var wait = 0;
@@ -356,6 +381,44 @@
                 var el = document.getElementById(id);
                 if (el) el.addEventListener('change', savePreferences);
             });
+
+            // Change password button
+            var cpBtn = document.getElementById('changePasswordBtn');
+            if (cpBtn) {
+                cpBtn.addEventListener('click', async function() {
+                    var current = document.getElementById('currentPassword').value;
+                    var next    = document.getElementById('newPassword').value;
+                    var confirm = document.getElementById('confirmPassword').value;
+
+                    if (!current || !next || !confirm) {
+                        LeasePilot.Toast.show('All three password fields are required.', 'error');
+                        return;
+                    }
+                    if (next !== confirm) {
+                        LeasePilot.Toast.show('New passwords do not match.', 'error');
+                        return;
+                    }
+                    if (next.length < 8 || !/[A-Z]/.test(next) || !/[0-9]/.test(next)) {
+                        LeasePilot.Toast.show('Password needs 8+ chars, one uppercase, one number.', 'error');
+                        return;
+                    }
+
+                    cpBtn.disabled = true;
+                    cpBtn.textContent = 'Updating…';
+                    try {
+                        await LeasePilot.API.put('/users/me/password', { currentPassword: current, newPassword: next });
+                        LeasePilot.Toast.show('Password updated successfully.', 'success');
+                        document.getElementById('currentPassword').value = '';
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmPassword').value = '';
+                    } catch (e) {
+                        LeasePilot.Toast.show(e.message || 'Failed to update password.', 'error');
+                    } finally {
+                        cpBtn.disabled = false;
+                        cpBtn.textContent = 'Update Password';
+                    }
+                });
+            }
         })();
 
         window.saveProfile = async function() {
@@ -400,8 +463,8 @@
             try {
                 await LeasePilot.DataManager.deleteAccount();
             } catch (e) {}
-            localStorage.removeItem('token');
             localStorage.removeItem('user');
+            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
             window.location.href = 'login.html';
         };
     </script>

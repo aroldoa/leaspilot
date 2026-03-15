@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
 
 export function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  // Prefer httpOnly cookie; fall back to Authorization header for API clients
+  const token = req.cookies?.token || (req.headers['authorization'] || '').replace('Bearer ', '').trim() || null;
 
   if (!token) {
     return res.status(401).json({ error: 'Access token required' });
@@ -18,7 +18,7 @@ export function authenticateToken(req, res, next) {
   });
 }
 
-/** Require user to have one of the given roles (e.g. 'Portfolio Manager'). Used to protect manager-only routes. */
+/** Require user to have one of the given roles (e.g. 'Portfolio Manager'). */
 export function requireRole(...allowedRoles) {
   return (req, res, next) => {
     const role = (req.role || '').trim();
@@ -94,6 +94,3 @@ export async function requireContractor(req, res, next) {
     res.status(500).json({ error: 'Internal server error' });
   }
 }
-
-
-

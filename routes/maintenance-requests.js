@@ -59,37 +59,34 @@ router.patch('/:id', authenticateToken, requireRole('Portfolio Manager'), async 
     }
     if (updates.length === 0) return res.status(400).json({ error: 'Provide status, assigned_vendor, and/or assigned_contractor_id' });
     values.push(id, req.userId);
-    // #region agent log
-    fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H3',location:'maintenance-requests.js:PATCH',message:'Manager PATCH assign before update',data:{requestId:id,bodyAssignedContractorId:assigned_contractor_id},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     const result = await pool.query(
       `UPDATE maintenance_requests mr
        SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
        FROM properties p
        WHERE mr.id = $${idx} AND mr.property_id = p.id AND p.user_id = $${idx + 1}
-       RETURNING mr.id, mr.status, mr.assigned_vendor, mr.assigned_contractor_id, mr.updated_at`,
+       RETURNING mr.id, mr.status, mr.assigned_vendor, mr.assigned_contractor_id, mr.updated_at,
+                 mr.subject, mr.priority, mr.tenant_id, p.name as property_name`,
       values
     );
-    // #region agent log
-    fetch('http://127.0.0.1:7249/ingest/883d00fc-6419-4636-bf2d-d40db9bb5ee7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hypothesisId:'H3',location:'maintenance-requests.js:PATCH',message:'Manager PATCH assign after update',data:{rowsAffected:result.rows.length,returned:result.rows[0]?{id:result.rows[0].id,assigned_contractor_id:result.rows[0].assigned_contractor_id}:null},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     if (result.rows.length === 0) return res.status(404).json({ error: 'Request not found' });
     const updated = result.rows[0];
 
-    // When a contractor is assigned, send them the maintenance request via SMS
+    // When a contractor is assigned, send them the maintenance request via SMS.
+    // Fetch only contractor phone + tenant unit (targeted lookups, no N+1 multi-join).
     const cid = assigned_contractor_id === null || assigned_contractor_id === '' ? null : parseInt(assigned_contractor_id, 10);
     if (Number.isInteger(cid) && cid > 0) {
       try {
-        const detail = await pool.query(
-          `SELECT mr.subject, mr.priority, p.name as property_name, t.unit as tenant_unit, c.phone as contractor_phone
-           FROM maintenance_requests mr
-           JOIN properties p ON p.id = mr.property_id AND p.user_id = $2
-           LEFT JOIN tenants t ON t.id = mr.tenant_id
-           LEFT JOIN contractors c ON c.id = mr.assigned_contractor_id
-           WHERE mr.id = $1`,
-          [id, req.userId]
-        );
-        const row = detail.rows[0];
+        const [contractorRes, tenantRes] = await Promise.all([
+          pool.query('SELECT phone FROM contractors WHERE id = $1 AND user_id = $2', [cid, req.userId]),
+          updated.tenant_id ? pool.query('SELECT unit FROM tenants WHERE id = $1', [updated.tenant_id]) : Promise.resolve({ rows: [{}] })
+        ]);
+        const row = {
+          contractor_phone: contractorRes.rows[0]?.phone,
+          subject: updated.subject,
+          priority: updated.priority,
+          property_name: updated.property_name,
+          tenant_unit: tenantRes.rows[0]?.unit
+        };
         if (row && row.contractor_phone && row.contractor_phone.trim()) {
           const prop = row.property_name || 'Property';
           const unit = row.tenant_unit ? ` Unit ${row.tenant_unit}` : '';

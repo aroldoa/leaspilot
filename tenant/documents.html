@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Documents - Tenant Portal | LeasePilot</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@0.469.0"></script>
   <script src="../app.js"></script>
   <script src="notifications.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -47,8 +47,19 @@
       try {
         const docs = await LeasePilot.API.get('/tenant/documents');
         const el = document.getElementById('docList');
-        if (!docs.length) el.innerHTML = '<p class="text-slate-400">No documents.</p>';
-        else el.innerHTML = docs.map(d => '<a href="' + (d.file_url || '#') + '" target="_blank" class="flex items-center gap-2 text-slate-700 hover:text-slate-900 py-2"><i data-lucide="file-text" class="h-4 w-4"></i> ' + (d.name || 'Document') + '</a>').join('');
+        if (!docs.length) el.innerHTML = '<p class="text-slate-400 text-sm">No documents yet.</p>';
+        else el.innerHTML = docs.map(function(d) {
+          if (d.file_url) {
+            return '<a href="' + d.file_url + '" target="_blank" rel="noopener" class="flex items-center justify-between py-3 border-b border-slate-50 last:border-0 group hover:bg-slate-50 -mx-2 px-2 rounded-xl transition-colors">'
+              + '<div class="flex items-center gap-3"><i data-lucide="file-text" class="h-4 w-4 text-slate-500"></i><span class="text-sm font-medium text-slate-900 group-hover:text-slate-700">' + (d.name || 'Document') + '</span></div>'
+              + '<i data-lucide="download" class="h-4 w-4 text-slate-400 group-hover:text-slate-600"></i>'
+              + '</a>';
+          }
+          return '<div class="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">'
+            + '<div class="flex items-center gap-3"><i data-lucide="file-text" class="h-4 w-4 text-slate-300"></i><span class="text-sm text-slate-400">' + (d.name || 'Document') + '</span></div>'
+            + '<span class="text-xs text-slate-400">Not available</span>'
+            + '</div>';
+        }).join('');
         lucide.createIcons();
       } catch (e) { document.getElementById('docList').innerHTML = '<p class="text-slate-400">Unable to load.</p>'; }
     })();

@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Financials - LeasePilot AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.469.0"></script>
     <script src="app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
@@ -65,7 +65,7 @@ body { font-family: 'Inter', sans-serif; }
                     <div class="relative z-10">
                         <p class="mb-2 text-lg font-medium tracking-tight text-slate-900">Upgrade to Pro</p>
                         <p class="mb-4 text-sm text-slate-700">Unlock advanced AI forecasting for your portfolio.</p>
-                        <button class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
+                        <button onclick="window.location.href='settings.html'" class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">
                             View Plans
                         </button>
                     </div>
@@ -76,7 +76,7 @@ body { font-family: 'Inter', sans-serif; }
                     <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity">
                         <img data-user-avatar src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
                         <div class="flex flex-col flex-1">
-                            <span class="text-sm font-medium" data-user-name>Sarah Jenkins</span>
+                            <span class="text-sm font-medium" data-user-name></span>
                             <span class="text-xs text-slate-500">Portfolio Manager</span>
                         </div>
                     </a>
@@ -108,7 +108,7 @@ body { font-family: 'Inter', sans-serif; }
                         <p class="mt-2 text-sm text-slate-500">Track revenue, expenses, and overall portfolio performance.</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                        <button id="exportReportBtn" class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
                             <i data-lucide="download" class="h-4 w-4"></i>
                             Export Report
                         </button>
@@ -129,8 +129,8 @@ body { font-family: 'Inter', sans-serif; }
                             </div>
                          </div>
                          <div class="mt-4">
-                            <span class="text-2xl font-medium text-slate-900 tracking-tight">$482,900</span>
-                            <span class="text-xs text-green-600 ml-2 font-medium">+8.2% vs last year</span>
+                            <span id="statRevenue" class="text-2xl font-medium text-slate-900 tracking-tight">—</span>
+                            <span id="statRevenueGrowth" class="text-xs text-green-600 ml-2 font-medium"></span>
                          </div>
                      </div>
                      <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
@@ -141,20 +141,20 @@ body { font-family: 'Inter', sans-serif; }
                             </div>
                          </div>
                          <div class="mt-4">
-                            <span class="text-2xl font-medium text-slate-900 tracking-tight">$312,045</span>
-                            <span class="text-xs text-slate-400 ml-2">64.6% Margin</span>
+                            <span id="statNOI" class="text-2xl font-medium text-slate-900 tracking-tight">—</span>
+                            <span id="statNOIMargin" class="text-xs text-slate-400 ml-2"></span>
                          </div>
                      </div>
                      <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
                          <div class="flex items-start justify-between">
-                            <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">Outstanding Rent</span>
+                            <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Expenses (YTD)</span>
                             <div class="flex h-8 w-8 items-center justify-center rounded-full bg-red-50">
                                 <i data-lucide="alert-circle" class="h-4 w-4 text-red-500"></i>
                             </div>
                          </div>
                          <div class="mt-4">
-                            <span class="text-2xl font-medium text-slate-900 tracking-tight">$4,250</span>
-                            <span class="text-xs text-red-500 ml-2 font-medium">3 Tenants</span>
+                            <span id="statExpenses" class="text-2xl font-medium text-slate-900 tracking-tight">—</span>
+                            <span id="statExpensesCount" class="text-xs text-red-500 ml-2 font-medium"></span>
                          </div>
                      </div>
                      <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
@@ -165,8 +165,8 @@ body { font-family: 'Inter', sans-serif; }
                             </div>
                          </div>
                          <div class="mt-4 relative z-10">
-                            <span class="text-2xl font-medium text-slate-900 tracking-tight">35.4%</span>
-                            <span class="text-xs text-slate-500 ml-2">On target</span>
+                            <span id="statExpenseRatio" class="text-2xl font-medium text-slate-900 tracking-tight">—</span>
+                            <span id="statExpenseRatioLabel" class="text-xs text-slate-500 ml-2"></span>
                          </div>
                          <div class="absolute -right-4 -bottom-4 h-16 w-16 rounded-full bg-slate-50"></div>
                      </div>
@@ -179,57 +179,15 @@ body { font-family: 'Inter', sans-serif; }
                             <h2 class="text-base font-medium text-slate-900">Cash Flow</h2>
                             <p class="text-xs text-slate-500">Income vs Expenses over the last 6 months</p>
                         </div>
-                        <select class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 outline-none focus:border-slate-300">
-                            <option>Last 6 Months</option>
-                            <option>This Year</option>
-                            <option>Last Year</option>
+                        <select id="chartPeriodSelect" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 outline-none focus:border-slate-300">
+                            <option value="6m">Last 6 Months</option>
+                            <option value="ytd">This Year</option>
+                            <option value="lastyear">Last Year</option>
                         </select>
                     </div>
                     
-                    <div class="flex h-48 items-end gap-2 md:gap-6">
-                        <!-- Chart Bar Group -->
-                        <div class="group flex w-full flex-col items-center gap-2">
-                            <div class="flex h-full w-full items-end justify-center gap-1">
-                                <div class="relative w-3 md:w-8 rounded-t-sm bg-slate-900 transition-all hover:bg-slate-700 h-[65%]"></div> <!-- Income -->
-                                <div class="relative w-3 md:w-8 rounded-t-sm bg-slate-200 transition-all hover:bg-slate-300 h-[30%]"></div> <!-- Expense -->
-                            </div>
-                            <span class="text-[10px] font-medium text-slate-400">May</span>
-                        </div>
-                        <div class="group flex w-full flex-col items-center gap-2">
-                            <div class="flex h-full w-full items-end justify-center gap-1">
-                                <div class="relative w-3 md:w-8 rounded-t-sm bg-slate-900 transition-all hover:bg-slate-700 h-[72%]"></div>
-                                <div class="relative w-3 md:w-8 rounded-t-sm bg-slate-200 transition-all hover:bg-slate-300 h-[35%]"></div>
-                            </div>
-                            <span class="text-[10px] font-medium text-slate-400">Jun</span>
-                        </div>
-                        <div class="group flex w-full flex-col items-center gap-2">
-                            <div class="flex h-full w-full items-end justify-center gap-1">
-                                <div class="relative w-3 md:w-8 rounded-t-sm bg-slate-900 transition-all hover:bg-slate-700 h-[68%]"></div>
-                                <div class="relative w-3 md:w-8 rounded-t-sm bg-slate-200 transition-all hover:bg-slate-300 h-[25%]"></div>
-                            </div>
-                            <span class="text-[10px] font-medium text-slate-400">Jul</span>
-                        </div>
-                        <div class="group flex w-full flex-col items-center gap-2">
-                            <div class="flex h-full w-full items-end justify-center gap-1">
-                                <div class="relative w-3 md:w-8 rounded-t-sm bg-slate-900 transition-all hover:bg-slate-700 h-[85%]"></div>
-                                <div class="relative w-3 md:w-8 rounded-t-sm bg-slate-200 transition-all hover:bg-slate-300 h-[45%]"></div>
-                            </div>
-                            <span class="text-[10px] font-medium text-slate-400">Aug</span>
-                        </div>
-                        <div class="group flex w-full flex-col items-center gap-2">
-                            <div class="flex h-full w-full items-end justify-center gap-1">
-                                <div class="relative w-3 md:w-8 rounded-t-sm bg-slate-900 transition-all hover:bg-slate-700 h-[78%]"></div>
-                                <div class="relative w-3 md:w-8 rounded-t-sm bg-slate-200 transition-all hover:bg-slate-300 h-[32%]"></div>
-                            </div>
-                            <span class="text-[10px] font-medium text-slate-400">Sep</span>
-                        </div>
-                        <div class="group flex w-full flex-col items-center gap-2">
-                            <div class="flex h-full w-full items-end justify-center gap-1">
-                                <div class="relative w-3 md:w-8 rounded-t-sm bg-slate-900 transition-all hover:bg-slate-700 h-[82%]"></div>
-                                <div class="relative w-3 md:w-8 rounded-t-sm bg-slate-200 transition-all hover:bg-slate-300 h-[38%]"></div>
-                            </div>
-                            <span class="text-[10px] font-medium text-slate-900">Oct</span>
-                        </div>
+                    <div id="cashFlowChart" class="flex h-48 items-end gap-2 md:gap-6">
+                        <div class="w-full text-center text-xs text-slate-400 self-center">Loading chart...</div>
                     </div>
                 </div>
 
@@ -246,7 +204,7 @@ body { font-family: 'Inter', sans-serif; }
                             Expenses
                         </button>
                         <button class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-                            Pending <span class="ml-1 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-100 px-1 text-[10px] text-amber-700">3</span>
+                            Pending <span id="pendingCount" class="ml-1 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-100 px-1 text-[10px] text-amber-700 hidden">0</span>
                         </button>
                     </div>
                     
@@ -254,13 +212,13 @@ body { font-family: 'Inter', sans-serif; }
                         <div class="h-4 w-px bg-slate-200 hidden md:block"></div>
                         <div class="relative group w-full md:w-auto">
                             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-slate-900 transition-colors"></i>
-                            <input type="text" placeholder="Search transactions..." class="h-10 w-full md:w-64 rounded-full border-none bg-slate-50 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-slate-100 transition-all placeholder:text-slate-400">
+                            <input id="txSearchInput" type="text" placeholder="Search transactions..." class="h-10 w-full md:w-64 rounded-full border-none bg-slate-50 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-slate-100 transition-all placeholder:text-slate-400">
                         </div>
                         <div class="flex items-center rounded-full bg-slate-50 p-1 border border-slate-100">
-                             <button class="rounded-full bg-white p-1.5 shadow-sm text-slate-900">
+                             <button id="txViewList" onclick="setTxView('list')" class="rounded-full bg-white p-1.5 shadow-sm text-slate-900" title="List view">
                                 <i data-lucide="list" class="h-4 w-4"></i>
                             </button>
-                            <button class="rounded-full p-1.5 text-slate-400 hover:text-slate-600">
+                            <button id="txViewFilter" onclick="document.getElementById('txSearchInput').focus()" class="rounded-full p-1.5 text-slate-400 hover:text-slate-600" title="Search/filter">
                                 <i data-lucide="filter" class="h-4 w-4"></i>
                             </button>
                         </div>
@@ -288,277 +246,8 @@ body { font-family: 'Inter', sans-serif; }
                                     <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">Action</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-50">
-                                <!-- Transaction 1 -->
-                                <tr class="group hover:bg-slate-50 transition-colors">
-                                    <td class="px-6 py-4">
-                                         <label class="flex h-5 w-5 cursor-pointer items-center justify-center rounded bg-white border border-slate-300 shadow-sm">
-                                            <input type="checkbox" class="peer h-full w-full appearance-none rounded checked:bg-slate-900 checked:border-slate-900 transition-all cursor-pointer">
-                                            <i data-lucide="check" class="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100"></i>
-                                        </label>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="text-sm text-slate-600 tabular-nums">Oct 24, 2024</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-green-50 text-green-600">
-                                                <i data-lucide="arrow-down-left" class="h-4 w-4"></i>
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-medium text-slate-900">Rent Payment - Oct</p>
-                                                <p class="text-xs text-slate-500">Arthur Campbell</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
-                                            Rental Income
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <a href="property-detail.html?id=1" class="text-sm text-slate-600 hover:text-slate-900 transition-colors">The Highland Lofts</a>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="text-sm font-medium text-slate-900 tabular-nums">+$2,450.00</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="inline-flex items-center gap-1 text-xs font-medium text-green-600">
-                                            <i data-lucide="check" class="h-3 w-3"></i> Cleared
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <button class="rounded-full p-2 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all">
-                                            <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-
-                                <!-- Transaction 2 -->
-                                <tr class="group hover:bg-slate-50 transition-colors">
-                                    <td class="px-6 py-4">
-                                         <label class="flex h-5 w-5 cursor-pointer items-center justify-center rounded bg-white border border-slate-300 shadow-sm">
-                                            <input type="checkbox" class="peer h-full w-full appearance-none rounded checked:bg-slate-900 checked:border-slate-900 transition-all cursor-pointer">
-                                            <i data-lucide="check" class="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100"></i>
-                                        </label>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="text-sm text-slate-600 tabular-nums">Oct 23, 2024</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-600">
-                                                <i data-lucide="wrench" class="h-4 w-4"></i>
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-medium text-slate-900">Emergency Plumbing</p>
-                                                <p class="text-xs text-slate-500">Fix leak in Unit 402</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
-                                            Maintenance
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <a href="property-detail.html?id=1" class="text-sm text-slate-600 hover:text-slate-900 transition-colors">The Highland Lofts</a>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="text-sm font-medium text-slate-900 tabular-nums">-$380.00</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="inline-flex items-center gap-1 text-xs font-medium text-green-600">
-                                            <i data-lucide="check" class="h-3 w-3"></i> Cleared
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <button class="rounded-full p-2 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all">
-                                            <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-
-                                <!-- Transaction 3 -->
-                                <tr class="group hover:bg-slate-50 transition-colors">
-                                    <td class="px-6 py-4">
-                                         <label class="flex h-5 w-5 cursor-pointer items-center justify-center rounded bg-white border border-slate-300 shadow-sm">
-                                            <input type="checkbox" class="peer h-full w-full appearance-none rounded checked:bg-slate-900 checked:border-slate-900 transition-all cursor-pointer">
-                                            <i data-lucide="check" class="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100"></i>
-                                        </label>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="text-sm text-slate-600 tabular-nums">Oct 22, 2024</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-green-50 text-green-600">
-                                                <i data-lucide="arrow-down-left" class="h-4 w-4"></i>
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-medium text-slate-900">Rent Payment - Oct</p>
-                                                <p class="text-xs text-slate-500">Marcus Thompson</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
-                                            Rental Income
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <a href="property-detail.html?id=4" class="text-sm text-slate-600 hover:text-slate-900 transition-colors">Oakwood Residence</a>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="text-sm font-medium text-slate-900 tabular-nums">+$3,100.00</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
-                                            <i data-lucide="clock" class="h-3 w-3"></i> Pending
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <button class="rounded-full p-2 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all">
-                                            <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-
-                                <!-- Transaction 4 -->
-                                <tr class="group hover:bg-slate-50 transition-colors">
-                                    <td class="px-6 py-4">
-                                         <label class="flex h-5 w-5 cursor-pointer items-center justify-center rounded bg-white border border-slate-300 shadow-sm">
-                                            <input type="checkbox" class="peer h-full w-full appearance-none rounded checked:bg-slate-900 checked:border-slate-900 transition-all cursor-pointer">
-                                            <i data-lucide="check" class="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100"></i>
-                                        </label>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="text-sm text-slate-600 tabular-nums">Oct 20, 2024</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-600">
-                                                <i data-lucide="zap" class="h-4 w-4"></i>
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-medium text-slate-900">Utilities - Water/Elec</p>
-                                                <p class="text-xs text-slate-500">Common Areas</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
-                                            Utilities
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <a href="property-detail.html?id=3" class="text-sm text-slate-600 hover:text-slate-900 transition-colors">The Meridian</a>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="text-sm font-medium text-slate-900 tabular-nums">-$450.00</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="inline-flex items-center gap-1 text-xs font-medium text-green-600">
-                                            <i data-lucide="check" class="h-3 w-3"></i> Cleared
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <button class="rounded-full p-2 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all">
-                                            <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                
-                                <!-- Transaction 5 -->
-                                <tr class="group hover:bg-slate-50 transition-colors">
-                                    <td class="px-6 py-4">
-                                         <label class="flex h-5 w-5 cursor-pointer items-center justify-center rounded bg-white border border-slate-300 shadow-sm">
-                                            <input type="checkbox" class="peer h-full w-full appearance-none rounded checked:bg-slate-900 checked:border-slate-900 transition-all cursor-pointer">
-                                            <i data-lucide="check" class="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100"></i>
-                                        </label>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="text-sm text-slate-600 tabular-nums">Oct 18, 2024</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-600">
-                                                <i data-lucide="shield" class="h-4 w-4"></i>
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-medium text-slate-900">Property Insurance</p>
-                                                <p class="text-xs text-slate-500">Annual Premium Installment</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
-                                            Insurance
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <a href="property-detail.html?id=2" class="text-sm text-slate-600 hover:text-slate-900 transition-colors">Sunset Villas</a>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="text-sm font-medium text-slate-900 tabular-nums">-$1,200.00</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="inline-flex items-center gap-1 text-xs font-medium text-green-600">
-                                            <i data-lucide="check" class="h-3 w-3"></i> Cleared
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <button class="rounded-full p-2 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all">
-                                            <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                
-                                <!-- Transaction 6 -->
-                                <tr class="group hover:bg-slate-50 transition-colors">
-                                    <td class="px-6 py-4">
-                                         <label class="flex h-5 w-5 cursor-pointer items-center justify-center rounded bg-white border border-slate-300 shadow-sm">
-                                            <input type="checkbox" class="peer h-full w-full appearance-none rounded checked:bg-slate-900 checked:border-slate-900 transition-all cursor-pointer">
-                                            <i data-lucide="check" class="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100"></i>
-                                        </label>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="text-sm text-slate-600 tabular-nums">Oct 15, 2024</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-green-50 text-green-600">
-                                                <i data-lucide="arrow-down-left" class="h-4 w-4"></i>
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-medium text-slate-900">Rent Payment - Oct</p>
-                                                <p class="text-xs text-slate-500">Jessica Wright</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
-                                            Rental Income
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <a href="properties.html" class="text-sm text-slate-600 hover:text-slate-900 transition-colors">Capital Tower</a>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="text-sm font-medium text-slate-900 tabular-nums">+$5,500.00</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="inline-flex items-center gap-1 text-xs font-medium text-green-600">
-                                            <i data-lucide="check" class="h-3 w-3"></i> Cleared
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <button class="rounded-full p-2 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all">
-                                            <i data-lucide="more-horizontal" class="h-4 w-4"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-
+                            <tbody id="transactionsTbody" class="divide-y divide-slate-50">
+                                <tr id="transactionsEmpty" class="hidden"><td colspan="8" class="px-6 py-10 text-center text-slate-400 text-sm">No transactions yet. Add your first transaction.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -567,7 +256,7 @@ body { font-family: 'Inter', sans-serif; }
                 <!-- Pagination -->
                 <div class="mt-8 flex items-center justify-between">
                      <div class="text-xs text-slate-500">
-                        Showing <span class="font-medium text-slate-900">1-6</span> of <span class="font-medium text-slate-900">482</span> transactions
+                        Showing <span id="paginationShowing" class="font-medium text-slate-900">—</span> of <span id="paginationTotal" class="font-medium text-slate-900">—</span> transactions
                     </div>
                     <div class="flex gap-2">
                         <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors" disabled="">
@@ -580,7 +269,7 @@ body { font-family: 'Inter', sans-serif; }
                 </div>
                 
                 <footer class="mt-12 pt-8 text-center md:text-left border-t border-slate-200">
-                    <p class="text-xs text-slate-400">© 2024 LeasePilot AI Inc.</p>
+                    <p class="text-xs text-slate-400">© <span id="footerYear"></span> LeasePilot AI Inc.</p>
                 </footer>
 
             </div>
@@ -642,79 +331,322 @@ body { font-family: 'Inter', sans-serif; }
     </div>
 
     <script>
-        // Wait for LeasePilot to be available
-        (async () => {
+        function esc(s) { return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function fmt(n) { return '$' + Math.abs(Number(n)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+        function categoryIcon(cat, type) {
+            var c = (cat || '').toLowerCase();
+            if (c.includes('rental') || c.includes('income')) return 'arrow-down-left';
+            if (c.includes('maintenance')) return 'wrench';
+            if (c.includes('utilities') || c.includes('utility')) return 'zap';
+            if (c.includes('insurance')) return 'shield';
+            if (c.includes('taxes') || c.includes('tax')) return 'receipt';
+            return type === 'income' ? 'arrow-down-left' : 'minus-circle';
+        }
+
+        function renderTransactionRow(t) {
+            var isIncome = t.type === 'income';
+            var iconBg = isIncome ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600';
+            var icon = categoryIcon(t.category, t.type);
+            var amtSign = isIncome ? '+' : '-';
+            var status = (t.status || 'cleared').toLowerCase();
+            var statusHtml = status === 'pending'
+                ? '<span class="inline-flex items-center gap-1 text-xs font-medium text-amber-600"><i data-lucide="clock" class="h-3 w-3"></i> Pending</span>'
+                : '<span class="inline-flex items-center gap-1 text-xs font-medium text-green-600"><i data-lucide="check" class="h-3 w-3"></i> Cleared</span>';
+            var dateStr = t.transaction_date ? new Date(t.transaction_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+            var propHtml = t.property_name
+                ? '<a href="property-detail.html?id=' + esc(t.property_id) + '" class="text-sm text-slate-600 hover:text-slate-900 transition-colors">' + esc(t.property_name) + '</a>'
+                : '<span class="text-slate-400">—</span>';
+            var catLabel = (t.category || 'Other').replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+            return '<tr class="group hover:bg-slate-50 transition-colors">'
+                + '<td class="px-6 py-4"><label class="flex h-5 w-5 cursor-pointer items-center justify-center rounded bg-white border border-slate-300 shadow-sm"><input type="checkbox" class="peer h-full w-full appearance-none rounded checked:bg-slate-900 checked:border-slate-900 transition-all cursor-pointer"><i data-lucide="check" class="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100"></i></label></td>'
+                + '<td class="px-6 py-4"><span class="text-sm text-slate-600 tabular-nums">' + esc(dateStr) + '</span></td>'
+                + '<td class="px-6 py-4"><div class="flex items-center gap-3"><div class="flex h-8 w-8 items-center justify-center rounded-full ' + iconBg + '"><i data-lucide="' + icon + '" class="h-4 w-4"></i></div><div><p class="text-sm font-medium text-slate-900">' + esc(t.description || '—') + '</p></div></div></td>'
+                + '<td class="px-6 py-4"><span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">' + esc(catLabel) + '</span></td>'
+                + '<td class="px-6 py-4">' + propHtml + '</td>'
+                + '<td class="px-6 py-4 text-right"><span class="text-sm font-medium text-slate-900 tabular-nums">' + amtSign + fmt(t.amount) + '</span></td>'
+                + '<td class="px-6 py-4 text-right">' + statusHtml + '</td>'
+                + '<td class="px-6 py-4 text-right"><button class="rounded-full p-2 text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all"><i data-lucide="more-horizontal" class="h-4 w-4"></i></button></td>'
+                + '</tr>';
+        }
+
+        var allTransactions = [];
+        var activeFilter = 'all';
+        var chartPeriod = '6m';
+
+        function getChartMonths(period) {
+            var now = new Date();
+            var months = [];
+            if (period === '6m') {
+                for (var i = 5; i >= 0; i--) {
+                    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    months.push({ label: d.toLocaleString('en-US', { month: 'short' }), year: d.getFullYear(), month: d.getMonth() });
+                }
+            } else if (period === 'ytd') {
+                for (var m = 0; m <= now.getMonth(); m++) {
+                    var d = new Date(now.getFullYear(), m, 1);
+                    months.push({ label: d.toLocaleString('en-US', { month: 'short' }), year: d.getFullYear(), month: d.getMonth() });
+                }
+            } else if (period === 'lastyear') {
+                for (var m = 0; m < 12; m++) {
+                    var d = new Date(now.getFullYear() - 1, m, 1);
+                    months.push({ label: d.toLocaleString('en-US', { month: 'short' }), year: d.getFullYear(), month: d.getMonth() });
+                }
+            }
+            return months;
+        }
+
+        function renderCashFlowChart() {
+            var chart = document.getElementById('cashFlowChart');
+            if (!chart) return;
+            var months = getChartMonths(chartPeriod);
+            var incomes = months.map(function(m) {
+                return allTransactions.filter(function(t) {
+                    if (t.type !== 'income') return false;
+                    var d = t.transaction_date ? new Date(t.transaction_date) : null;
+                    return d && d.getFullYear() === m.year && d.getMonth() === m.month;
+                }).reduce(function(s, t) { return s + parseFloat(t.amount || 0); }, 0);
+            });
+            var expenses = months.map(function(m) {
+                return allTransactions.filter(function(t) {
+                    if (t.type !== 'expense') return false;
+                    var d = t.transaction_date ? new Date(t.transaction_date) : null;
+                    return d && d.getFullYear() === m.year && d.getMonth() === m.month;
+                }).reduce(function(s, t) { return s + parseFloat(t.amount || 0); }, 0);
+            });
+            var maxVal = Math.max.apply(null, incomes.concat(expenses)) || 1;
+            var now = new Date();
+            chart.innerHTML = months.map(function(m, i) {
+                var iPct = Math.max(Math.round(incomes[i] / maxVal * 90), incomes[i] > 0 ? 4 : 0);
+                var ePct = Math.max(Math.round(expenses[i] / maxVal * 90), expenses[i] > 0 ? 4 : 0);
+                var isCurrent = m.year === now.getFullYear() && m.month === now.getMonth();
+                var labelClass = isCurrent ? 'text-slate-900 font-medium' : 'text-slate-400';
+                return '<div class="group flex w-full flex-col items-center gap-2">'
+                    + '<div class="flex h-full w-full items-end justify-center gap-1">'
+                    + '<div class="relative w-3 md:w-8 rounded-t-sm bg-slate-900 transition-all hover:bg-slate-700" style="height:' + iPct + '%"></div>'
+                    + '<div class="relative w-3 md:w-8 rounded-t-sm bg-slate-200 transition-all hover:bg-slate-300" style="height:' + ePct + '%"></div>'
+                    + '</div>'
+                    + '<span class="text-[10px] font-medium ' + labelClass + '">' + m.label + '</span>'
+                    + '</div>';
+            }).join('');
+        }
+
+        function updatePendingCount() {
+            var count = allTransactions.filter(function(t) { return (t.status || '').toLowerCase() === 'pending'; }).length;
+            var badge = document.getElementById('pendingCount');
+            if (badge) {
+                badge.textContent = count;
+                badge.classList.toggle('hidden', count === 0);
+            }
+        }
+
+        function exportCSV() {
+            var list = filterTransactions();
+            if (!list.length) { if (window.LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('No transactions to export.', 'info'); return; }
+            var rows = [['Date', 'Type', 'Description', 'Category', 'Property', 'Amount', 'Status']];
+            list.forEach(function(t) {
+                rows.push([
+                    t.transaction_date || '',
+                    t.type || '',
+                    '"' + (t.description || '').replace(/"/g, '""') + '"',
+                    t.category || '',
+                    '"' + (t.property_name || '').replace(/"/g, '""') + '"',
+                    (t.type === 'expense' ? '-' : '') + parseFloat(t.amount || 0).toFixed(2),
+                    t.status || 'cleared'
+                ]);
+            });
+            var csv = rows.map(function(r) { return r.join(','); }).join('\n');
+            var a = document.createElement('a');
+            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+            a.download = 'transactions-' + new Date().toISOString().split('T')[0] + '.csv';
+            a.click();
+        }
+
+        var txSearchQuery = '';
+
+        function setTxView(mode) {
+            // Only one mode exists currently; keep button styles consistent
+            var listBtn = document.getElementById('txViewList');
+            var filterBtn = document.getElementById('txViewFilter');
+            if (listBtn) listBtn.className = 'rounded-full bg-white p-1.5 shadow-sm text-slate-900';
+            if (filterBtn) filterBtn.className = 'rounded-full p-1.5 text-slate-400 hover:text-slate-600';
+        }
+
+        function filterTransactions() {
+            var list = allTransactions;
+            if (activeFilter === 'income') list = list.filter(function(t) { return t.type === 'income'; });
+            else if (activeFilter === 'expense') list = list.filter(function(t) { return t.type === 'expense'; });
+            else if (activeFilter === 'pending') list = list.filter(function(t) { return (t.status || '').toLowerCase() === 'pending'; });
+            var q = txSearchQuery.trim().toLowerCase();
+            if (q) {
+                list = list.filter(function(t) {
+                    return (t.description || '').toLowerCase().includes(q) || (t.property_name || '').toLowerCase().includes(q) || (t.category || '').toLowerCase().includes(q);
+                });
+            }
+            return list;
+        }
+
+        function renderTransactions() {
+            var tbody = document.getElementById('transactionsTbody');
+            var loading = document.getElementById('transactionsLoading');
+            var empty = document.getElementById('transactionsEmpty');
+            var showing = document.getElementById('paginationShowing');
+            var total = document.getElementById('paginationTotal');
+            if (!tbody) return;
+            if (loading) loading.style.display = 'none';
+            var list = filterTransactions();
+            if (list.length === 0) {
+                if (empty) empty.classList.remove('hidden');
+                tbody.querySelectorAll('tr.group').forEach(function(r) { r.remove(); });
+            } else {
+                if (empty) empty.classList.add('hidden');
+                var existing = tbody.querySelectorAll('tr.group');
+                existing.forEach(function(r) { r.remove(); });
+                tbody.insertAdjacentHTML('beforeend', list.map(renderTransactionRow).join(''));
+                if (window.lucide && window.lucide.createIcons) window.lucide.createIcons({ attrs: { 'stroke-width': 1.5 } });
+            }
+            if (showing) showing.textContent = list.length;
+            if (total) total.textContent = allTransactions.length;
+        }
+
+        function updateSummaryStats() {
+            var now = new Date();
+            var ytdStart = new Date(now.getFullYear(), 0, 1);
+            var ytd = allTransactions.filter(function(t) {
+                var d = t.transaction_date ? new Date(t.transaction_date) : null;
+                return d && d >= ytdStart;
+            });
+            var totalIncome = ytd.filter(function(t) { return t.type === 'income'; }).reduce(function(s, t) { return s + parseFloat(t.amount || 0); }, 0);
+            var totalExpenses = ytd.filter(function(t) { return t.type === 'expense'; }).reduce(function(s, t) { return s + parseFloat(t.amount || 0); }, 0);
+            var noi = totalIncome - totalExpenses;
+            var expenseRatio = totalIncome > 0 ? (totalExpenses / totalIncome * 100) : 0;
+            var expenseCount = ytd.filter(function(t) { return t.type === 'expense'; }).length;
+
+            var statRevenue = document.getElementById('statRevenue');
+            var statNOI = document.getElementById('statNOI');
+            var statNOIMargin = document.getElementById('statNOIMargin');
+            var statExpenses = document.getElementById('statExpenses');
+            var statExpensesCount = document.getElementById('statExpensesCount');
+            var statExpenseRatio = document.getElementById('statExpenseRatio');
+            var statExpenseRatioLabel = document.getElementById('statExpenseRatioLabel');
+
+            if (statRevenue) statRevenue.textContent = fmt(totalIncome);
+            if (statNOI) statNOI.textContent = (noi >= 0 ? '' : '-') + fmt(noi);
+            if (statNOIMargin) statNOIMargin.textContent = totalIncome > 0 ? (noi / totalIncome * 100).toFixed(1) + '% Margin' : '';
+            if (statExpenses) statExpenses.textContent = fmt(totalExpenses);
+            if (statExpensesCount) { statExpensesCount.textContent = expenseCount + ' transaction' + (expenseCount !== 1 ? 's' : ''); }
+            if (statExpenseRatio) statExpenseRatio.textContent = expenseRatio.toFixed(1) + '%';
+            if (statExpenseRatioLabel) statExpenseRatioLabel.textContent = expenseRatio <= 40 ? 'On target' : 'Above target';
+        }
+
+        // Filter button wiring
+        document.addEventListener('DOMContentLoaded', function() {
+            var filterBtns = document.querySelectorAll('.flex.items-center.gap-1.overflow-x-auto button');
+            var filterMap = ['all', 'income', 'expense', 'pending'];
+            filterBtns.forEach(function(btn, i) {
+                btn.addEventListener('click', function() {
+                    activeFilter = filterMap[i] || 'all';
+                    filterBtns.forEach(function(b) { b.classList.remove('bg-slate-100', 'text-slate-900'); b.classList.add('text-slate-500'); });
+                    btn.classList.add('bg-slate-100', 'text-slate-900'); btn.classList.remove('text-slate-500');
+                    renderTransactions();
+                });
+            });
+
+            // Chart period selector
+            var periodSel = document.getElementById('chartPeriodSelect');
+            if (periodSel) {
+                periodSel.addEventListener('change', function() {
+                    chartPeriod = this.value;
+                    renderCashFlowChart();
+                });
+            }
+
+            // Export button
+            var exportBtn = document.getElementById('exportReportBtn');
+            if (exportBtn) exportBtn.addEventListener('click', exportCSV);
+
+            // Search input
+            var searchInput = document.getElementById('txSearchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    txSearchQuery = this.value;
+                    renderTransactions();
+                });
+            }
+
+            // Footer year
+            var fyEl = document.getElementById('footerYear');
+            if (fyEl) fyEl.textContent = new Date().getFullYear();
+        });
+
+        (async function() {
             while (typeof LeasePilot === 'undefined') {
-                await new Promise(resolve => setTimeout(resolve, 50));
+                await new Promise(function(r) { setTimeout(r, 50); });
             }
             await LeasePilot.checkAuth();
-        })();
-        
-        lucide.createIcons({
-            attrs: {
-                'stroke-width': 1.5
-            }
-        });
 
-        // Add Transaction Button
-        document.querySelector('button:has-text("Add Transaction")')?.addEventListener('click', function(e) {
-            if (this.textContent.includes('Add Transaction')) {
-                e.preventDefault();
-                LeasePilot.Modal.open('addTransactionModal');
-            }
-        });
+            lucide.createIcons({ attrs: { 'stroke-width': 1.5 } });
 
-        // Load properties for dropdown
-        async function loadProperties() {
+            // Load properties for dropdown
             try {
-                const properties = await LeasePilot.DataManager.getProperties();
-                const propertySelect = document.querySelector('#transactionForm select[name="propertyId"]');
+                var properties = await LeasePilot.DataManager.getProperties();
+                var propertySelect = document.querySelector('#transactionForm select[name="propertyId"]');
                 if (propertySelect) {
                     propertySelect.innerHTML = '<option value="">Select Property</option>';
-                    properties.forEach(prop => {
-                        const option = document.createElement('option');
+                    properties.forEach(function(prop) {
+                        var option = document.createElement('option');
                         option.value = prop.id;
                         option.textContent = prop.name || prop.address;
                         propertySelect.appendChild(option);
                     });
                 }
-            } catch (error) {
-                console.error('Error loading properties:', error);
-            }
-        }
+            } catch (e) { console.error('Error loading properties:', e); }
 
-        loadProperties();
+            // Set today's date
+            var dateInput = document.querySelector('#transactionForm input[name="date"]');
+            if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
-        // Set today's date
-        const dateInput = document.querySelector('#transactionForm input[name="date"]');
-        if (dateInput) {
-            dateInput.value = new Date().toISOString().split('T')[0];
-        }
-
-        // Transaction Form Handler
-        document.getElementById('transactionForm')?.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const transaction = {
-                type: formData.get('type'),
-                description: formData.get('description'),
-                amount: parseFloat(formData.get('amount')),
-                category: formData.get('category'),
-                propertyId: formData.get('propertyId'),
-                date: formData.get('date'),
-                status: 'cleared'
-            };
-            
+            // Load transactions
             try {
-                await LeasePilot.DataManager.saveTransaction(transaction);
-                LeasePilot.Toast.show('Transaction added successfully!', 'success');
-                LeasePilot.Modal.close('addTransactionModal');
-                e.target.reset();
-                setTimeout(() => location.reload(), 1000);
-            } catch (error) {
-                LeasePilot.Toast.show('Failed to add transaction. Please try again.', 'error');
+                allTransactions = await LeasePilot.DataManager.getTransactions() || [];
+                renderTransactions();
+                updateSummaryStats();
+                renderCashFlowChart();
+                updatePendingCount();
+            } catch (e) {
+                var loading = document.getElementById('transactionsLoading');
+                if (loading) loading.querySelector('td').textContent = 'Failed to load transactions.';
+                console.error('Error loading transactions:', e);
             }
-        });
+
+            // Transaction Form Handler
+            document.getElementById('transactionForm')?.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                var formData = new FormData(e.target);
+                var transaction = {
+                    type: formData.get('type'),
+                    description: formData.get('description'),
+                    amount: parseFloat(formData.get('amount')),
+                    category: formData.get('category'),
+                    propertyId: formData.get('propertyId'),
+                    date: formData.get('date'),
+                    status: 'cleared'
+                };
+                try {
+                    await LeasePilot.DataManager.saveTransaction(transaction);
+                    LeasePilot.Toast.show('Transaction added successfully!', 'success');
+                    LeasePilot.Modal.close('addTransactionModal');
+                    e.target.reset();
+                    allTransactions = await LeasePilot.DataManager.getTransactions() || [];
+                    renderTransactions();
+                    updateSummaryStats();
+                    renderCashFlowChart();
+                    updatePendingCount();
+                } catch (error) {
+                    LeasePilot.Toast.show('Failed to add transaction. Please try again.', 'error');
+                }
+            });
+        })();
     </script>
 
 </body></html>
