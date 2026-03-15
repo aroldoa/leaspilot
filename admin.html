@@ -16,6 +16,8 @@
     .tab-btn.active { background: #0f172a; color: #fff; }
     .tab-btn:not(.active) { color: #64748b; }
     .tab-btn:not(.active):hover { background: #f1f5f9; color: #0f172a; }
+    .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; }
+    .health-card { background:#fff; border-radius:16px; border:1px solid #f1f5f9; padding:20px; }
   </style>
 </head>
 <body class="bg-[#F3F5F7] text-slate-900 antialiased">
@@ -28,49 +30,57 @@
       <div class="h-5 w-px bg-slate-700"></div>
       <span class="text-sm font-semibold text-slate-300 tracking-wide uppercase">Super Admin</span>
     </div>
-    <button onclick="LeasePilot.logout()" class="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors">
+    <button id="logoutBtn" class="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors">
       <i data-lucide="log-out" class="h-4 w-4"></i> Sign out
     </button>
   </header>
 
-  <main class="flex-1 max-w-7xl mx-auto w-full px-6 py-10 md:px-10">
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-8 md:px-8">
 
     <!-- Page header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-medium tracking-tight text-slate-900">Admin Dashboard</h1>
-      <p class="mt-1.5 text-sm text-slate-500">Manage all landlord and tenant accounts across LeasePilot.</p>
+    <div class="mb-6">
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Admin Dashboard</h1>
+      <p class="mt-1 text-sm text-slate-500">Manage all landlord and tenant accounts across LeasePilot.</p>
     </div>
 
-    <!-- Stats -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-      <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-        <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Landlords</p>
-        <p class="text-4xl font-semibold text-slate-900" id="statLandlords">—</p>
+    <!-- Stats row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Landlords</p>
+        <p class="text-3xl font-semibold text-slate-900" id="statLandlords">—</p>
       </div>
-      <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-        <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Tenant Accounts</p>
-        <p class="text-4xl font-semibold text-slate-900" id="statTenants">—</p>
+      <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Tenants</p>
+        <p class="text-3xl font-semibold text-slate-900" id="statTenants">—</p>
       </div>
-      <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-        <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Properties</p>
-        <p class="text-4xl font-semibold text-slate-900" id="statProperties">—</p>
+      <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Properties</p>
+        <p class="text-3xl font-semibold text-slate-900" id="statProperties">—</p>
+      </div>
+      <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Failed Invoices</p>
+        <p class="text-3xl font-semibold text-red-600" id="statFailedInvoices">—</p>
       </div>
     </div>
 
     <!-- Tabs -->
-    <div class="flex gap-1 bg-white rounded-full p-1 border border-slate-200 shadow-sm inline-flex mb-6">
-      <button class="tab-btn active rounded-full px-5 py-2 text-sm font-medium" data-tab="landlords">Landlords</button>
-      <button class="tab-btn rounded-full px-5 py-2 text-sm font-medium" data-tab="tenants">Tenant Accounts</button>
+    <div class="flex flex-wrap gap-1 bg-white rounded-full p-1 border border-slate-200 shadow-sm inline-flex mb-5">
+      <button class="tab-btn active rounded-full px-4 py-2 text-sm font-medium" data-tab="landlords">Landlords</button>
+      <button class="tab-btn rounded-full px-4 py-2 text-sm font-medium" data-tab="tenants">Tenants</button>
+      <button class="tab-btn rounded-full px-4 py-2 text-sm font-medium" data-tab="billing">Billing</button>
+      <button class="tab-btn rounded-full px-4 py-2 text-sm font-medium" data-tab="invoices">Invoices</button>
+      <button class="tab-btn rounded-full px-4 py-2 text-sm font-medium" data-tab="usage">Usage</button>
+      <button class="tab-btn rounded-full px-4 py-2 text-sm font-medium" data-tab="health">System Health</button>
     </div>
 
-    <!-- Landlords table -->
+    <!-- ── LANDLORDS TAB ──────────────────────────────────────────────────── -->
     <div id="panelLandlords" class="tab-panel">
       <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <h2 class="text-base font-semibold text-slate-900">Landlord Accounts</h2>
           <div class="relative">
             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"></i>
-            <input id="landlordSearch" type="search" placeholder="Search…" class="h-9 w-48 rounded-full border border-slate-200 pl-9 pr-4 text-sm focus:outline-none focus:border-slate-400">
+            <input id="landlordSearch" type="search" placeholder="Search…" class="h-9 w-44 rounded-full border border-slate-200 pl-9 pr-4 text-sm focus:outline-none focus:border-slate-400">
           </div>
         </div>
         <div id="landlordsTable" class="overflow-x-auto">
@@ -79,14 +89,14 @@
       </div>
     </div>
 
-    <!-- Tenants table -->
+    <!-- ── TENANTS TAB ────────────────────────────────────────────────────── -->
     <div id="panelTenants" class="tab-panel hidden">
       <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 class="text-base font-semibold text-slate-900">Tenant Portal Accounts</h2>
+          <h2 class="text-base font-semibold text-slate-900">Tenant Accounts</h2>
           <div class="relative">
             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"></i>
-            <input id="tenantSearch" type="search" placeholder="Search…" class="h-9 w-48 rounded-full border border-slate-200 pl-9 pr-4 text-sm focus:outline-none focus:border-slate-400">
+            <input id="tenantSearch" type="search" placeholder="Search…" class="h-9 w-44 rounded-full border border-slate-200 pl-9 pr-4 text-sm focus:outline-none focus:border-slate-400">
           </div>
         </div>
         <div id="tenantsTable" class="overflow-x-auto">
@@ -95,10 +105,216 @@
       </div>
     </div>
 
+    <!-- ── BILLING TAB ────────────────────────────────────────────────────── -->
+    <div id="panelBilling" class="tab-panel hidden">
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 class="text-base font-semibold text-slate-900">Subscriptions</h2>
+          <div class="relative">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"></i>
+            <input id="billingSearch" type="search" placeholder="Search…" class="h-9 w-44 rounded-full border border-slate-200 pl-9 pr-4 text-sm focus:outline-none focus:border-slate-400">
+          </div>
+        </div>
+        <div id="billingTable" class="overflow-x-auto">
+          <p class="py-12 text-center text-slate-400 text-sm">Loading…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── INVOICES TAB ───────────────────────────────────────────────────── -->
+    <div id="panelInvoices" class="tab-panel hidden">
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 class="text-base font-semibold text-slate-900">Invoice History</h2>
+          <button id="newInvoiceBtn" class="flex items-center gap-1.5 rounded-full bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-700">
+            <i data-lucide="plus" class="h-3.5 w-3.5"></i> New Invoice
+          </button>
+        </div>
+        <div id="invoicesTable" class="overflow-x-auto">
+          <p class="py-12 text-center text-slate-400 text-sm">Loading…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── USAGE TAB ──────────────────────────────────────────────────────── -->
+    <div id="panelUsage" class="tab-panel hidden">
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100">
+          <h2 class="text-base font-semibold text-slate-900">Usage Analysis</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Per-landlord activity across the platform</p>
+        </div>
+        <div id="usageTable" class="overflow-x-auto">
+          <p class="py-12 text-center text-slate-400 text-sm">Loading…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SYSTEM HEALTH TAB ─────────────────────────────────────────────── -->
+    <div id="panelHealth" class="tab-panel hidden">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-semibold text-slate-900">System Health &amp; Operations</h2>
+        <button id="refreshHealthBtn" class="flex items-center gap-1.5 rounded-full border border-slate-200 text-slate-600 px-3 py-1.5 text-xs font-medium hover:bg-slate-50">
+          <i data-lucide="refresh-cw" class="h-3 w-3"></i> Refresh
+        </button>
+      </div>
+      <div id="healthDashboard" class="space-y-4">
+        <p class="py-12 text-center text-slate-400 text-sm">Loading…</p>
+      </div>
+    </div>
+
   </main>
 </div>
 
-<!-- Confirm delete modal -->
+<!-- ── EDIT SUBSCRIPTION MODAL ──────────────────────────────────────────────── -->
+<div id="subModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/40">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onclick="event.stopPropagation()">
+    <h3 class="text-base font-semibold text-slate-900 mb-4">Edit Subscription</h3>
+    <div class="space-y-3">
+      <input type="hidden" id="subUserId">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-slate-500 mb-1 block">Plan</label>
+          <select id="subPlan" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400">
+            <option value="free">Free</option>
+            <option value="starter">Starter</option>
+            <option value="professional">Professional</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-slate-500 mb-1 block">Status</label>
+          <select id="subStatus" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400">
+            <option value="active">Active</option>
+            <option value="trialing">Trialing</option>
+            <option value="past_due">Past Due</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="paused">Paused</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-slate-500 mb-1 block">Billing Cycle</label>
+          <select id="subCycle" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400">
+            <option value="monthly">Monthly</option>
+            <option value="annual">Annual</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-slate-500 mb-1 block">Amount ($)</label>
+          <input id="subAmount" type="number" min="0" step="0.01" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400" placeholder="0.00">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-slate-500 mb-1 block">Discount %</label>
+          <input id="subDiscount" type="number" min="0" max="100" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400" placeholder="0">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-slate-500 mb-1 block">Next Billing Date</label>
+          <input id="subNextBilling" type="date" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400">
+        </div>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-slate-500 mb-1 block">Trial Ends At</label>
+        <input id="subTrialEnds" type="date" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400">
+      </div>
+      <div>
+        <label class="text-xs font-medium text-slate-500 mb-1 block">Internal Notes</label>
+        <textarea id="subNotes" rows="2" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400 resize-none" placeholder="Notes…"></textarea>
+      </div>
+    </div>
+    <div class="flex gap-3 justify-end mt-5">
+      <button id="subCancelBtn" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
+      <button id="subSaveBtn" class="rounded-full bg-slate-900 px-5 py-2 text-sm font-medium text-white hover:bg-slate-700">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── APPLY CREDIT MODAL ────────────────────────────────────────────────────── -->
+<div id="creditModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/40">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onclick="event.stopPropagation()">
+    <h3 class="text-base font-semibold text-slate-900 mb-4">Apply Credit</h3>
+    <input type="hidden" id="creditUserId">
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs font-medium text-slate-500 mb-1 block">Credit Amount ($)</label>
+        <input id="creditAmount" type="number" min="0.01" step="0.01" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400" placeholder="0.00">
+      </div>
+      <div>
+        <label class="text-xs font-medium text-slate-500 mb-1 block">Reason</label>
+        <input id="creditReason" type="text" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400" placeholder="e.g. Service outage compensation">
+      </div>
+    </div>
+    <div class="flex gap-3 justify-end mt-5">
+      <button id="creditCancelBtn" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
+      <button id="creditSaveBtn" class="rounded-full bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700">Apply Credit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── APPLY DISCOUNT MODAL ──────────────────────────────────────────────────── -->
+<div id="discountModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/40">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onclick="event.stopPropagation()">
+    <h3 class="text-base font-semibold text-slate-900 mb-4">Apply Discount</h3>
+    <input type="hidden" id="discountUserId">
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs font-medium text-slate-500 mb-1 block">Discount Percentage</label>
+        <input id="discountPercent" type="number" min="1" max="100" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400" placeholder="e.g. 20">
+      </div>
+      <div>
+        <label class="text-xs font-medium text-slate-500 mb-1 block">Reason</label>
+        <input id="discountReason" type="text" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400" placeholder="e.g. Annual plan promotion">
+      </div>
+    </div>
+    <div class="flex gap-3 justify-end mt-5">
+      <button id="discountCancelBtn" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
+      <button id="discountSaveBtn" class="rounded-full bg-violet-600 px-5 py-2 text-sm font-medium text-white hover:bg-violet-700">Apply Discount</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── NEW INVOICE MODAL ─────────────────────────────────────────────────────── -->
+<div id="newInvoiceModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/40">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onclick="event.stopPropagation()">
+    <h3 class="text-base font-semibold text-slate-900 mb-4">Create Invoice</h3>
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs font-medium text-slate-500 mb-1 block">Landlord</label>
+        <select id="invoiceLandlord" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"></select>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-slate-500 mb-1 block">Amount ($)</label>
+          <input id="invoiceAmount" type="number" min="0.01" step="0.01" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400" placeholder="0.00">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-slate-500 mb-1 block">Due Date</label>
+          <input id="invoiceDue" type="date" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400">
+        </div>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-slate-500 mb-1 block">Status</label>
+        <select id="invoiceStatus" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400">
+          <option value="pending">Pending</option>
+          <option value="paid">Paid</option>
+          <option value="failed">Failed</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-slate-500 mb-1 block">Description</label>
+        <input id="invoiceDesc" type="text" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-slate-400" placeholder="e.g. Professional plan – March 2026">
+      </div>
+    </div>
+    <div class="flex gap-3 justify-end mt-5">
+      <button id="newInvoiceCancelBtn" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
+      <button id="newInvoiceSaveBtn" class="rounded-full bg-slate-900 px-5 py-2 text-sm font-medium text-white hover:bg-slate-700">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── DELETE MODAL ──────────────────────────────────────────────────────────── -->
 <div id="deleteModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/40">
   <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onclick="event.stopPropagation()">
     <div class="flex items-start gap-4 mb-5">
@@ -125,11 +341,15 @@
   await LeasePilot.checkAuth();
   lucide.createIcons();
 
-  var allLandlords = [];
-  var allTenants   = [];
+  document.getElementById('logoutBtn').addEventListener('click', function() { LeasePilot.logout(); });
+
+  var allLandlords  = [];
+  var allTenants    = [];
+  var allBilling    = [];
+  var allInvoices   = [];
   var pendingDeleteId = null;
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────────────────
 
   function esc(s) {
     if (s == null) return '';
@@ -141,20 +361,67 @@
     return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  function api(path, opts) {
-    return fetch(LeasePilot.API && LeasePilot.API._base ? LeasePilot.API._base + path : '/api' + path, Object.assign({ credentials: 'include' }, opts))
-      .then(function(r) { return r.json(); });
+  function fmtMoney(n) {
+    if (n == null || n === '') return '—';
+    return '$' + parseFloat(n).toFixed(2);
   }
 
-  // ── Load stats ──────────────────────────────────────────────────────────────
+  function showModal(id) {
+    var m = document.getElementById(id);
+    m.classList.remove('hidden');
+    m.classList.add('flex');
+  }
+  function hideModal(id) {
+    var m = document.getElementById(id);
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+  }
 
-  LeasePilot.API.get('/admin/stats').then(function(data) {
-    document.getElementById('statLandlords').textContent  = data.landlords  ?? '—';
-    document.getElementById('statTenants').textContent    = data.tenants    ?? '—';
-    document.getElementById('statProperties').textContent = data.properties ?? '—';
-  }).catch(function() {});
+  var PLAN_COLORS = {
+    free:         'bg-slate-100 text-slate-600',
+    starter:      'bg-blue-50 text-blue-700',
+    professional: 'bg-violet-50 text-violet-700',
+    enterprise:   'bg-amber-50 text-amber-700',
+  };
+  var STATUS_COLORS = {
+    active:    'bg-green-50 text-green-700',
+    trialing:  'bg-blue-50 text-blue-700',
+    past_due:  'bg-red-50 text-red-700',
+    cancelled: 'bg-slate-100 text-slate-500',
+    paused:    'bg-amber-50 text-amber-700',
+  };
+  var INVOICE_STATUS_COLORS = {
+    paid:    'bg-green-50 text-green-700',
+    pending: 'bg-amber-50 text-amber-700',
+    failed:  'bg-red-50 text-red-700',
+    refunded:'bg-violet-50 text-violet-700',
+    void:    'bg-slate-100 text-slate-500',
+  };
 
-  // ── Landlords ───────────────────────────────────────────────────────────────
+  function planBadge(plan) {
+    var cls = PLAN_COLORS[plan] || 'bg-slate-100 text-slate-600';
+    return '<span class="rounded-full px-2.5 py-0.5 text-xs font-medium ' + cls + '">' + esc(plan || 'free') + '</span>';
+  }
+  function statusBadge(s, map) {
+    var cls = (map || STATUS_COLORS)[s] || 'bg-slate-100 text-slate-600';
+    return '<span class="rounded-full px-2.5 py-0.5 text-xs font-medium ' + cls + '">' + esc(s || '—') + '</span>';
+  }
+
+  // ── Load stats ───────────────────────────────────────────────────────────────
+
+  function loadStats() {
+    LeasePilot.API.get('/admin/stats').then(function(data) {
+      document.getElementById('statLandlords').textContent  = data.landlords  ?? '—';
+      document.getElementById('statTenants').textContent    = data.tenants    ?? '—';
+      document.getElementById('statProperties').textContent = data.properties ?? '—';
+    }).catch(function() {});
+    LeasePilot.API.get('/admin/system-health').then(function(data) {
+      document.getElementById('statFailedInvoices').textContent = data.failed_invoices ?? '—';
+    }).catch(function() {});
+  }
+  loadStats();
+
+  // ── LANDLORDS ────────────────────────────────────────────────────────────────
 
   function renderLandlords(rows) {
     var el = document.getElementById('landlordsTable');
@@ -164,40 +431,31 @@
     }
     el.innerHTML =
       '<table class="w-full text-sm">' +
-        '<thead>' +
-          '<tr class="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wide">' +
-            '<th class="px-6 py-3 text-left">Name</th>' +
-            '<th class="px-6 py-3 text-left">Email</th>' +
-            '<th class="px-6 py-3 text-left">Role</th>' +
-            '<th class="px-6 py-3 text-left">Properties</th>' +
-            '<th class="px-6 py-3 text-left">Tenants</th>' +
-            '<th class="px-6 py-3 text-left">Joined</th>' +
-            '<th class="px-6 py-3 text-left">Actions</th>' +
-          '</tr>' +
-        '</thead>' +
+        '<thead><tr class="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wide">' +
+          '<th class="px-6 py-3 text-left">Name</th>' +
+          '<th class="px-6 py-3 text-left">Email</th>' +
+          '<th class="px-6 py-3 text-left">Role</th>' +
+          '<th class="px-6 py-3 text-center">Properties</th>' +
+          '<th class="px-6 py-3 text-center">Tenants</th>' +
+          '<th class="px-6 py-3 text-left">Joined</th>' +
+          '<th class="px-6 py-3 text-left">Actions</th>' +
+        '</tr></thead>' +
         '<tbody class="divide-y divide-slate-50">' +
         rows.map(function(u) {
           return '<tr class="hover:bg-slate-50 transition-colors">' +
             '<td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">' + esc(u.name) + '</td>' +
             '<td class="px-6 py-4 text-slate-500">' + esc(u.email) + '</td>' +
             '<td class="px-6 py-4"><span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">' + esc(u.role) + '</span></td>' +
-            '<td class="px-6 py-4 text-slate-700">' + (u.property_count || 0) + '</td>' +
-            '<td class="px-6 py-4 text-slate-700">' + (u.tenant_count || 0) + '</td>' +
+            '<td class="px-6 py-4 text-slate-700 text-center">' + (u.property_count || 0) + '</td>' +
+            '<td class="px-6 py-4 text-slate-700 text-center">' + (u.tenant_count || 0) + '</td>' +
             '<td class="px-6 py-4 text-slate-400 whitespace-nowrap">' + fmtDate(u.created_at) + '</td>' +
-            '<td class="px-6 py-4">' +
-              '<div class="flex items-center gap-2">' +
-                '<button class="impersonate-btn rounded-full bg-slate-900 text-white px-3 py-1.5 text-xs font-medium hover:bg-slate-700 flex items-center gap-1" data-id="' + u.id + '" data-name="' + esc(u.name) + '">' +
-                  '<i data-lucide="log-in" class="h-3 w-3"></i> Login as' +
-                '</button>' +
-                '<button class="delete-user-btn rounded-full border border-red-200 text-red-600 px-3 py-1.5 text-xs font-medium hover:bg-red-50 flex items-center gap-1" data-id="' + u.id + '" data-name="' + esc(u.name) + '">' +
-                  '<i data-lucide="trash-2" class="h-3 w-3"></i> Delete' +
-                '</button>' +
-              '</div>' +
-            '</td>' +
+            '<td class="px-6 py-4"><div class="flex items-center gap-2">' +
+              '<button class="impersonate-btn rounded-full bg-slate-900 text-white px-3 py-1.5 text-xs font-medium hover:bg-slate-700 flex items-center gap-1" data-id="' + u.id + '" data-name="' + esc(u.name) + '"><i data-lucide="log-in" class="h-3 w-3"></i> Login as</button>' +
+              '<button class="delete-user-btn rounded-full border border-red-200 text-red-600 px-3 py-1.5 text-xs font-medium hover:bg-red-50 flex items-center gap-1" data-id="' + u.id + '" data-name="' + esc(u.name) + '"><i data-lucide="trash-2" class="h-3 w-3"></i> Delete</button>' +
+            '</div></td>' +
           '</tr>';
         }).join('') +
-        '</tbody>' +
-      '</table>';
+        '</tbody></table>';
     lucide.createIcons();
     wireTableActions(el);
   }
@@ -216,49 +474,45 @@
     }) : allLandlords);
   });
 
-  // ── Tenants ─────────────────────────────────────────────────────────────────
+  // ── TENANTS ──────────────────────────────────────────────────────────────────
 
   function renderTenants(rows) {
     var el = document.getElementById('tenantsTable');
     if (!rows || rows.length === 0) {
-      el.innerHTML = '<p class="py-12 text-center text-slate-400 text-sm">No tenant portal accounts yet.</p>';
+      el.innerHTML = '<p class="py-12 text-center text-slate-400 text-sm">No tenants yet.</p>';
       return;
     }
     el.innerHTML =
       '<table class="w-full text-sm">' +
-        '<thead>' +
-          '<tr class="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wide">' +
-            '<th class="px-6 py-3 text-left">Tenant</th>' +
-            '<th class="px-6 py-3 text-left">Login email</th>' +
-            '<th class="px-6 py-3 text-left">Property</th>' +
-            '<th class="px-6 py-3 text-left">Unit</th>' +
-            '<th class="px-6 py-3 text-left">Manager</th>' +
-            '<th class="px-6 py-3 text-left">Status</th>' +
-            '<th class="px-6 py-3 text-left">Joined</th>' +
-            '<th class="px-6 py-3 text-left">Actions</th>' +
-          '</tr>' +
-        '</thead>' +
+        '<thead><tr class="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wide">' +
+          '<th class="px-6 py-3 text-left">Tenant</th>' +
+          '<th class="px-6 py-3 text-left">Portal Email</th>' +
+          '<th class="px-6 py-3 text-left">Property</th>' +
+          '<th class="px-6 py-3 text-left">Unit</th>' +
+          '<th class="px-6 py-3 text-left">Manager</th>' +
+          '<th class="px-6 py-3 text-left">Status</th>' +
+          '<th class="px-6 py-3 text-left">Added</th>' +
+          '<th class="px-6 py-3 text-left">Actions</th>' +
+        '</tr></thead>' +
         '<tbody class="divide-y divide-slate-50">' +
         rows.map(function(t) {
-          var statusClass = t.lease_status === 'active' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-600';
           var hasPortal = !!t.user_id;
+          var leaseStatus = t.lease_status || 'active';
+          var statusCls = leaseStatus === 'active' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-600';
           return '<tr class="hover:bg-slate-50 transition-colors">' +
-            '<td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">' + esc(t.first_name + ' ' + t.last_name) + '</td>' +
-            '<td class="px-6 py-4 text-slate-500">' + (hasPortal ? esc(t.email) : '<span class="text-slate-300 italic text-xs">No portal account</span>') + '</td>' +
+            '<td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">' + esc((t.first_name || '') + ' ' + (t.last_name || '')) + '</td>' +
+            '<td class="px-6 py-4 text-slate-500">' + (hasPortal ? esc(t.email) : '<span class="text-slate-300 italic text-xs">No portal</span>') + '</td>' +
             '<td class="px-6 py-4 text-slate-700">' + esc(t.property_name || '—') + '</td>' +
             '<td class="px-6 py-4 text-slate-500">' + esc(t.unit || '—') + '</td>' +
             '<td class="px-6 py-4 text-slate-500">' + esc(t.manager_name || '—') + '</td>' +
-            '<td class="px-6 py-4"><span class="rounded-full px-2.5 py-0.5 text-xs font-medium ' + statusClass + '">' + esc(t.lease_status || 'active') + '</span></td>' +
+            '<td class="px-6 py-4"><span class="rounded-full px-2.5 py-0.5 text-xs font-medium ' + statusCls + '">' + esc(leaseStatus) + '</span></td>' +
             '<td class="px-6 py-4 text-slate-400 whitespace-nowrap">' + fmtDate(t.created_at) + '</td>' +
             '<td class="px-6 py-4">' +
-              (hasPortal
-                ? '<button class="impersonate-btn rounded-full bg-slate-900 text-white px-3 py-1.5 text-xs font-medium hover:bg-slate-700 flex items-center gap-1" data-id="' + t.user_id + '" data-name="' + esc(t.first_name + ' ' + t.last_name) + '"><i data-lucide="log-in" class="h-3 w-3"></i> Login as</button>'
-                : '<span class="text-xs text-slate-300">—</span>') +
+              (hasPortal ? '<button class="impersonate-btn rounded-full bg-slate-900 text-white px-3 py-1.5 text-xs font-medium hover:bg-slate-700 flex items-center gap-1" data-id="' + t.user_id + '" data-name="' + esc((t.first_name || '') + ' ' + (t.last_name || '')) + '"><i data-lucide="log-in" class="h-3 w-3"></i> Login as</button>' : '<span class="text-xs text-slate-300">—</span>') +
             '</td>' +
           '</tr>';
         }).join('') +
-        '</tbody>' +
-      '</table>';
+        '</tbody></table>';
     lucide.createIcons();
     wireTableActions(el);
   }
@@ -273,14 +527,413 @@
   document.getElementById('tenantSearch').addEventListener('input', function() {
     var q = this.value.trim().toLowerCase();
     renderTenants(q ? allTenants.filter(function(t) {
-      return (t.first_name + ' ' + t.last_name).toLowerCase().includes(q) ||
+      return ((t.first_name || '') + ' ' + (t.last_name || '')).toLowerCase().includes(q) ||
              (t.email || '').toLowerCase().includes(q) ||
              (t.property_name || '').toLowerCase().includes(q) ||
              (t.manager_name || '').toLowerCase().includes(q);
     }) : allTenants);
   });
 
-  // ── Action wiring ────────────────────────────────────────────────────────────
+  // ── BILLING ──────────────────────────────────────────────────────────────────
+
+  function renderBilling(rows) {
+    var el = document.getElementById('billingTable');
+    if (!rows || rows.length === 0) {
+      el.innerHTML = '<p class="py-12 text-center text-slate-400 text-sm">No landlord accounts.</p>';
+      return;
+    }
+    el.innerHTML =
+      '<table class="w-full text-sm">' +
+        '<thead><tr class="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wide">' +
+          '<th class="px-6 py-3 text-left">Landlord</th>' +
+          '<th class="px-6 py-3 text-left">Plan</th>' +
+          '<th class="px-6 py-3 text-left">Status</th>' +
+          '<th class="px-6 py-3 text-left">Cycle</th>' +
+          '<th class="px-6 py-3 text-left">Amount</th>' +
+          '<th class="px-6 py-3 text-left">Discount</th>' +
+          '<th class="px-6 py-3 text-left">Credit Bal.</th>' +
+          '<th class="px-6 py-3 text-left">Next Bill</th>' +
+          '<th class="px-6 py-3 text-left">Actions</th>' +
+        '</tr></thead>' +
+        '<tbody class="divide-y divide-slate-50">' +
+        rows.map(function(u) {
+          return '<tr class="hover:bg-slate-50 transition-colors">' +
+            '<td class="px-6 py-4"><div class="font-medium text-slate-900">' + esc(u.name) + '</div><div class="text-xs text-slate-400">' + esc(u.email) + '</div></td>' +
+            '<td class="px-6 py-4">' + planBadge(u.plan) + '</td>' +
+            '<td class="px-6 py-4">' + statusBadge(u.status, STATUS_COLORS) + '</td>' +
+            '<td class="px-6 py-4 text-slate-500 capitalize">' + esc(u.billing_cycle) + '</td>' +
+            '<td class="px-6 py-4 text-slate-700">' + fmtMoney(u.amount) + '</td>' +
+            '<td class="px-6 py-4 text-slate-500">' + (u.discount_percent > 0 ? u.discount_percent + '%' : '—') + '</td>' +
+            '<td class="px-6 py-4 ' + (parseFloat(u.credit_balance) > 0 ? 'text-emerald-600 font-medium' : 'text-slate-400') + '">' + fmtMoney(u.credit_balance) + '</td>' +
+            '<td class="px-6 py-4 text-slate-400 whitespace-nowrap">' + fmtDate(u.next_billing_date) + '</td>' +
+            '<td class="px-6 py-4"><div class="flex items-center gap-1.5">' +
+              '<button class="edit-sub-btn rounded-full border border-slate-200 text-slate-700 px-2.5 py-1 text-xs font-medium hover:bg-slate-50" data-user=\'' + JSON.stringify(u).replace(/'/g,"&#39;") + '\'>Edit</button>' +
+              '<button class="apply-credit-btn rounded-full border border-emerald-200 text-emerald-700 px-2.5 py-1 text-xs font-medium hover:bg-emerald-50" data-id="' + u.id + '">Credit</button>' +
+              '<button class="apply-discount-btn rounded-full border border-violet-200 text-violet-700 px-2.5 py-1 text-xs font-medium hover:bg-violet-50" data-id="' + u.id + '">Discount</button>' +
+            '</div></td>' +
+          '</tr>';
+        }).join('') +
+        '</tbody></table>';
+    lucide.createIcons();
+    wireBillingActions(el);
+  }
+
+  function loadBilling() {
+    LeasePilot.API.get('/admin/billing').then(function(data) {
+      allBilling = data || [];
+      renderBilling(allBilling);
+      // populate invoice landlord select
+      var sel = document.getElementById('invoiceLandlord');
+      sel.innerHTML = allBilling.map(function(u) {
+        return '<option value="' + u.id + '">' + esc(u.name) + ' (' + esc(u.email) + ')</option>';
+      }).join('');
+    }).catch(function() {
+      document.getElementById('billingTable').innerHTML = '<p class="py-8 text-center text-red-400 text-sm">Failed to load billing.</p>';
+    });
+  }
+  loadBilling();
+
+  document.getElementById('billingSearch').addEventListener('input', function() {
+    var q = this.value.trim().toLowerCase();
+    renderBilling(q ? allBilling.filter(function(u) {
+      return (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q);
+    }) : allBilling);
+  });
+
+  // Edit subscription
+  function wireBillingActions(container) {
+    container.querySelectorAll('.edit-sub-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var u = JSON.parse(this.getAttribute('data-user').replace(/&#39;/g,"'"));
+        document.getElementById('subUserId').value = u.id;
+        document.getElementById('subPlan').value = u.plan || 'free';
+        document.getElementById('subStatus').value = u.status || 'active';
+        document.getElementById('subCycle').value = u.billing_cycle || 'monthly';
+        document.getElementById('subAmount').value = u.amount || '';
+        document.getElementById('subDiscount').value = u.discount_percent || '';
+        document.getElementById('subNextBilling').value = u.next_billing_date ? u.next_billing_date.slice(0,10) : '';
+        document.getElementById('subTrialEnds').value = u.trial_ends_at ? u.trial_ends_at.slice(0,10) : '';
+        document.getElementById('subNotes').value = u.notes || '';
+        showModal('subModal');
+      });
+    });
+    container.querySelectorAll('.apply-credit-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.getElementById('creditUserId').value = this.getAttribute('data-id');
+        document.getElementById('creditAmount').value = '';
+        document.getElementById('creditReason').value = '';
+        showModal('creditModal');
+      });
+    });
+    container.querySelectorAll('.apply-discount-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.getElementById('discountUserId').value = this.getAttribute('data-id');
+        document.getElementById('discountPercent').value = '';
+        document.getElementById('discountReason').value = '';
+        showModal('discountModal');
+      });
+    });
+  }
+
+  document.getElementById('subCancelBtn').addEventListener('click', function() { hideModal('subModal'); });
+  document.getElementById('subModal').addEventListener('click', function(e) { if (e.target===this) hideModal('subModal'); });
+  document.getElementById('subSaveBtn').addEventListener('click', function() {
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    var userId = document.getElementById('subUserId').value;
+    LeasePilot.API.put('/admin/billing/' + userId + '/subscription', {
+      plan:              document.getElementById('subPlan').value,
+      status:            document.getElementById('subStatus').value,
+      billing_cycle:     document.getElementById('subCycle').value,
+      amount:            document.getElementById('subAmount').value || 0,
+      discount_percent:  document.getElementById('subDiscount').value || 0,
+      next_billing_date: document.getElementById('subNextBilling').value || null,
+      trial_ends_at:     document.getElementById('subTrialEnds').value || null,
+      notes:             document.getElementById('subNotes').value || null,
+    }).then(function() {
+      hideModal('subModal');
+      LeasePilot.Toast.show('Subscription updated');
+      loadBilling();
+    }).catch(function(err) {
+      LeasePilot.Toast.show(err.message || 'Failed to save', 'error');
+    }).finally(function() { btn.disabled = false; btn.textContent = 'Save'; });
+  });
+
+  document.getElementById('creditCancelBtn').addEventListener('click', function() { hideModal('creditModal'); });
+  document.getElementById('creditModal').addEventListener('click', function(e) { if (e.target===this) hideModal('creditModal'); });
+  document.getElementById('creditSaveBtn').addEventListener('click', function() {
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Applying…';
+    var userId = document.getElementById('creditUserId').value;
+    LeasePilot.API.post('/admin/billing/' + userId + '/credit', {
+      amount: document.getElementById('creditAmount').value,
+      reason: document.getElementById('creditReason').value,
+    }).then(function() {
+      hideModal('creditModal');
+      LeasePilot.Toast.show('Credit applied');
+      loadBilling();
+    }).catch(function(err) {
+      LeasePilot.Toast.show(err.message || 'Failed to apply credit', 'error');
+    }).finally(function() { btn.disabled = false; btn.textContent = 'Apply Credit'; });
+  });
+
+  document.getElementById('discountCancelBtn').addEventListener('click', function() { hideModal('discountModal'); });
+  document.getElementById('discountModal').addEventListener('click', function(e) { if (e.target===this) hideModal('discountModal'); });
+  document.getElementById('discountSaveBtn').addEventListener('click', function() {
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Applying…';
+    var userId = document.getElementById('discountUserId').value;
+    LeasePilot.API.post('/admin/billing/' + userId + '/discount', {
+      percent: document.getElementById('discountPercent').value,
+      reason:  document.getElementById('discountReason').value,
+    }).then(function() {
+      hideModal('discountModal');
+      LeasePilot.Toast.show('Discount applied');
+      loadBilling();
+    }).catch(function(err) {
+      LeasePilot.Toast.show(err.message || 'Failed to apply discount', 'error');
+    }).finally(function() { btn.disabled = false; btn.textContent = 'Apply Discount'; });
+  });
+
+  // ── INVOICES ─────────────────────────────────────────────────────────────────
+
+  function renderInvoices(rows) {
+    var el = document.getElementById('invoicesTable');
+    if (!rows || rows.length === 0) {
+      el.innerHTML = '<p class="py-12 text-center text-slate-400 text-sm">No invoices yet.</p>';
+      return;
+    }
+    el.innerHTML =
+      '<table class="w-full text-sm">' +
+        '<thead><tr class="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wide">' +
+          '<th class="px-6 py-3 text-left">Landlord</th>' +
+          '<th class="px-6 py-3 text-left">Description</th>' +
+          '<th class="px-6 py-3 text-left">Amount</th>' +
+          '<th class="px-6 py-3 text-left">Status</th>' +
+          '<th class="px-6 py-3 text-left">Due</th>' +
+          '<th class="px-6 py-3 text-left">Paid</th>' +
+          '<th class="px-6 py-3 text-left">Created</th>' +
+          '<th class="px-6 py-3 text-left">Actions</th>' +
+        '</tr></thead>' +
+        '<tbody class="divide-y divide-slate-50">' +
+        rows.map(function(inv) {
+          return '<tr class="hover:bg-slate-50 transition-colors' + (inv.status === 'failed' ? ' bg-red-50/30' : '') + '">' +
+            '<td class="px-6 py-4"><div class="font-medium text-slate-900">' + esc(inv.landlord_name) + '</div><div class="text-xs text-slate-400">' + esc(inv.landlord_email) + '</div></td>' +
+            '<td class="px-6 py-4 text-slate-500 max-w-xs truncate">' + esc(inv.description || '—') + '</td>' +
+            '<td class="px-6 py-4 font-medium text-slate-900">' + fmtMoney(inv.amount) + '</td>' +
+            '<td class="px-6 py-4">' + statusBadge(inv.status, INVOICE_STATUS_COLORS) + '</td>' +
+            '<td class="px-6 py-4 text-slate-400">' + fmtDate(inv.due_date) + '</td>' +
+            '<td class="px-6 py-4 text-slate-400">' + (inv.paid_at ? fmtDate(inv.paid_at) : '—') + '</td>' +
+            '<td class="px-6 py-4 text-slate-400 whitespace-nowrap">' + fmtDate(inv.created_at) + '</td>' +
+            '<td class="px-6 py-4"><div class="flex items-center gap-1.5">' +
+              (inv.status !== 'paid' ? '<button class="mark-paid-btn rounded-full border border-green-200 text-green-700 px-2.5 py-1 text-xs font-medium hover:bg-green-50" data-id="' + inv.id + '">Mark Paid</button>' : '') +
+              (inv.status !== 'void' ? '<button class="void-inv-btn rounded-full border border-slate-200 text-slate-500 px-2.5 py-1 text-xs font-medium hover:bg-slate-50" data-id="' + inv.id + '">Void</button>' : '') +
+            '</div></td>' +
+          '</tr>';
+        }).join('') +
+        '</tbody></table>';
+    lucide.createIcons();
+    wireInvoiceActions(el);
+  }
+
+  function loadInvoices() {
+    LeasePilot.API.get('/admin/invoices').then(function(data) {
+      allInvoices = data || [];
+      renderInvoices(allInvoices);
+    }).catch(function() {
+      document.getElementById('invoicesTable').innerHTML = '<p class="py-8 text-center text-red-400 text-sm">Failed to load invoices.</p>';
+    });
+  }
+  loadInvoices();
+
+  function wireInvoiceActions(container) {
+    container.querySelectorAll('.mark-paid-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = this.getAttribute('data-id');
+        LeasePilot.API.patch('/admin/invoices/' + id, { status: 'paid' })
+          .then(function() { LeasePilot.Toast.show('Invoice marked as paid'); loadInvoices(); loadStats(); })
+          .catch(function(err) { LeasePilot.Toast.show(err.message || 'Failed', 'error'); });
+      });
+    });
+    container.querySelectorAll('.void-inv-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = this.getAttribute('data-id');
+        if (!confirm('Void this invoice?')) return;
+        LeasePilot.API.patch('/admin/invoices/' + id, { status: 'void' })
+          .then(function() { LeasePilot.Toast.show('Invoice voided'); loadInvoices(); })
+          .catch(function(err) { LeasePilot.Toast.show(err.message || 'Failed', 'error'); });
+      });
+    });
+  }
+
+  document.getElementById('newInvoiceBtn').addEventListener('click', function() { showModal('newInvoiceModal'); });
+  document.getElementById('newInvoiceCancelBtn').addEventListener('click', function() { hideModal('newInvoiceModal'); });
+  document.getElementById('newInvoiceModal').addEventListener('click', function(e) { if (e.target===this) hideModal('newInvoiceModal'); });
+  document.getElementById('newInvoiceSaveBtn').addEventListener('click', function() {
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Creating…';
+    LeasePilot.API.post('/admin/invoices', {
+      user_id:     document.getElementById('invoiceLandlord').value,
+      amount:      document.getElementById('invoiceAmount').value,
+      status:      document.getElementById('invoiceStatus').value,
+      description: document.getElementById('invoiceDesc').value,
+      due_date:    document.getElementById('invoiceDue').value || null,
+    }).then(function() {
+      hideModal('newInvoiceModal');
+      LeasePilot.Toast.show('Invoice created');
+      loadInvoices(); loadStats();
+    }).catch(function(err) {
+      LeasePilot.Toast.show(err.message || 'Failed to create invoice', 'error');
+    }).finally(function() { btn.disabled = false; btn.textContent = 'Create'; });
+  });
+
+  // ── USAGE ────────────────────────────────────────────────────────────────────
+
+  function loadUsage() {
+    LeasePilot.API.get('/admin/usage').then(function(data) {
+      var el = document.getElementById('usageTable');
+      if (!data || data.length === 0) {
+        el.innerHTML = '<p class="py-12 text-center text-slate-400 text-sm">No data yet.</p>';
+        return;
+      }
+      el.innerHTML =
+        '<table class="w-full text-sm">' +
+          '<thead><tr class="border-b border-slate-100 text-xs font-medium text-slate-400 uppercase tracking-wide">' +
+            '<th class="px-6 py-3 text-left">Landlord</th>' +
+            '<th class="px-6 py-3 text-center">Properties</th>' +
+            '<th class="px-6 py-3 text-center">Tenants</th>' +
+            '<th class="px-6 py-3 text-center">Maintenance</th>' +
+            '<th class="px-6 py-3 text-center">Messages</th>' +
+            '<th class="px-6 py-3 text-center">Transactions</th>' +
+            '<th class="px-6 py-3 text-left">Last Activity</th>' +
+            '<th class="px-6 py-3 text-left">Joined</th>' +
+          '</tr></thead>' +
+          '<tbody class="divide-y divide-slate-50">' +
+          data.map(function(u) {
+            var total = (u.properties || 0) + (u.tenants || 0) + (u.maintenance_requests || 0) + (u.messages || 0) + (u.transactions || 0);
+            var activity = total === 0 ? 'bg-slate-50' : '';
+            return '<tr class="hover:bg-slate-50 transition-colors ' + activity + '">' +
+              '<td class="px-6 py-4"><div class="font-medium text-slate-900">' + esc(u.name) + '</div><div class="text-xs text-slate-400">' + esc(u.email) + '</div></td>' +
+              '<td class="px-6 py-4 text-center"><span class="font-semibold text-slate-900">' + (u.properties || 0) + '</span></td>' +
+              '<td class="px-6 py-4 text-center"><span class="font-semibold text-slate-900">' + (u.tenants || 0) + '</span></td>' +
+              '<td class="px-6 py-4 text-center text-amber-700 font-medium">' + (u.maintenance_requests || 0) + '</td>' +
+              '<td class="px-6 py-4 text-center text-blue-700 font-medium">' + (u.messages || 0) + '</td>' +
+              '<td class="px-6 py-4 text-center text-emerald-700 font-medium">' + (u.transactions || 0) + '</td>' +
+              '<td class="px-6 py-4 text-slate-400 whitespace-nowrap">' + (u.last_activity ? fmtDate(u.last_activity) : '<span class="text-slate-300 italic text-xs">No activity</span>') + '</td>' +
+              '<td class="px-6 py-4 text-slate-400 whitespace-nowrap">' + fmtDate(u.created_at) + '</td>' +
+            '</tr>';
+          }).join('') +
+          '</tbody></table>';
+    }).catch(function() {
+      document.getElementById('usageTable').innerHTML = '<p class="py-8 text-center text-red-400 text-sm">Failed to load usage data.</p>';
+    });
+  }
+
+  // ── SYSTEM HEALTH ────────────────────────────────────────────────────────────
+
+  function loadHealth() {
+    var el = document.getElementById('healthDashboard');
+    el.innerHTML = '<p class="py-8 text-center text-slate-400 text-sm">Loading…</p>';
+    LeasePilot.API.get('/admin/system-health').then(function(d) {
+      var c = d.counts || {};
+      var p = d.process || {};
+      var a = d.activity_30d || {};
+      var mem = p.memory_mb || {};
+      var uptimeMins = Math.floor((p.uptime_seconds || 0) / 60);
+      var uptimeHrs  = Math.floor(uptimeMins / 60);
+      var uptimeStr  = uptimeHrs > 0 ? uptimeHrs + 'h ' + (uptimeMins % 60) + 'm' : uptimeMins + 'm';
+
+      function statCard(label, val, sub, color) {
+        return '<div class="health-card">' +
+          '<p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">' + label + '</p>' +
+          '<p class="text-2xl font-semibold ' + (color || 'text-slate-900') + '">' + val + '</p>' +
+          (sub ? '<p class="text-xs text-slate-400 mt-1">' + sub + '</p>' : '') +
+        '</div>';
+      }
+
+      var dbDot = d.db && d.db.status === 'connected'
+        ? '<span class="status-dot bg-green-400"></span><span class="text-green-700 font-medium">Connected</span>'
+        : '<span class="status-dot bg-red-400"></span><span class="text-red-700 font-medium">Error</span>';
+
+      el.innerHTML =
+        // DB + Process row
+        '<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">' +
+          '<div class="health-card col-span-2 sm:col-span-1 flex items-center gap-3">' +
+            '<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100"><i data-lucide="database" class="h-5 w-5 text-slate-600"></i></div>' +
+            '<div><p class="text-xs font-medium text-slate-400 mb-0.5">Database</p><p class="text-sm flex items-center">' + dbDot + '</p></div>' +
+          '</div>' +
+          '<div class="health-card">' +
+            '<p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Uptime</p>' +
+            '<p class="text-xl font-semibold text-slate-900">' + uptimeStr + '</p>' +
+            '<p class="text-xs text-slate-400 mt-1">' + (p.env || 'development') + '</p>' +
+          '</div>' +
+          '<div class="health-card">' +
+            '<p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Memory</p>' +
+            '<p class="text-xl font-semibold text-slate-900">' + (mem.heap_used || '—') + ' MB</p>' +
+            '<p class="text-xs text-slate-400 mt-1">of ' + (mem.heap_total || '—') + ' MB heap · ' + (mem.rss || '—') + ' MB RSS</p>' +
+          '</div>' +
+          '<div class="health-card">' +
+            '<p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Node</p>' +
+            '<p class="text-xl font-semibold text-slate-900">' + (p.node_version || '—') + '</p>' +
+          '</div>' +
+        '</div>' +
+
+        // DB counts row
+        '<div>' +
+          '<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Database Totals</h3>' +
+          '<div class="grid grid-cols-3 sm:grid-cols-5 gap-3">' +
+            statCard('Total Users',   c.total_users   || 0) +
+            statCard('Landlords',     c.landlords     || 0) +
+            statCard('Tenant Accts',  c.tenant_users  || 0) +
+            statCard('Tenants',       c.tenants       || 0) +
+            statCard('Properties',    c.properties    || 0) +
+          '</div>' +
+          '<div class="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-3">' +
+            statCard('Maintenance',   c.maintenance_requests || 0) +
+            statCard('Messages',      c.messages      || 0) +
+            statCard('Transactions',  c.transactions  || 0) +
+            statCard('Failed Invoices', d.failed_invoices || 0, null, d.failed_invoices > 0 ? 'text-red-600' : 'text-slate-900') +
+          '</div>' +
+        '</div>' +
+
+        // 30-day activity
+        '<div>' +
+          '<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Last 30 Days</h3>' +
+          '<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">' +
+            statCard('New Users',        a.new_users_30d       || 0, 'signups',         'text-blue-600') +
+            statCard('New Tenants',      a.new_tenants_30d     || 0, 'added to system', 'text-slate-900') +
+            statCard('Maintenance Reqs', a.new_maintenance_30d || 0, 'submitted',       'text-amber-600') +
+            statCard('Messages',         a.new_messages_30d    || 0, 'sent',            'text-slate-900') +
+          '</div>' +
+        '</div>';
+
+      lucide.createIcons();
+    }).catch(function() {
+      el.innerHTML = '<p class="py-8 text-center text-red-400 text-sm">Failed to load system health.</p>';
+    });
+  }
+
+  document.getElementById('refreshHealthBtn').addEventListener('click', loadHealth);
+
+  // ── TABS ─────────────────────────────────────────────────────────────────────
+
+  var lazyLoaded = { usage: false, health: false };
+
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tab = this.getAttribute('data-tab');
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.add('hidden'); });
+      this.classList.add('active');
+      var panelId = 'panel' + tab.charAt(0).toUpperCase() + tab.slice(1);
+      document.getElementById(panelId).classList.remove('hidden');
+      // Lazy load heavy tabs
+      if (tab === 'usage' && !lazyLoaded.usage) { lazyLoaded.usage = true; loadUsage(); }
+      if (tab === 'health' && !lazyLoaded.health) { lazyLoaded.health = true; loadHealth(); }
+    });
+  });
+
+  // ── ACTION WIRING ────────────────────────────────────────────────────────────
 
   function wireTableActions(container) {
     container.querySelectorAll('.impersonate-btn').forEach(function(btn) {
@@ -295,75 +948,38 @@
             else if (role === 'contractor') window.location.href = 'contractor/messages.html';
             else window.location.href = 'index.html';
           })
-          .catch(function(err) {
-            LeasePilot.Toast.show(err.message || 'Failed to impersonate', 'error');
-          });
+          .catch(function(err) { LeasePilot.Toast.show(err.message || 'Failed to impersonate', 'error'); });
       });
     });
-
     container.querySelectorAll('.delete-user-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         pendingDeleteId = this.getAttribute('data-id');
         var name = this.getAttribute('data-name');
         document.getElementById('deleteModalDesc').textContent =
           'Permanently delete "' + name + '" and all their data (properties, tenants, transactions)? This cannot be undone.';
-        var modal = document.getElementById('deleteModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        showModal('deleteModal');
       });
     });
   }
 
-  // Delete modal buttons
-  document.getElementById('deleteCancelBtn').addEventListener('click', function() {
-    document.getElementById('deleteModal').classList.add('hidden');
-    document.getElementById('deleteModal').classList.remove('flex');
-    pendingDeleteId = null;
-  });
+  document.getElementById('deleteCancelBtn').addEventListener('click', function() { hideModal('deleteModal'); pendingDeleteId = null; });
+  document.getElementById('deleteModal').addEventListener('click', function(e) { if (e.target===this) { hideModal('deleteModal'); pendingDeleteId = null; } });
   document.getElementById('deleteConfirmBtn').addEventListener('click', function() {
     if (!pendingDeleteId) return;
     var btn = this;
-    btn.disabled = true;
-    btn.textContent = 'Deleting…';
+    btn.disabled = true; btn.textContent = 'Deleting…';
     LeasePilot.API.delete('/admin/users/' + pendingDeleteId)
       .then(function() {
-        document.getElementById('deleteModal').classList.add('hidden');
-        document.getElementById('deleteModal').classList.remove('flex');
+        hideModal('deleteModal');
         LeasePilot.Toast.show('Account deleted');
         allLandlords = allLandlords.filter(function(u) { return String(u.id) !== String(pendingDeleteId); });
         allTenants   = allTenants.filter(function(t) { return String(t.user_id) !== String(pendingDeleteId); });
         renderLandlords(allLandlords);
         renderTenants(allTenants);
-        // Refresh stats
-        LeasePilot.API.get('/admin/stats').then(function(data) {
-          document.getElementById('statLandlords').textContent  = data.landlords;
-          document.getElementById('statTenants').textContent    = data.tenants;
-          document.getElementById('statProperties').textContent = data.properties;
-        });
+        loadStats();
       })
-      .catch(function(err) {
-        LeasePilot.Toast.show(err.message || 'Failed to delete', 'error');
-      })
-      .finally(function() {
-        btn.disabled = false;
-        btn.textContent = 'Delete';
-        pendingDeleteId = null;
-      });
-  });
-  document.getElementById('deleteModal').addEventListener('click', function(e) {
-    if (e.target === this) { this.classList.add('hidden'); this.classList.remove('flex'); }
-  });
-
-  // ── Tabs ─────────────────────────────────────────────────────────────────────
-
-  document.querySelectorAll('.tab-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var tab = this.getAttribute('data-tab');
-      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-      document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.add('hidden'); });
-      this.classList.add('active');
-      document.getElementById('panel' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('hidden');
-    });
+      .catch(function(err) { LeasePilot.Toast.show(err.message || 'Failed to delete', 'error'); })
+      .finally(function() { btn.disabled = false; btn.textContent = 'Delete'; pendingDeleteId = null; });
   });
 
 })();

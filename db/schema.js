@@ -318,6 +318,54 @@ export async function initializeDatabase(pool) {
       CREATE INDEX IF NOT EXISTS idx_messages_read_at ON messages(read_at)
     `).catch(() => {});
 
+    // Billing: subscriptions per landlord
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id               SERIAL PRIMARY KEY,
+        user_id          INTEGER REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+        plan             VARCHAR(50)     DEFAULT 'free',
+        status           VARCHAR(50)     DEFAULT 'active',
+        billing_cycle    VARCHAR(20)     DEFAULT 'monthly',
+        amount           DECIMAL(10,2)   DEFAULT 0,
+        discount_percent INTEGER         DEFAULT 0,
+        credit_balance   DECIMAL(10,2)   DEFAULT 0,
+        next_billing_date DATE,
+        trial_ends_at    TIMESTAMP,
+        notes            TEXT,
+        created_at       TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
+        updated_at       TIMESTAMP       DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Billing: invoice history
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS invoices (
+        id             SERIAL PRIMARY KEY,
+        user_id        INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        amount         DECIMAL(10,2) NOT NULL,
+        status         VARCHAR(50)   DEFAULT 'pending',
+        description    TEXT,
+        due_date       DATE,
+        paid_at        TIMESTAMP,
+        failure_reason TEXT,
+        created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Billing: credit / discount adjustments log
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS billing_adjustments (
+        id          SERIAL PRIMARY KEY,
+        user_id     INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        type        VARCHAR(20) NOT NULL,
+        amount      DECIMAL(10,2),
+        percent     INTEGER,
+        reason      TEXT,
+        applied_by  INTEGER REFERENCES users(id),
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     console.log('✅ Database schema created successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
