@@ -150,7 +150,7 @@
                           <i data-lucide="bell" class="h-5 w-5"></i>
                           <span data-notification-count class="hidden absolute -top-0.5 -right-0.5 min-w-[1.25rem] h-5 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-medium">0</span>
             </a>
-                      <button onclick="window.location.href='properties.html'" class="flex h-12 items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
+                      <button id="dashAddPropertyBtn" class="flex h-12 items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
                           <i data-lucide="plus" class="h-4 w-4"></i>
                           Add Property
             </button>
@@ -219,31 +219,30 @@
           </div>
 
                   <!-- AI Actions Card -->
-                  <div class="col-span-1 md:col-span-12 rounded-[2rem] bg-slate-900 p-8 text-white shadow-lg overflow-hidden relative">
-                       <div class="absolute top-0 right-0 p-12 opacity-10">
-                          <i data-lucide="shield-check" class="h-64 w-64"></i>
-          </div>
-
-                      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                          <div class="max-w-lg">
-                              <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
-                                  <i data-lucide="sparkles" class="h-3 w-3"></i>
-                                  AI Recommendation
-          </div>
-                              <h3 class="text-2xl font-medium tracking-tight mb-2" id="aiCardTitle">Review Pending Leases</h3>
-                              <p class="text-slate-400 text-base leading-relaxed" id="aiCardDesc">Loading your portfolio summary...</p>
-          </div>
-                          <div class="flex gap-4">
-                              <a href="tenants.html" class="rounded-full bg-white px-6 py-3 text-sm font-medium text-slate-900 hover:bg-slate-100 transition-colors inline-block">
-                                  Review Now
-                              </a>
-                              <button onclick="this.closest('.col-span-1').remove()" class="rounded-full border border-white/20 px-6 py-3 text-sm font-medium text-white hover:bg-white/10 transition-colors">
-                                  Dismiss
-                              </button>
-          </div>
-        </div>
-      </div>
-        </div>
+                  <div id="aiCard" class="col-span-1 md:col-span-12 rounded-[2rem] bg-slate-900 p-8 text-white shadow-lg overflow-hidden relative">
+                    <div class="absolute top-0 right-0 p-12 opacity-10">
+                      <i data-lucide="sparkles" class="h-64 w-64"></i>
+                    </div>
+                    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                      <div class="max-w-lg">
+                        <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                          <i data-lucide="sparkles" class="h-3 w-3"></i>
+                          <span id="aiCardLabel">AI Recommendation</span>
+                        </div>
+                        <h3 class="text-2xl font-medium tracking-tight mb-2" id="aiCardTitle">Analyzing your portfolio…</h3>
+                        <p class="text-slate-400 text-base leading-relaxed" id="aiCardDesc">Loading your portfolio summary…</p>
+                      </div>
+                      <div class="flex gap-4 flex-shrink-0">
+                        <a id="aiCardAction" href="properties.html" class="rounded-full bg-white px-6 py-3 text-sm font-medium text-slate-900 hover:bg-slate-100 transition-colors inline-block">
+                          Review Now
+                        </a>
+                        <button id="aiCardDismiss" onclick="document.getElementById('aiCard').remove()" class="rounded-full border border-white/20 px-6 py-3 text-sm font-medium text-white hover:bg-white/10 transition-colors">
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+                  </div><!-- end aiCard -->
+              </div><!-- end bento grid -->
 
               <!-- Maintenance requests from tenants -->
               <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10">
@@ -441,23 +440,36 @@
                             }).join('');
                         }
 
-                        // AI card — summarize open maintenance + vacant properties
-                        var openMaint = _dashMaint.filter(function(r) { return (r.status || '').toLowerCase() === 'open'; });
-                        var vacant = props.filter(function(p) { return (p.status || '').toLowerCase() === 'vacant'; });
-                        var aiTitle = document.getElementById('aiCardTitle');
-                        var aiDesc = document.getElementById('aiCardDesc');
-                        if (aiTitle && aiDesc) {
-                            if (openMaint.length > 0) {
-                                aiTitle.textContent = openMaint.length + ' Open Maintenance Request' + (openMaint.length !== 1 ? 's' : '');
-                                aiDesc.textContent = openMaint.length + ' maintenance request' + (openMaint.length !== 1 ? 's require' : ' requires') + ' your attention.' + (vacant.length > 0 ? ' Also, ' + vacant.length + ' propert' + (vacant.length !== 1 ? 'ies are' : 'y is') + ' vacant and available to list.' : '');
-                            } else if (vacant.length > 0) {
-                                aiTitle.textContent = vacant.length + ' Vacant Propert' + (vacant.length !== 1 ? 'ies' : 'y');
-                                aiDesc.textContent = vacant.length + ' propert' + (vacant.length !== 1 ? 'ies are' : 'y is') + ' vacant. Consider listing ' + (vacant.length !== 1 ? 'them' : 'it') + ' to maximize your rental income.';
-                            } else {
-                                aiTitle.textContent = 'Portfolio Looking Good';
-                                aiDesc.textContent = 'All properties are occupied and no open maintenance requests. Your portfolio is running smoothly.';
+                        // AI card — fetch real recommendation from server
+                        (async function() {
+                          try {
+                            var rec = await LeasePilot.API.request('/ai/recommendation');
+                            var aiTitle = document.getElementById('aiCardTitle');
+                            var aiDesc  = document.getElementById('aiCardDesc');
+                            var aiAction = document.getElementById('aiCardAction');
+                            var aiLabel  = document.getElementById('aiCardLabel');
+                            if (aiTitle) aiTitle.textContent = rec.title || 'Portfolio Update';
+                            if (aiDesc)  aiDesc.textContent  = rec.description || '';
+                            if (aiLabel) aiLabel.textContent = rec.source === 'ai' ? 'AI Recommendation' : 'Portfolio Insight';
+                            var actionMap = {
+                              maintenance: 'maintenance.html',
+                              tenants:     'tenants.html',
+                              properties:  'properties.html',
+                              financials:  'financials.html',
+                              messages:    'messages.html',
+                            };
+                            if (aiAction && rec.action && actionMap[rec.action]) {
+                              aiAction.href = actionMap[rec.action];
                             }
-                        }
+                          } catch(e) {
+                            var aiTitle = document.getElementById('aiCardTitle');
+                            var aiDesc  = document.getElementById('aiCardDesc');
+                            if (aiTitle) aiTitle.textContent = 'Portfolio Summary';
+                            if (aiDesc)  aiDesc.textContent  = 'Could not load recommendation. Check your connection.';
+                          }
+                        })();
+
+                        var vacant = props.filter(function(p) { return (p.status || '').toLowerCase() === 'vacant'; });
                     } catch (err) {
                         console.error('Dashboard stats error:', err);
                     }
@@ -585,5 +597,170 @@
             })();
         })();
     </script>
-  
+
+  <!-- Add Property Modal -->
+  <div id="addPropertyModal" class="modal hidden fixed inset-0 z-50 items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-slate-900">Add New Property</h2>
+        <button id="dashClosePropertyModal" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+      <form id="dashPropertyForm" class="p-6 space-y-5">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Property Name</label>
+            <input type="text" name="name" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Property Type</label>
+            <select name="type" id="dashPropertyType" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+              <option value="Single Family">Single Family</option>
+              <option value="Multifamily">Multifamily</option>
+              <option value="Condo">Condo</option>
+              <option value="Apartment">Apartment</option>
+              <option value="Commercial">Commercial</option>
+            </select>
+          </div>
+        </div>
+        <div id="dashPropertyUnitsSection" class="hidden space-y-4 p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Number of units</label>
+            <input type="number" name="number_of_units" id="dashPropertyNumberUnits" min="1" value="1" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Unit numbers or letters</label>
+            <input type="text" name="units_list" id="dashPropertyUnitsList" placeholder="e.g. 101, 102, 103 or A, B, C" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+            <p class="mt-1 text-xs text-slate-500">Comma-separated list of unit identifiers</p>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">Address</label>
+          <input type="text" name="address" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">City</label>
+            <input type="text" name="city" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">State</label>
+            <input type="text" name="state" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">ZIP Code</label>
+            <input type="text" name="zip" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Bedrooms</label>
+            <input type="number" name="bedrooms" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Bathrooms</label>
+            <input type="number" name="bathrooms" step="0.5" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Square Feet</label>
+            <input type="number" name="sqft" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">Monthly Rent</label>
+          <input type="number" name="rent" step="0.01" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+          <select name="status" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+            <option value="vacant">Vacant</option>
+            <option value="occupied">Occupied</option>
+            <option value="maintenance">Maintenance</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">Image URL</label>
+          <input type="url" name="image" placeholder="https://..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 outline-none">
+        </div>
+        <div class="flex gap-3 pt-4">
+          <button type="button" id="dashCancelPropertyBtn" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium">Cancel</button>
+          <button type="submit" id="dashPropertySubmitBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-medium">Add Property</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      function toggleDashUnits() {
+        var type = document.getElementById('dashPropertyType').value;
+        document.getElementById('dashPropertyUnitsSection').classList.toggle('hidden', type === 'Single Family');
+      }
+
+      function openDashPropertyModal() {
+        document.getElementById('dashPropertyForm').reset();
+        document.getElementById('dashPropertyNumberUnits').value = '1';
+        document.getElementById('dashPropertyUnitsList').value = '';
+        toggleDashUnits();
+        LeasePilot.Modal.open('addPropertyModal');
+        lucide.createIcons({ attrs: { 'stroke-width': 1.5 } });
+      }
+
+      function closeDashPropertyModal() {
+        LeasePilot.Modal.close('addPropertyModal');
+      }
+
+      document.getElementById('dashAddPropertyBtn').addEventListener('click', openDashPropertyModal);
+      document.getElementById('dashClosePropertyModal').addEventListener('click', closeDashPropertyModal);
+      document.getElementById('dashCancelPropertyBtn').addEventListener('click', closeDashPropertyModal);
+      document.getElementById('dashPropertyType').addEventListener('change', toggleDashUnits);
+
+      document.getElementById('addPropertyModal').addEventListener('click', function (e) {
+        if (e.target === this) closeDashPropertyModal();
+      });
+
+      document.getElementById('dashPropertyForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const btn = document.getElementById('dashPropertySubmitBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+
+        const formData = new FormData(e.target);
+        const type = formData.get('type');
+        const isSingleFamily = type === 'Single Family';
+        const unitsList = document.getElementById('dashPropertyUnitsList').value;
+        const units = isSingleFamily ? [] : (unitsList ? unitsList.split(',').map(s => s.trim()).filter(Boolean) : []);
+        const number_of_units = isSingleFamily ? 1 : Math.max(1, parseInt(document.getElementById('dashPropertyNumberUnits').value, 10) || 1);
+
+        const property = {
+          name: formData.get('name'),
+          type,
+          address: formData.get('address'),
+          city: formData.get('city'),
+          state: formData.get('state'),
+          zip: formData.get('zip'),
+          bedrooms: parseInt(formData.get('bedrooms')) || 0,
+          bathrooms: parseFloat(formData.get('bathrooms')) || 0,
+          sqft: parseInt(formData.get('sqft')) || 0,
+          rent: parseFloat(formData.get('rent')) || 0,
+          image_url: formData.get('image') || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800&h=500',
+          status: formData.get('status') || 'vacant',
+          number_of_units,
+          units,
+        };
+
+        try {
+          await LeasePilot.DataManager.saveProperty(property);
+          LeasePilot.Toast.show('Property added successfully!', 'success');
+          closeDashPropertyModal();
+          // Redirect to properties page so they can see the new property
+          window.location.href = 'properties.html';
+        } catch (error) {
+          LeasePilot.Toast.show((error && error.message) ? error.message : 'Failed to save property.', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Add Property';
+        }
+      });
+    })();
+  </script>
+
 </body></html>

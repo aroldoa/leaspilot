@@ -26,8 +26,32 @@ import createUserRouter from './routes/users.js';
 import adminRoutes from './routes/admin.js';
 import applyRoutes from './routes/apply.js';
 import applicationsRoutes from './routes/applications.js';
+import aiRoutes from './routes/ai.js';
 
 dotenv.config();
+
+// ── Startup env validation ────────────────────────────────────────────────────
+const REQUIRED_ENV = ['DATABASE_URL', 'JWT_SECRET'];
+const missing = REQUIRED_ENV.filter(k => !process.env[k]);
+if (missing.length) {
+  console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
+  process.exit(1);
+}
+if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+  console.error('❌ JWT_SECRET must be at least 32 characters');
+  process.exit(1);
+}
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    console.warn('⚠️  STRIPE_WEBHOOK_SECRET not set — Stripe webhooks will be rejected in production');
+  }
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.warn('⚠️  STRIPE_SECRET_KEY not set — application fee payments will be skipped');
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.warn('⚠️  ANTHROPIC_API_KEY not set — AI recommendations will use rule-based fallback');
+  }
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isServerless = __dirname.startsWith('/var/task') || process.env.VERCEL === '1';
@@ -215,6 +239,7 @@ app.use('/api/users', requirePool, createUserRouter(serverAvatarDir));
 app.use('/api/admin', requirePool, adminRoutes);
 app.use('/api/apply', requirePool, applyRoutes);
 app.use('/api/applications', requirePool, applicationsRoutes);
+app.use('/api/ai', requirePool, aiRoutes);
 
 // 404 for unknown API routes
 app.use('/api', (req, res) => {

@@ -219,10 +219,17 @@ router.post('/invoices', authenticateToken, requireSuperAdmin, async (req, res) 
 router.patch('/invoices/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
   const pool = req.app.locals.pool;
   const { status, failure_reason } = req.body;
+  const validStatuses = ['pending', 'paid', 'failed', 'refunded', 'void'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
   try {
-    const paid_at = status === 'paid' ? 'CURRENT_TIMESTAMP' : 'NULL';
     await pool.query(`
-      UPDATE invoices SET status=$1, failure_reason=$2, paid_at=${paid_at} WHERE id=$3
+      UPDATE invoices
+      SET status = $1,
+          failure_reason = $2,
+          paid_at = CASE WHEN $1 = 'paid' THEN CURRENT_TIMESTAMP ELSE NULL END
+      WHERE id = $3
     `, [status, failure_reason || null, parseInt(req.params.id, 10)]);
     res.json({ ok: true });
   } catch (err) {

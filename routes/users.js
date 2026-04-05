@@ -75,7 +75,7 @@ router.put('/me', authenticateToken, async (req, res) => {
     // Check if email is already taken by another user
     if (email) {
       const existingUser = await pool.query(
-        'SELECT id FROM users WHERE email = $1 AND id != $2',
+        'SELECT id FROM users WHERE LOWER(email) = LOWER($1) AND id != $2',
         [email, req.userId]
       );
 
