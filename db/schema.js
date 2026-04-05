@@ -366,6 +366,54 @@ export async function initializeDatabase(pool) {
       )
     `);
 
+    // Rental applications: shareable listing link per property
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS property_listings (
+        id               SERIAL PRIMARY KEY,
+        property_id      INTEGER REFERENCES properties(id) ON DELETE CASCADE UNIQUE,
+        token            VARCHAR(64) UNIQUE NOT NULL,
+        application_fee  DECIMAL(10,2) DEFAULT 50.00,
+        is_active        BOOLEAN DEFAULT true,
+        created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Rental applications submitted by prospective tenants
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS rental_applications (
+        id                     SERIAL PRIMARY KEY,
+        listing_id             INTEGER REFERENCES property_listings(id) ON DELETE CASCADE,
+        property_id            INTEGER REFERENCES properties(id) ON DELETE SET NULL,
+        first_name             VARCHAR(100) NOT NULL,
+        last_name              VARCHAR(100) NOT NULL,
+        email                  VARCHAR(255) NOT NULL,
+        phone                  VARCHAR(50),
+        date_of_birth          DATE,
+        employer               VARCHAR(255),
+        job_title              VARCHAR(255),
+        monthly_income         DECIMAL(10,2),
+        employment_status      VARCHAR(50) DEFAULT 'employed',
+        current_address        TEXT,
+        current_landlord       VARCHAR(255),
+        current_landlord_phone VARCHAR(50),
+        move_in_date           DATE,
+        reason_for_moving      TEXT,
+        num_occupants          INTEGER DEFAULT 1,
+        has_pets               BOOLEAN DEFAULT false,
+        pet_description        TEXT,
+        additional_notes       TEXT,
+        stripe_session_id      VARCHAR(255),
+        stripe_payment_intent  VARCHAR(255),
+        application_fee        DECIMAL(10,2),
+        payment_status         VARCHAR(50) DEFAULT 'pending',
+        status                 VARCHAR(50) DEFAULT 'submitted',
+        submitted_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     console.log('✅ Database schema created successfully');
   } catch (error) {
     console.error('Error initializing database:', error);

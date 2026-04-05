@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Applications – LeasePilot AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@0.469.0"></script>
+  <script src="app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-[#F3F5F7] text-slate-900 antialiased selection:bg-slate-200">
+
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="hidden md:flex w-72 flex-col justify-between border-r border-slate-200 bg-white p-6">
+      <div>
+        <a href="index.html" class="flex items-center mb-10">
+          <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-12">
+        </a>
+        <nav class="space-y-1">
+          <a href="index.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="layout-grid" class="h-5 w-5"></i>Dashboard
+          </a>
+          <a href="properties.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="home" class="h-5 w-5"></i>Properties
+          </a>
+          <a href="tenants.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="users" class="h-5 w-5"></i>Tenants
+          </a>
+          <a href="applications.html" class="flex items-center gap-3 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition-colors">
+            <i data-lucide="file-text" class="h-5 w-5 text-slate-900"></i>Applications
+          </a>
+          <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="wrench" class="h-5 w-5"></i>Maintenance
+          </a>
+          <a href="contractors.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="hard-hat" class="h-5 w-5"></i>Contractors
+          </a>
+          <a href="messages.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="message-square" class="h-5 w-5"></i>Messages
+          </a>
+          <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="wallet" class="h-5 w-5"></i>Financials
+          </a>
+          <a href="settings.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="settings" class="h-5 w-5"></i>Settings
+          </a>
+        </nav>
+      </div>
+      <div>
+        <div class="mb-6 rounded-3xl bg-[#EBC7B6] p-5 relative overflow-hidden">
+          <div class="relative z-10">
+            <p class="mb-2 text-lg font-medium tracking-tight text-slate-900">Upgrade to Pro</p>
+            <p class="mb-4 text-sm text-slate-700">Unlock advanced AI forecasting for your portfolio.</p>
+            <button onclick="window.location.href='settings.html'" class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">View Plans</button>
+          </div>
+          <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/20"></div>
+        </div>
+        <div class="flex items-center gap-3 border-t border-slate-100 pt-5">
+          <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity">
+            <img data-user-avatar src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
+            <div class="flex flex-col flex-1">
+              <span class="text-sm font-medium" data-user-name></span>
+              <span class="text-xs text-slate-500">Portfolio Manager</span>
+            </div>
+          </a>
+          <button id="logoutBtn" class="text-slate-400 hover:text-slate-600" title="Logout">
+            <i data-lucide="log-out" class="h-4 w-4"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="flex-1 overflow-hidden flex flex-col">
+
+      <!-- Mobile header -->
+      <div class="flex md:hidden items-center justify-between bg-white p-4 border-b border-slate-100">
+        <a href="index.html"><img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-10"></a>
+        <button class="text-slate-500"><i data-lucide="menu" class="h-6 w-6"></i></button>
+      </div>
+
+      <div class="flex flex-1 overflow-hidden">
+
+        <!-- Left: Application list -->
+        <div id="listPanel" class="w-full md:w-[420px] flex flex-col border-r border-slate-200 bg-white overflow-hidden">
+
+          <div class="p-6 border-b border-slate-100">
+            <div class="flex items-center justify-between mb-4">
+              <h1 class="text-2xl font-semibold text-slate-900">Applications</h1>
+              <button id="shareLinkBtn"
+                class="flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                <i data-lucide="share-2" class="h-4 w-4"></i>
+                Share Link
+              </button>
+            </div>
+
+            <!-- Stats row -->
+            <div class="grid grid-cols-4 gap-2 mb-4">
+              <div class="rounded-xl bg-slate-50 p-2.5 text-center">
+                <p class="text-lg font-semibold text-slate-900" id="statTotal">–</p>
+                <p class="text-[10px] text-slate-500 uppercase tracking-wide">Total</p>
+              </div>
+              <div class="rounded-xl bg-blue-50 p-2.5 text-center">
+                <p class="text-lg font-semibold text-blue-700" id="statReview">–</p>
+                <p class="text-[10px] text-blue-500 uppercase tracking-wide">Review</p>
+              </div>
+              <div class="rounded-xl bg-emerald-50 p-2.5 text-center">
+                <p class="text-lg font-semibold text-emerald-700" id="statApproved">–</p>
+                <p class="text-[10px] text-emerald-500 uppercase tracking-wide">Approved</p>
+              </div>
+              <div class="rounded-xl bg-red-50 p-2.5 text-center">
+                <p class="text-lg font-semibold text-red-600" id="statDenied">–</p>
+                <p class="text-[10px] text-red-400 uppercase tracking-wide">Denied</p>
+              </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex gap-1.5 flex-wrap">
+              <button data-filter="all" class="app-filter active rounded-full px-3 py-1 text-xs font-medium transition-colors bg-slate-900 text-white">All</button>
+              <button data-filter="submitted" class="app-filter rounded-full px-3 py-1 text-xs font-medium transition-colors text-slate-500 hover:bg-slate-100">New</button>
+              <button data-filter="under_review" class="app-filter rounded-full px-3 py-1 text-xs font-medium transition-colors text-slate-500 hover:bg-slate-100">Under Review</button>
+              <button data-filter="approved" class="app-filter rounded-full px-3 py-1 text-xs font-medium transition-colors text-slate-500 hover:bg-slate-100">Approved</button>
+              <button data-filter="denied" class="app-filter rounded-full px-3 py-1 text-xs font-medium transition-colors text-slate-500 hover:bg-slate-100">Denied</button>
+            </div>
+          </div>
+
+          <!-- Search -->
+          <div class="px-6 py-3 border-b border-slate-100">
+            <div class="relative">
+              <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+              <input id="searchInput" type="text" placeholder="Search applicants…"
+                class="w-full pl-9 pr-4 py-2 rounded-full border border-slate-200 text-sm outline-none focus:border-slate-400 bg-slate-50">
+            </div>
+          </div>
+
+          <!-- List -->
+          <div id="appList" class="flex-1 overflow-y-auto hide-scrollbar">
+            <div id="listLoading" class="flex items-center justify-center h-40">
+              <div class="w-6 h-6 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin"></div>
+            </div>
+            <div id="listEmpty" class="hidden flex flex-col items-center justify-center h-40 text-center px-6">
+              <i data-lucide="file-text" class="h-8 w-8 text-slate-300 mb-2"></i>
+              <p class="text-sm text-slate-500">No applications yet.</p>
+              <p class="text-xs text-slate-400 mt-1">Share an application link to get started.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Detail panel -->
+        <div id="detailPanel" class="flex-1 overflow-y-auto hide-scrollbar bg-[#F3F5F7]">
+
+          <!-- Empty state -->
+          <div id="detailEmpty" class="flex flex-col items-center justify-center h-full text-center px-10">
+            <div class="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4">
+              <i data-lucide="file-text" class="h-7 w-7 text-slate-400"></i>
+            </div>
+            <p class="text-slate-600 font-medium">Select an Application</p>
+            <p class="text-sm text-slate-400 mt-1">Click an applicant from the list to view their full details.</p>
+          </div>
+
+          <!-- Detail content (hidden until selected) -->
+          <div id="detailContent" class="hidden p-6 max-w-2xl mx-auto space-y-5">
+
+            <!-- Back button (mobile) -->
+            <button id="backBtn" class="md:hidden flex items-center gap-1 text-sm text-slate-500 mb-2">
+              <i data-lucide="arrow-left" class="h-4 w-4"></i> Back
+            </button>
+
+            <!-- Applicant header -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-4">
+                  <div id="detailInitials" class="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white text-lg font-semibold flex-shrink-0"></div>
+                  <div>
+                    <h2 id="detailName" class="text-xl font-semibold text-slate-900"></h2>
+                    <p id="detailEmail" class="text-sm text-slate-500"></p>
+                    <p id="detailPhone" class="text-sm text-slate-400"></p>
+                  </div>
+                </div>
+                <div id="detailPaymentBadge" class="flex-shrink-0"></div>
+              </div>
+
+              <div class="mt-4 flex items-center gap-2 flex-wrap">
+                <span id="detailStatusBadge" class="px-3 py-1 rounded-full text-xs font-medium"></span>
+                <span id="detailPropertyBadge" class="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 flex items-center gap-1">
+                  <i data-lucide="home" class="h-3 w-3"></i>
+                  <span id="detailPropertyName"></span>
+                </span>
+                <span id="detailDate" class="text-xs text-slate-400"></span>
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div id="detailActions" class="flex gap-2 flex-wrap"></div>
+
+            <!-- Info grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+              <div class="bg-white rounded-2xl border border-slate-200 p-5">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Employment</p>
+                <div class="space-y-2.5">
+                  <div><p class="text-xs text-slate-400">Status</p><p id="dEmployStatus" class="text-sm font-medium text-slate-800 capitalize"></p></div>
+                  <div><p class="text-xs text-slate-400">Employer</p><p id="dEmployer" class="text-sm font-medium text-slate-800"></p></div>
+                  <div><p class="text-xs text-slate-400">Title</p><p id="dTitle" class="text-sm font-medium text-slate-800"></p></div>
+                  <div><p class="text-xs text-slate-400">Monthly Income</p><p id="dIncome" class="text-sm font-medium text-slate-800"></p></div>
+                </div>
+              </div>
+
+              <div class="bg-white rounded-2xl border border-slate-200 p-5">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Move-in Details</p>
+                <div class="space-y-2.5">
+                  <div><p class="text-xs text-slate-400">Desired Move-in</p><p id="dMoveIn" class="text-sm font-medium text-slate-800"></p></div>
+                  <div><p class="text-xs text-slate-400">Occupants</p><p id="dOccupants" class="text-sm font-medium text-slate-800"></p></div>
+                  <div><p class="text-xs text-slate-400">Pets</p><p id="dPets" class="text-sm font-medium text-slate-800"></p></div>
+                  <div><p class="text-xs text-slate-400">Date of Birth</p><p id="dDob" class="text-sm font-medium text-slate-800"></p></div>
+                </div>
+              </div>
+
+              <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:col-span-2">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Rental History</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div><p class="text-xs text-slate-400">Current Address</p><p id="dAddress" class="text-sm font-medium text-slate-800"></p></div>
+                  <div><p class="text-xs text-slate-400">Current Landlord</p><p id="dLandlord" class="text-sm font-medium text-slate-800"></p></div>
+                  <div><p class="text-xs text-slate-400">Landlord Phone</p><p id="dLandlordPhone" class="text-sm font-medium text-slate-800"></p></div>
+                  <div class="sm:col-span-2"><p class="text-xs text-slate-400">Reason for Moving</p><p id="dReason" class="text-sm font-medium text-slate-800"></p></div>
+                </div>
+              </div>
+
+              <div id="dNotesWrap" class="bg-white rounded-2xl border border-slate-200 p-5 sm:col-span-2 hidden">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Additional Notes</p>
+                <p id="dNotes" class="text-sm text-slate-700"></p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Share Link Modal -->
+  <div id="shareLinkModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg mx-4">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-lg font-semibold text-slate-900">Share Application Link</h3>
+        <button id="closeShareModal" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+
+      <!-- Property selector -->
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">Select Property</label>
+        <select id="sharePropertySelect" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-slate-400">
+          <option value="">Loading properties…</option>
+        </select>
+      </div>
+
+      <!-- Fee + active -->
+      <div class="flex gap-3 mb-4">
+        <div class="flex-1">
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Application Fee ($)</label>
+          <input type="number" id="shareFeeInput" min="0" step="5" value="50"
+            class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-slate-400">
+        </div>
+        <div class="flex flex-col justify-end">
+          <label class="flex items-center gap-2 cursor-pointer pb-2.5">
+            <input type="checkbox" id="shareActiveToggle" checked class="rounded">
+            <span class="text-sm text-slate-700">Active</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Link display -->
+      <div class="rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2 px-3 py-2.5 mb-4">
+        <i data-lucide="link" class="h-4 w-4 text-slate-400 flex-shrink-0"></i>
+        <span id="shareLinkText" class="text-sm text-slate-600 truncate flex-1 select-all">Select a property to generate a link</span>
+        <button id="copyLinkBtn" class="flex-shrink-0 text-xs font-medium text-slate-700 hover:text-slate-900 border border-slate-200 rounded-lg px-2.5 py-1 hover:bg-slate-100 transition-colors">Copy</button>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="saveListingBtn" class="flex-1 rounded-full bg-slate-900 text-white py-2.5 text-sm font-medium hover:bg-slate-700 transition-colors">Save Settings</button>
+        <button id="regenerateLinkBtn" class="rounded-full border border-slate-200 text-slate-600 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 flex items-center gap-1.5" title="Generate new link (old one stops working)">
+          <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+          New Link
+        </button>
+      </div>
+      <p class="text-xs text-slate-400 mt-3 text-center">Generating a new link will invalidate the old one.</p>
+    </div>
+  </div>
+
+  <script>
+    let allApps = [];
+    let activeFilter = 'all';
+    let selectedId = null;
+    let currentListing = null;
+    let currentPropertyId = null;
+    let properties = [];
+
+    // ── Auth + init ──────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      const ok = await LeasePilot.checkAuth();
+      if (!ok) return;
+      lucide.createIcons();
+
+      document.getElementById('logoutBtn').addEventListener('click', () => LeasePilot.logout());
+      document.getElementById('backBtn').addEventListener('click', () => {
+        document.getElementById('listPanel').classList.remove('hidden');
+        document.getElementById('detailPanel').classList.add('hidden');
+      });
+
+      await loadApplications();
+      await loadProperties();
+      wireFilters();
+      wireSearch();
+      wireShareModal();
+    });
+
+    // ── Load applications ─────────────────────────────────────────────────────
+    async function loadApplications() {
+      try {
+        const r = await LeasePilot.API.request(`/applications`);
+        allApps = r;
+        updateStats(r);
+        renderList(r);
+      } catch (e) {
+        document.getElementById('listLoading').innerHTML =
+          `<p class="text-sm text-red-500 px-6">Failed to load applications.</p>`;
+      }
+    }
+
+    function updateStats(apps) {
+      document.getElementById('statTotal').textContent = apps.length;
+      document.getElementById('statReview').textContent = apps.filter(a => a.status === 'under_review').length;
+      document.getElementById('statApproved').textContent = apps.filter(a => a.status === 'approved').length;
+      document.getElementById('statDenied').textContent = apps.filter(a => a.status === 'denied').length;
+    }
+
+    function filtered() {
+      const q = (document.getElementById('searchInput').value || '').toLowerCase();
+      return allApps.filter(a => {
+        const matchFilter = activeFilter === 'all' || a.status === activeFilter;
+        const name = `${a.first_name} ${a.last_name} ${a.email} ${a.property_name || ''}`.toLowerCase();
+        const matchSearch = !q || name.includes(q);
+        return matchFilter && matchSearch;
+      });
+    }
+
+    function renderList(apps) {
+      const container = document.getElementById('appList');
+      document.getElementById('listLoading').remove && document.getElementById('listLoading')?.remove();
+
+      const list = filtered();
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="flex flex-col items-center justify-center h-40 text-center px-6">
+          <p class="text-sm text-slate-500">No applications match your filter.</p>
+        </div>`;
+        return;
+      }
+
+      list.forEach(a => {
+        const card = document.createElement('div');
+        card.className = `app-card cursor-pointer px-6 py-4 border-b border-slate-100 hover:bg-slate-50 transition-colors ${selectedId === a.id ? 'bg-slate-50' : ''}`;
+        card.dataset.id = a.id;
+
+        const initials = `${(a.first_name||'')[0]||''}${(a.last_name||'')[0]||''}`.toUpperCase();
+        const statusCfg = statusConfig(a.status);
+        const payBadge = a.payment_status === 'paid'
+          ? `<span class="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Paid</span>`
+          : `<span class="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Unpaid</span>`;
+        const dateStr = new Date(a.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">${initials}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-sm font-medium text-slate-900 truncate">${a.first_name} ${a.last_name}</p>
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${statusCfg.classes}">${statusCfg.label}</span>
+              </div>
+              <p class="text-xs text-slate-500 truncate mt-0.5">${a.property_name || ''}${a.address ? ' · ' + a.address : ''}</p>
+              <div class="flex items-center gap-2 mt-1">
+                ${payBadge}
+                <span class="text-[10px] text-slate-400">${dateStr}</span>
+              </div>
+            </div>
+          </div>`;
+
+        card.addEventListener('click', () => openDetail(a.id));
+        container.appendChild(card);
+      });
+    }
+
+    function statusConfig(status) {
+      switch (status) {
+        case 'submitted':    return { label: 'New',          classes: 'bg-blue-50 text-blue-600' };
+        case 'under_review': return { label: 'Under Review', classes: 'bg-amber-50 text-amber-600' };
+        case 'approved':     return { label: 'Approved',     classes: 'bg-emerald-50 text-emerald-700' };
+        case 'denied':       return { label: 'Denied',       classes: 'bg-red-50 text-red-600' };
+        default:             return { label: status,         classes: 'bg-slate-100 text-slate-600' };
+      }
+    }
+
+    // ── Open detail ───────────────────────────────────────────────────────────
+    async function openDetail(id) {
+      selectedId = id;
+      document.querySelectorAll('.app-card').forEach(c => {
+        c.classList.toggle('bg-slate-50', parseInt(c.dataset.id) === id);
+      });
+
+      try {
+        const app = await LeasePilot.API.request(`/applications/${id}`);
+        renderDetail(app);
+
+        // On mobile: hide list, show detail
+        document.getElementById('listPanel').classList.add('hidden', 'md:flex');
+        document.getElementById('detailPanel').classList.remove('hidden');
+      } catch (e) {
+        console.error('Failed to load application detail', e);
+      }
+    }
+
+    function renderDetail(a) {
+      document.getElementById('detailEmpty').classList.add('hidden');
+      document.getElementById('detailContent').classList.remove('hidden');
+
+      const initials = `${(a.first_name||'')[0]||''}${(a.last_name||'')[0]||''}`.toUpperCase();
+      document.getElementById('detailInitials').textContent = initials;
+      document.getElementById('detailName').textContent = `${a.first_name} ${a.last_name}`;
+      document.getElementById('detailEmail').textContent = a.email || '–';
+      document.getElementById('detailPhone').textContent = a.phone || '';
+
+      const payBadge = document.getElementById('detailPaymentBadge');
+      if (a.payment_status === 'paid') {
+        payBadge.innerHTML = `<span class="px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 flex items-center gap-1">
+          <i data-lucide="check-circle-2" class="h-3 w-3"></i> $${Number(a.application_fee||0).toFixed(2)} Paid
+        </span>`;
+      } else {
+        payBadge.innerHTML = `<span class="px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-600">Payment Pending</span>`;
+      }
+
+      const sc = statusConfig(a.status);
+      document.getElementById('detailStatusBadge').className = `px-3 py-1 rounded-full text-xs font-medium ${sc.classes}`;
+      document.getElementById('detailStatusBadge').textContent = sc.label;
+      document.getElementById('detailPropertyName').textContent = a.property_name || '–';
+      document.getElementById('detailDate').textContent = `Submitted ${new Date(a.submitted_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+
+      // Action buttons
+      const actions = document.getElementById('detailActions');
+      actions.innerHTML = '';
+      const btns = [];
+      if (a.status !== 'under_review') btns.push({ label: 'Mark Under Review', status: 'under_review', cls: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' });
+      if (a.status !== 'approved')     btns.push({ label: 'Approve', status: 'approved', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' });
+      if (a.status !== 'denied')       btns.push({ label: 'Deny', status: 'denied', cls: 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' });
+
+      btns.forEach(b => {
+        const btn = document.createElement('button');
+        btn.className = `flex-1 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${b.cls}`;
+        btn.textContent = b.label;
+        btn.addEventListener('click', () => updateStatus(a.id, b.status));
+        actions.appendChild(btn);
+      });
+
+      // Employment
+      document.getElementById('dEmployStatus').textContent = (a.employment_status||'').replace('_', ' ') || '–';
+      document.getElementById('dEmployer').textContent = a.employer || '–';
+      document.getElementById('dTitle').textContent = a.job_title || '–';
+      document.getElementById('dIncome').textContent = a.monthly_income ? `$${Number(a.monthly_income).toLocaleString()}/mo` : '–';
+
+      // Move-in
+      document.getElementById('dMoveIn').textContent = a.move_in_date ? new Date(a.move_in_date).toLocaleDateString() : '–';
+      document.getElementById('dOccupants').textContent = a.num_occupants || '1';
+      document.getElementById('dPets').textContent = a.has_pets ? (a.pet_description || 'Yes') : 'No';
+      document.getElementById('dDob').textContent = a.date_of_birth ? new Date(a.date_of_birth).toLocaleDateString() : '–';
+
+      // Rental history
+      document.getElementById('dAddress').textContent = a.current_address || '–';
+      document.getElementById('dLandlord').textContent = a.current_landlord || '–';
+      document.getElementById('dLandlordPhone').textContent = a.current_landlord_phone || '–';
+      document.getElementById('dReason').textContent = a.reason_for_moving || '–';
+
+      // Notes
+      if (a.additional_notes) {
+        document.getElementById('dNotesWrap').classList.remove('hidden');
+        document.getElementById('dNotes').textContent = a.additional_notes;
+      } else {
+        document.getElementById('dNotesWrap').classList.add('hidden');
+      }
+
+      lucide.createIcons();
+    }
+
+    async function updateStatus(id, status) {
+      try {
+        await LeasePilot.API.request(`/applications/${id}/status`, {
+          method: 'PUT',
+          body: JSON.stringify({ status }),
+        });
+        // Refresh
+        const idx = allApps.findIndex(a => a.id === id);
+        if (idx !== -1) allApps[idx].status = status;
+        updateStats(allApps);
+        renderList(allApps);
+        openDetail(id);
+      } catch (e) {
+        alert('Failed to update status: ' + (e.message || e));
+      }
+    }
+
+    // ── Filters ───────────────────────────────────────────────────────────────
+    function wireFilters() {
+      document.querySelectorAll('.app-filter').forEach(btn => {
+        btn.addEventListener('click', function () {
+          document.querySelectorAll('.app-filter').forEach(b => {
+            b.classList.remove('bg-slate-900', 'text-white');
+            b.classList.add('text-slate-500', 'hover:bg-slate-100');
+          });
+          this.classList.add('bg-slate-900', 'text-white');
+          this.classList.remove('text-slate-500', 'hover:bg-slate-100');
+          activeFilter = this.dataset.filter;
+          renderList(allApps);
+        });
+      });
+    }
+
+    function wireSearch() {
+      document.getElementById('searchInput').addEventListener('input', () => renderList(allApps));
+    }
+
+    // ── Share Link Modal ──────────────────────────────────────────────────────
+    async function loadProperties() {
+      try {
+        const r = await LeasePilot.API.request(`/properties`);
+        properties = r;
+        const sel = document.getElementById('sharePropertySelect');
+        sel.innerHTML = '<option value="">Select a property…</option>';
+        r.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = `${p.name} – ${p.address || ''}`;
+          sel.appendChild(opt);
+        });
+      } catch (e) {}
+    }
+
+    function wireShareModal() {
+      const modal = document.getElementById('shareLinkModal');
+      document.getElementById('shareLinkBtn').addEventListener('click', () => {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        lucide.createIcons();
+      });
+      document.getElementById('closeShareModal').addEventListener('click', () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      });
+      modal.addEventListener('click', e => {
+        if (e.target === modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+      });
+
+      document.getElementById('sharePropertySelect').addEventListener('change', async function () {
+        currentPropertyId = this.value;
+        if (!currentPropertyId) { updateLinkDisplay(null); return; }
+        try {
+          currentListing = await LeasePilot.API.request(`/applications/listing/${currentPropertyId}`);
+          document.getElementById('shareFeeInput').value = currentListing.application_fee || 50;
+          document.getElementById('shareActiveToggle').checked = currentListing.is_active !== false;
+          updateLinkDisplay(currentListing.token);
+        } catch (e) { updateLinkDisplay(null); }
+      });
+
+      document.getElementById('copyLinkBtn').addEventListener('click', () => {
+        const link = document.getElementById('shareLinkText').textContent;
+        if (!link.startsWith('http')) return;
+        navigator.clipboard.writeText(link).then(() => {
+          const btn = document.getElementById('copyLinkBtn');
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+        });
+      });
+
+      document.getElementById('saveListingBtn').addEventListener('click', async () => {
+        if (!currentPropertyId) return;
+        try {
+          const fee = parseFloat(document.getElementById('shareFeeInput').value) || 50;
+          const is_active = document.getElementById('shareActiveToggle').checked;
+          currentListing = await LeasePilot.API.request(`/applications/listing/${currentPropertyId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ application_fee: fee, is_active }),
+          });
+          updateLinkDisplay(currentListing.token);
+          const btn = document.getElementById('saveListingBtn');
+          btn.textContent = 'Saved!';
+          setTimeout(() => { btn.textContent = 'Save Settings'; }, 2000);
+        } catch (e) { alert('Failed to save: ' + (e.message || e)); }
+      });
+
+      document.getElementById('regenerateLinkBtn').addEventListener('click', async () => {
+        if (!currentPropertyId) return;
+        if (!confirm('This will invalidate the current link. Anyone with the old link will no longer be able to apply. Continue?')) return;
+        try {
+          currentListing = await LeasePilot.API.request(`/applications/listing/${currentPropertyId}/regenerate`, { method: 'POST' });
+          updateLinkDisplay(currentListing.token);
+        } catch (e) { alert('Failed: ' + (e.message || e)); }
+      });
+    }
+
+    function updateLinkDisplay(token) {
+      const el = document.getElementById('shareLinkText');
+      if (!token) {
+        el.textContent = 'Select a property to generate a link';
+        return;
+      }
+      el.textContent = `${window.location.origin}/apply.html?token=${token}`;
+    }
+  </script>
+</body>
+</html>

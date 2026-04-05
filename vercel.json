@@ -2,7 +2,7 @@
   "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
   "functions": {
     "api/index.js": {
-      "includeFiles": "*.{html,js}"
+      "includeFiles": "**/*.{html,js}"
     }
   }
 }

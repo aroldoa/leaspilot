@@ -24,6 +24,8 @@ import smsRoutes from './routes/sms.js';
 import messagesRoutes from './routes/messages.js';
 import createUserRouter from './routes/users.js';
 import adminRoutes from './routes/admin.js';
+import applyRoutes from './routes/apply.js';
+import applicationsRoutes from './routes/applications.js';
 
 dotenv.config();
 
@@ -211,6 +213,8 @@ app.use('/api/messages', requirePool, messagesRoutes);
 app.use('/api/transactions', requirePool, transactionRoutes);
 app.use('/api/users', requirePool, createUserRouter(serverAvatarDir));
 app.use('/api/admin', requirePool, adminRoutes);
+app.use('/api/apply', requirePool, applyRoutes);
+app.use('/api/applications', requirePool, applicationsRoutes);
 
 // 404 for unknown API routes
 app.use('/api', (req, res) => {
