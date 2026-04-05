@@ -170,17 +170,12 @@ body { font-family: 'Inter', sans-serif; }
                 </div>
 
                 <!-- Pagination -->
-                <div id="paginationBar" class="mt-12 flex items-center justify-between border-t border-slate-200 pt-8">
-                     <div class="text-xs text-slate-500">
-                        Showing <span id="paginationRange" class="font-medium text-slate-900">0</span> of <span id="paginationTotal" class="font-medium text-slate-900">0</span> properties
-                    </div>
-                    <div class="flex gap-2">
-                        <button id="prevPageBtn" onclick="changePage(-1)" class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors" disabled>
-                            <i data-lucide="chevron-left" class="h-3 w-3"></i> Previous
-                        </button>
-                        <button id="nextPageBtn" onclick="changePage(1)" class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
-                            Next <i data-lucide="chevron-right" class="h-3 w-3"></i>
-                        </button>
+                <div id="paginationBar" class="mt-10 hidden">
+                    <div class="border-t border-slate-200 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p class="text-xs text-slate-500">
+                            Showing <span id="paginationRange" class="font-medium text-slate-900">0</span> of <span id="paginationTotal" class="font-medium text-slate-900">0</span> properties
+                        </p>
+                        <div id="paginationPages" class="flex items-center gap-1 flex-wrap justify-center"></div>
                     </div>
                 </div>
                 
@@ -320,11 +315,36 @@ body { font-family: 'Inter', sans-serif; }
         let searchQuery = '';
         let viewMode = 'grid'; // 'grid' | 'list'
         let currentPage = 1;
-        const PAGE_SIZE = 9;
+        const PAGE_SIZE = 25;
 
         function changePage(delta) {
             currentPage += delta;
             applyFiltersAndRender();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            applyFiltersAndRender();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Returns array of page numbers and '…' ellipsis markers
+        function buildPageRange(current, total) {
+            if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+            const pages = [];
+            const delta = 2;
+            const left = current - delta;
+            const right = current + delta;
+            let last = 0;
+            for (let i = 1; i <= total; i++) {
+                if (i === 1 || i === total || (i >= left && i <= right)) {
+                    if (last && i - last > 1) pages.push('…');
+                    pages.push(i);
+                    last = i;
+                }
+            }
+            return pages;
         }
 
         function exportPropertiesCSV() {
@@ -460,12 +480,52 @@ body { font-family: 'Inter', sans-serif; }
             if (rangeEl) rangeEl.textContent = filtered.length > 0 ? (pageStart + 1) + '–' + pageEnd : '0';
             if (totalEl) totalEl.textContent = filtered.length;
 
-            const prevBtn = document.getElementById('prevPageBtn');
-            const nextBtn = document.getElementById('nextPageBtn');
-            if (prevBtn) prevBtn.disabled = currentPage <= 1;
-            if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
             const paginationBar = document.getElementById('paginationBar');
-            if (paginationBar) paginationBar.style.display = filtered.length <= PAGE_SIZE ? 'none' : '';
+            const pagesEl = document.getElementById('paginationPages');
+            if (!paginationBar || !pagesEl) return;
+
+            if (totalPages <= 1) {
+                paginationBar.classList.add('hidden');
+            } else {
+                paginationBar.classList.remove('hidden');
+                pagesEl.innerHTML = '';
+
+                // Prev button
+                const prevBtn = document.createElement('button');
+                prevBtn.disabled = currentPage <= 1;
+                prevBtn.className = 'flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors';
+                prevBtn.innerHTML = '<i data-lucide="chevron-left" class="h-3 w-3"></i> Prev';
+                prevBtn.addEventListener('click', () => changePage(-1));
+                pagesEl.appendChild(prevBtn);
+
+                // Page number buttons with smart truncation
+                const pageButtons = buildPageRange(currentPage, totalPages);
+                pageButtons.forEach(p => {
+                    if (p === '…') {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'px-1 text-xs text-slate-400 select-none';
+                        ellipsis.textContent = '…';
+                        pagesEl.appendChild(ellipsis);
+                    } else {
+                        const btn = document.createElement('button');
+                        const isActive = p === currentPage;
+                        btn.className = isActive
+                            ? 'rounded-full w-8 h-8 text-xs font-semibold bg-slate-900 text-white'
+                            : 'rounded-full w-8 h-8 text-xs font-medium border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors';
+                        btn.textContent = p;
+                        if (!isActive) btn.addEventListener('click', () => goToPage(p));
+                        pagesEl.appendChild(btn);
+                    }
+                });
+
+                // Next button
+                const nextBtn = document.createElement('button');
+                nextBtn.disabled = currentPage >= totalPages;
+                nextBtn.className = 'flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors';
+                nextBtn.innerHTML = 'Next <i data-lucide="chevron-right" class="h-3 w-3"></i>';
+                nextBtn.addEventListener('click', () => changePage(1));
+                pagesEl.appendChild(nextBtn);
+            }
 
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
