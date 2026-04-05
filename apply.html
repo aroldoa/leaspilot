@@ -301,7 +301,7 @@
       else beds.classList.add('hidden');
       if (l.bathrooms) baths.innerHTML = `<i data-lucide="bath" class="h-4 w-4 text-slate-400"></i> ${l.bathrooms} bath`;
       else baths.classList.add('hidden');
-      if (l.rent_amount) rent.innerHTML = `<i data-lucide="dollar-sign" class="h-4 w-4 text-slate-400"></i> ${fmt(l.rent_amount)}/mo`;
+      if (l.rent) rent.innerHTML = `<i data-lucide="dollar-sign" class="h-4 w-4 text-slate-400"></i> ${fmt(l.rent)}/mo`;
       else rent.classList.add('hidden');
 
       const fee = fmt(l.application_fee);

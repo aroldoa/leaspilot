@@ -51,7 +51,7 @@ router.get('/:token', async (req, res) => {
     const result = await pool.query(`
       SELECT pl.id, pl.token, pl.application_fee, pl.is_active,
              p.id AS property_id, p.name, p.address, p.city, p.state, p.zip,
-             p.bedrooms, p.bathrooms, p.rent_amount,
+             p.bedrooms, p.bathrooms, p.rent,
              u.name AS manager_name
       FROM property_listings pl
       JOIN properties p ON p.id = pl.property_id
