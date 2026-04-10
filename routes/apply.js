@@ -152,9 +152,11 @@ router.post('/:token', applySubmitLimit, async (req, res) => {
 
   try {
     const listingResult = await pool.query(`
-      SELECT pl.*, p.name AS property_name, p.address, p.city, p.state
+      SELECT pl.*, p.name AS property_name, p.address, p.city, p.state,
+             u.stripe_account_id, u.stripe_charges_enabled
       FROM property_listings pl
       JOIN properties p ON p.id = pl.property_id
+      JOIN users u ON u.id = p.user_id
       WHERE pl.token = $1 AND pl.is_active = true
     `, [req.params.token]);
 
@@ -206,7 +208,11 @@ router.post('/:token', applySubmitLimit, async (req, res) => {
     const proto = req.headers['x-forwarded-proto'] || req.protocol;
     const baseUrl = `${proto}://${req.get('host')}`;
 
-    const session = await stripe.checkout.sessions.create({
+    const feeAmount = Math.round(listing.application_fee * 100);
+    // Platform takes 2.9% + $0.30 as processing fee; rest goes to manager
+    const platformFee = Math.round(feeAmount * 0.029 + 30);
+
+    const sessionParams = {
       payment_method_types: ['card'],
       line_items: [{
         price_data: {
@@ -215,7 +221,7 @@ router.post('/:token', applySubmitLimit, async (req, res) => {
             name: `Rental Application – ${listing.property_name}`,
             description: `${listing.address}, ${listing.city}, ${listing.state}`,
           },
-          unit_amount: Math.round(listing.application_fee * 100),
+          unit_amount: feeAmount,
         },
         quantity: 1,
       }],
@@ -224,7 +230,17 @@ router.post('/:token', applySubmitLimit, async (req, res) => {
       metadata: { applicationId: String(applicationId) },
       success_url: `${baseUrl}/apply.html?token=${req.params.token}&success=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/apply.html?token=${req.params.token}&cancelled=1`,
-    });
+    };
+
+    // Route payment to manager's connected Stripe account if available
+    if (listing.stripe_account_id && listing.stripe_charges_enabled) {
+      sessionParams.payment_intent_data = {
+        application_fee_amount: platformFee,
+        transfer_data: { destination: listing.stripe_account_id },
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     await pool.query(
       `UPDATE rental_applications SET stripe_session_id = $1 WHERE id = $2`,

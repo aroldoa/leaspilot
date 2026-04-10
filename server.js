@@ -27,6 +27,7 @@ import adminRoutes from './routes/admin.js';
 import applyRoutes from './routes/apply.js';
 import applicationsRoutes from './routes/applications.js';
 import aiRoutes from './routes/ai.js';
+import stripeConnectRoutes from './routes/stripe-connect.js';
 
 dotenv.config();
 
@@ -240,6 +241,7 @@ app.use('/api/admin', requirePool, adminRoutes);
 app.use('/api/apply', requirePool, applyRoutes);
 app.use('/api/applications', requirePool, applicationsRoutes);
 app.use('/api/ai', requirePool, aiRoutes);
+app.use('/api/stripe', requirePool, stripeConnectRoutes);
 
 // 404 for unknown API routes
 app.use('/api', (req, res) => {

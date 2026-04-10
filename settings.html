@@ -229,6 +229,123 @@
                     </div>
                 </div>
 
+                <!-- Payment Processing (Stripe Connect) -->
+                <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
+                    <div class="flex items-start justify-between mb-6">
+                        <div>
+                            <h2 class="text-lg font-semibold text-slate-900">Payment Processing</h2>
+                            <p class="text-sm text-slate-500 mt-1">Connect Stripe to collect application fees and rent payments directly into your bank account.</p>
+                        </div>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" alt="Stripe" class="h-7 opacity-60 mt-1">
+                    </div>
+
+                    <!-- Not connected state -->
+                    <div id="stripeNotConnected">
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5 mb-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-slate-900 mb-1">Connect your Stripe account</p>
+                                    <p class="text-xs text-slate-500">Securely collect application fees from applicants and ACH rent payments from tenants. Funds go directly to your bank. LeasePilot charges a small platform fee.</p>
+                                </div>
+                                <button id="stripeConnectBtn"
+                                    class="flex-shrink-0 flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-700 transition-colors">
+                                    <i data-lucide="link" class="h-4 w-4"></i>
+                                    Connect Stripe
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="file-text" class="h-4 w-4 text-emerald-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-medium text-slate-800">Application Fees</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Collect fees from rental applicants via card</p>
+                                </div>
+                            </div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="building-2" class="h-4 w-4 text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-medium text-slate-800">ACH Rent Payments</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Tenants pay rent directly from their bank account</p>
+                                </div>
+                            </div>
+                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="shield-check" class="h-4 w-4 text-amber-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-medium text-slate-800">Secure & Compliant</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Stripe handles KYC, fraud, and PCI compliance</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connected state -->
+                    <div id="stripeConnected" class="hidden">
+                        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 mb-4">
+                            <div class="flex items-center justify-between gap-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                        <i data-lucide="check-circle-2" class="h-5 w-5 text-emerald-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-emerald-900">Stripe Connected</p>
+                                        <p id="stripeAccountEmail" class="text-xs text-emerald-700 mt-0.5"></p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                    <button id="stripeSyncBtn" class="rounded-full border border-emerald-300 text-emerald-700 px-3 py-1.5 text-xs font-medium hover:bg-emerald-100 flex items-center gap-1 transition-colors">
+                                        <i data-lucide="refresh-cw" class="h-3 w-3"></i> Sync
+                                    </button>
+                                    <button id="stripeDisconnectBtn" class="rounded-full border border-red-200 text-red-600 px-3 py-1.5 text-xs font-medium hover:bg-red-50 transition-colors">
+                                        Disconnect
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Capability status -->
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div class="rounded-xl border border-slate-200 p-4 flex items-center gap-3">
+                                <div id="chargesStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-300 flex-shrink-0"></div>
+                                <div>
+                                    <p class="text-sm font-medium text-slate-800">Card Payments</p>
+                                    <p id="chargesStatusText" class="text-xs text-slate-500">Checking…</p>
+                                </div>
+                            </div>
+                            <div class="rounded-xl border border-slate-200 p-4 flex items-center gap-3">
+                                <div id="payoutsStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-300 flex-shrink-0"></div>
+                                <div>
+                                    <p class="text-sm font-medium text-slate-800">Bank Payouts</p>
+                                    <p id="payoutsStatusText" class="text-xs text-slate-500">Checking…</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Onboarding not complete warning -->
+                        <div id="stripeOnboardingWarning" class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
+                            <i data-lucide="alert-triangle" class="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-amber-800">Action required</p>
+                                <p class="text-xs text-amber-700 mt-0.5">Complete your Stripe onboarding to enable payments and payouts.</p>
+                            </div>
+                            <button id="stripeCompleteOnboardingBtn" class="flex-shrink-0 rounded-full bg-amber-600 text-white px-3 py-1.5 text-xs font-medium hover:bg-amber-700 transition-colors">
+                                Continue
+                            </button>
+                        </div>
+
+                        <!-- Platform fee note -->
+                        <p class="text-xs text-slate-400 mt-3">Platform fee: 2.9% + $0.30 on application fees · 1% on rent payments. Stripe processing fees apply separately.</p>
+                    </div>
+
+                    <p id="stripeStatusLoading" class="text-sm text-slate-400 text-center py-4">Loading payment status…</p>
+                </div>
+
                 <!-- Danger Zone -->
                 <div class="bg-white rounded-3xl border border-red-200 shadow-sm p-6">
                     <h2 class="text-lg font-semibold text-red-900 mb-6">Danger Zone</h2>
@@ -423,6 +540,125 @@
                     }
                 });
             }
+        })();
+
+        // ── Stripe Connect ───────────────────────────────────────────────────────
+        (function() {
+            async function apiRequest(path, options) {
+                const r = await fetch(path, {
+                    ...options,
+                    headers: { 'Content-Type': 'application/json', ...(options && options.headers) },
+                    credentials: 'include',
+                });
+                const j = await r.json();
+                if (!r.ok) throw new Error(j.error || 'Request failed');
+                return j;
+            }
+
+            function setConnected(status) {
+                document.getElementById('stripeStatusLoading').classList.add('hidden');
+                const notConn = document.getElementById('stripeNotConnected');
+                const conn    = document.getElementById('stripeConnected');
+
+                if (status.connected) {
+                    notConn.classList.add('hidden');
+                    conn.classList.remove('hidden');
+
+                    const emailEl = document.getElementById('stripeAccountEmail');
+                    if (emailEl) emailEl.textContent = status.account_email || status.account_id || '';
+
+                    // Charges
+                    const cd = document.getElementById('chargesStatusDot');
+                    const ct = document.getElementById('chargesStatusText');
+                    if (cd && ct) {
+                        cd.className = `w-2.5 h-2.5 rounded-full flex-shrink-0 ${status.charges_enabled ? 'bg-emerald-500' : 'bg-amber-400'}`;
+                        ct.textContent = status.charges_enabled ? 'Enabled' : 'Pending setup';
+                    }
+                    // Payouts
+                    const pd = document.getElementById('payoutsStatusDot');
+                    const pt = document.getElementById('payoutsStatusText');
+                    if (pd && pt) {
+                        pd.className = `w-2.5 h-2.5 rounded-full flex-shrink-0 ${status.payouts_enabled ? 'bg-emerald-500' : 'bg-amber-400'}`;
+                        pt.textContent = status.payouts_enabled ? 'Enabled' : 'Pending setup';
+                    }
+                    // Onboarding warning
+                    const warn = document.getElementById('stripeOnboardingWarning');
+                    if (warn) warn.classList.toggle('hidden', status.charges_enabled && status.payouts_enabled);
+                } else {
+                    conn.classList.add('hidden');
+                    notConn.classList.remove('hidden');
+                }
+            }
+
+            async function loadStripeStatus() {
+                try {
+                    const status = await apiRequest('/api/stripe/status');
+                    setConnected(status);
+                } catch (e) {
+                    document.getElementById('stripeStatusLoading').textContent = 'Could not load payment status.';
+                }
+            }
+
+            async function startOnboarding() {
+                const btn = document.getElementById('stripeConnectBtn');
+                if (btn) { btn.disabled = true; btn.textContent = 'Redirecting…'; }
+                try {
+                    const data = await apiRequest('/api/stripe/onboard', { method: 'POST' });
+                    window.location.href = data.url;
+                } catch (e) {
+                    if (LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show(e.message || 'Failed to start onboarding', 'error');
+                    if (btn) { btn.disabled = false; btn.textContent = 'Connect Stripe'; lucide.createIcons(); }
+                }
+            }
+
+            // Check if returning from Stripe
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('stripe') === 'connected' || urlParams.get('stripe') === 'refresh') {
+                // Sync status then clear param
+                apiRequest('/api/stripe/sync', { method: 'POST' })
+                    .then(setConnected)
+                    .catch(() => loadStripeStatus());
+                history.replaceState({}, '', 'settings.html');
+            } else {
+                loadStripeStatus();
+            }
+
+            document.getElementById('stripeConnectBtn')?.addEventListener('click', startOnboarding);
+
+            document.getElementById('stripeSyncBtn')?.addEventListener('click', async function() {
+                this.disabled = true;
+                try {
+                    const status = await apiRequest('/api/stripe/sync', { method: 'POST' });
+                    setConnected(status);
+                    if (LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Stripe status synced.', 'success');
+                } catch (e) {
+                    if (LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Sync failed.', 'error');
+                } finally {
+                    this.disabled = false;
+                }
+            });
+
+            document.getElementById('stripeDisconnectBtn')?.addEventListener('click', async function() {
+                if (!confirm('Disconnect your Stripe account? Applicants and tenants will no longer be able to pay online.')) return;
+                try {
+                    await apiRequest('/api/stripe/disconnect', { method: 'DELETE' });
+                    setConnected({ connected: false });
+                    if (LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Stripe disconnected.', 'success');
+                } catch (e) {
+                    if (LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Failed to disconnect.', 'error');
+                }
+            });
+
+            document.getElementById('stripeCompleteOnboardingBtn')?.addEventListener('click', async function() {
+                this.disabled = true;
+                try {
+                    const data = await apiRequest('/api/stripe/refresh', { method: 'POST' });
+                    window.location.href = data.url;
+                } catch (e) {
+                    if (LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Failed to get onboarding link.', 'error');
+                    this.disabled = false;
+                }
+            });
         })();
 
         window.saveProfile = async function() {

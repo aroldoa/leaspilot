@@ -95,20 +95,115 @@ router.get('/balance', (req, res) => {
   res.json({ balance, currency: 'USD' });
 });
 
-// GET /api/tenant/payments - payment history (placeholder: no tenant_payments table yet)
-router.get('/payments', async (req, res) => {
+// GET /api/tenant/payments - rent payment history
+router.get('/payments', authenticateToken, requireTenant, async (req, res) => {
   try {
-    // Could join with transactions for this property/tenant later; for now empty
-    res.json([]);
+    const pool = req.app.locals.pool;
+    const result = await pool.query(
+      `SELECT id, amount, payment_method, status, description, period_month, created_at
+       FROM rent_payments WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 24`,
+      [req.tenantId]
+    );
+    res.json(result.rows);
   } catch (error) {
     console.error('Tenant payments error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// POST /api/tenant/pay - stub for "pay rent" (no payment processor)
-router.post('/pay', (req, res) => {
-  res.status(501).json({ message: 'Online payment coming soon. Please pay by check or contact your property manager.' });
+// POST /api/tenant/pay - create Stripe PaymentIntent for ACH rent payment
+router.post('/pay', authenticateToken, requireTenant, async (req, res) => {
+  const pool = req.app.locals.pool;
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+
+  try {
+    // Get tenant + property + manager Stripe account
+    const tenantResult = await pool.query(
+      `SELECT t.id, t.first_name, t.last_name, t.email, t.property_id, t.unit,
+              p.rent, p.name AS property_name,
+              u.stripe_account_id, u.stripe_charges_enabled, u.email AS manager_email
+       FROM tenants t
+       JOIN properties p ON p.id = t.property_id
+       JOIN users u ON u.id = p.user_id
+       WHERE t.id = $1`,
+      [req.tenantId]
+    );
+
+    if (tenantResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    const tenant = tenantResult.rows[0];
+    const { amount, period_month, description } = req.body;
+    const payAmount = amount ? parseFloat(amount) : parseFloat(tenant.rent || 0);
+
+    if (!payAmount || payAmount <= 0) {
+      return res.status(400).json({ error: 'Invalid payment amount' });
+    }
+
+    // No Stripe → record payment manually (dev mode)
+    if (!stripeKey || !tenant.stripe_account_id || !tenant.stripe_charges_enabled) {
+      const payment = await pool.query(
+        `INSERT INTO rent_payments (tenant_id, property_id, amount, payment_method, status, description, period_month)
+         VALUES ($1, $2, $3, 'manual', 'pending', $4, $5) RETURNING *`,
+        [req.tenantId, tenant.property_id, payAmount,
+         description || `Rent – ${tenant.property_name}`,
+         period_month || new Date().toISOString().slice(0, 7)]
+      );
+      return res.json({
+        noPayment: true,
+        message: !tenant.stripe_account_id
+          ? 'Your property manager has not connected online payments yet. Please pay by check or contact them directly.'
+          : 'Payment recorded.',
+        payment: payment.rows[0],
+      });
+    }
+
+    const Stripe = (await import('stripe')).default;
+    const stripe = new Stripe(stripeKey);
+
+    const amountCents = Math.round(payAmount * 100);
+    const platformFee = Math.round(amountCents * 0.01); // 1% platform fee on rent
+
+    // Create PaymentIntent with ACH (us_bank_account) as preferred method
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountCents,
+      currency: 'usd',
+      payment_method_types: ['us_bank_account', 'card'],
+      payment_method_options: {
+        us_bank_account: {
+          financial_connections: { permissions: ['payment_method'] },
+        },
+      },
+      application_fee_amount: platformFee,
+      transfer_data: { destination: tenant.stripe_account_id },
+      receipt_email: tenant.email,
+      description: description || `Rent – ${tenant.property_name}${tenant.unit ? ' Unit ' + tenant.unit : ''}`,
+      metadata: {
+        tenant_id: String(req.tenantId),
+        property_id: String(tenant.property_id),
+        period_month: period_month || new Date().toISOString().slice(0, 7),
+      },
+    });
+
+    // Record pending payment
+    const payment = await pool.query(
+      `INSERT INTO rent_payments (tenant_id, property_id, amount, payment_method, stripe_payment_intent, status, description, period_month)
+       VALUES ($1, $2, $3, 'ach', $4, 'pending', $5, $6) RETURNING *`,
+      [req.tenantId, tenant.property_id, payAmount, paymentIntent.id,
+       description || `Rent – ${tenant.property_name}`,
+       period_month || new Date().toISOString().slice(0, 7)]
+    );
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentId: payment.rows[0].id,
+      amount: payAmount,
+    });
+  } catch (err) {
+    console.error('Tenant pay error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // GET /api/tenant/maintenance - my maintenance requests (with assigned contractor when set)

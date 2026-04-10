@@ -414,6 +414,30 @@ export async function initializeDatabase(pool) {
       )
     `);
 
+    // Stripe Connect: per-manager connected account
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_account_id VARCHAR(255)`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_charges_enabled BOOLEAN DEFAULT false`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_payouts_enabled BOOLEAN DEFAULT false`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_account_email VARCHAR(255)`);
+
+    // Tenant rent payments
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS rent_payments (
+        id                    SERIAL PRIMARY KEY,
+        tenant_id             INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+        property_id           INTEGER REFERENCES properties(id) ON DELETE SET NULL,
+        amount                DECIMAL(10,2) NOT NULL,
+        payment_method        VARCHAR(50) DEFAULT 'ach',
+        stripe_payment_intent VARCHAR(255),
+        stripe_charge_id      VARCHAR(255),
+        status                VARCHAR(50) DEFAULT 'pending',
+        description           TEXT,
+        period_month          VARCHAR(7),
+        created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     console.log('✅ Database schema created successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
