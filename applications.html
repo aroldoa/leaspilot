@@ -39,6 +39,9 @@
           <a href="applications.html" class="flex items-center gap-3 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition-colors">
             <i data-lucide="file-text" class="h-5 w-5 text-slate-900"></i>Applications
           </a>
+          <a href="ai-insights.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+            <i data-lucide="sparkles" class="h-5 w-5"></i>AI Insights
+          </a>
           <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
             <i data-lucide="wrench" class="h-5 w-5"></i>Maintenance
           </a>
@@ -242,7 +245,58 @@
               </div>
 
             </div>
+
+            <!-- AI Screening Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">
+                    <i data-lucide="sparkles" class="h-4 w-4 text-violet-600"></i>
+                  </div>
+                  <p class="text-sm font-semibold text-slate-800">AI Screening</p>
+                </div>
+                <button id="aiScreenBtn" onclick="runAIScreening(false)"
+                  class="px-3 py-1.5 bg-violet-600 text-white text-xs font-medium rounded-lg hover:bg-violet-700 flex items-center gap-1.5">
+                  <i data-lucide="sparkles" class="h-3 w-3"></i>
+                  <span id="aiScreenBtnLabel">Analyze</span>
+                </button>
+              </div>
+
+              <!-- Empty state -->
+              <div id="aiScreenEmpty" class="text-center py-4">
+                <p class="text-sm text-slate-400">Click <strong>Analyze</strong> to run an AI-powered screening on this applicant.</p>
+              </div>
+
+              <!-- Loading state -->
+              <div id="aiScreenLoading" class="hidden text-center py-4">
+                <div class="w-5 h-5 border-2 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <p class="text-xs text-slate-400">Analyzing application…</p>
+              </div>
+
+              <!-- Result state -->
+              <div id="aiScreenResult" class="hidden space-y-3">
+                <div class="flex items-center gap-3">
+                  <div id="aiRecBadge" class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide"></div>
+                  <div class="flex items-center gap-1">
+                    <span class="text-xs text-slate-400">Score:</span>
+                    <span id="aiScore" class="text-sm font-bold text-slate-800"></span>
+                    <span class="text-xs text-slate-400">/10</span>
+                  </div>
+                </div>
+                <p id="aiSummary" class="text-sm text-slate-700 leading-relaxed"></p>
+                <div id="aiFlagsWrap" class="hidden">
+                  <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Flags</p>
+                  <ul id="aiFlags" class="space-y-1"></ul>
+                </div>
+                <div class="flex items-center justify-between pt-1">
+                  <p id="aiSourceLabel" class="text-xs text-slate-400"></p>
+                  <button onclick="runAIScreening(true)" class="text-xs text-violet-600 hover:text-violet-800">Re-analyze</button>
+                </div>
+              </div>
+            </div>
+
           </div>
+        </div>
         </div>
 
       </div>
@@ -415,6 +469,8 @@
     // ── Open detail ───────────────────────────────────────────────────────────
     async function openDetail(id) {
       selectedId = id;
+      currentScreeningAppId = id;
+      resetAIScreening();
       document.querySelectorAll('.app-card').forEach(c => {
         c.classList.toggle('bg-slate-50', parseInt(c.dataset.id) === id);
       });
@@ -422,6 +478,26 @@
       try {
         const app = await LeasePilot.API.request(`/applications/${id}`);
         renderDetail(app);
+        // Show cached AI result if available
+        if (app.ai_analyzed_at) {
+          document.getElementById('aiScreenEmpty').classList.add('hidden');
+          document.getElementById('aiScreenResult').classList.remove('hidden');
+          const badge = document.getElementById('aiRecBadge');
+          if (app.ai_recommendation === 'approve') {
+            badge.className = 'px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide bg-emerald-100 text-emerald-700';
+            badge.textContent = '✓ Approve';
+          } else if (app.ai_recommendation === 'deny') {
+            badge.className = 'px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide bg-red-100 text-red-700';
+            badge.textContent = '✗ Deny';
+          } else {
+            badge.className = 'px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide bg-amber-100 text-amber-700';
+            badge.textContent = '⚠ Review';
+          }
+          document.getElementById('aiScore').textContent = app.ai_score || '–';
+          document.getElementById('aiSummary').textContent = app.ai_summary || '';
+          document.getElementById('aiFlagsWrap').classList.add('hidden');
+          document.getElementById('aiSourceLabel').textContent = 'Cached result';
+        }
 
         // On mobile: hide list, show detail
         document.getElementById('listPanel').classList.add('hidden', 'md:flex');
@@ -515,6 +591,69 @@
         openDetail(id);
       } catch (e) {
         alert('Failed to update status: ' + (e.message || e));
+      }
+    }
+
+    // ── AI Screening ──────────────────────────────────────────────────────────
+    let currentScreeningAppId = null;
+
+    function resetAIScreening() {
+      document.getElementById('aiScreenEmpty').classList.remove('hidden');
+      document.getElementById('aiScreenLoading').classList.add('hidden');
+      document.getElementById('aiScreenResult').classList.add('hidden');
+      document.getElementById('aiScreenBtnLabel').textContent = 'Analyze';
+      document.getElementById('aiScreenBtn').disabled = false;
+    }
+
+    async function runAIScreening(force) {
+      if (!currentScreeningAppId) return;
+      document.getElementById('aiScreenEmpty').classList.add('hidden');
+      document.getElementById('aiScreenResult').classList.add('hidden');
+      document.getElementById('aiScreenLoading').classList.remove('hidden');
+      document.getElementById('aiScreenBtn').disabled = true;
+      document.getElementById('aiScreenBtnLabel').textContent = 'Analyzing…';
+
+      try {
+        const url = `/ai/screen-applicant/${currentScreeningAppId}${force ? '?force=true' : ''}`;
+        const r = await LeasePilot.API.request(url, { method: 'POST' });
+
+        document.getElementById('aiScreenLoading').classList.add('hidden');
+        document.getElementById('aiScreenResult').classList.remove('hidden');
+
+        const badge = document.getElementById('aiRecBadge');
+        if (r.recommendation === 'approve') {
+          badge.className = 'px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide bg-emerald-100 text-emerald-700';
+          badge.textContent = '✓ Approve';
+        } else if (r.recommendation === 'deny') {
+          badge.className = 'px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide bg-red-100 text-red-700';
+          badge.textContent = '✗ Deny';
+        } else {
+          badge.className = 'px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide bg-amber-100 text-amber-700';
+          badge.textContent = '⚠ Review';
+        }
+
+        document.getElementById('aiScore').textContent = r.score || '–';
+        document.getElementById('aiSummary').textContent = r.summary || '';
+
+        const flagsWrap = document.getElementById('aiFlagsWrap');
+        const flagsList = document.getElementById('aiFlags');
+        if (r.flags && r.flags.length > 0) {
+          flagsList.innerHTML = r.flags.map(f => `<li class="text-xs text-red-600 flex items-center gap-1"><i data-lucide="alert-circle" class="h-3 w-3"></i>${f}</li>`).join('');
+          flagsWrap.classList.remove('hidden');
+        } else {
+          flagsWrap.classList.add('hidden');
+        }
+
+        document.getElementById('aiSourceLabel').textContent = r.cached ? 'Cached result' : (r.source === 'ai' ? 'Powered by Gemini AI' : 'Rule-based analysis');
+        document.getElementById('aiScreenBtnLabel').textContent = 'Analyze';
+        document.getElementById('aiScreenBtn').disabled = false;
+        lucide.createIcons();
+      } catch (e) {
+        document.getElementById('aiScreenLoading').classList.add('hidden');
+        document.getElementById('aiScreenEmpty').classList.remove('hidden');
+        document.getElementById('aiScreenBtnLabel').textContent = 'Analyze';
+        document.getElementById('aiScreenBtn').disabled = false;
+        console.error('AI screening failed:', e);
       }
     }
 

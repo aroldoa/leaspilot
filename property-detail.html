@@ -41,6 +41,10 @@ body { font-family: 'Inter', sans-serif; }
                         <i data-lucide="file-text" class="h-5 w-5"></i>
                         Applications
                     </a>
+                    <a href="ai-insights.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                        <i data-lucide="sparkles" class="h-5 w-5"></i>
+                        AI Insights
+                    </a>
                     <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
                         <i data-lucide="wrench" class="h-5 w-5"></i>
                         Maintenance
@@ -214,6 +218,9 @@ body { font-family: 'Inter', sans-serif; }
                         <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="leases">Leases</button>
                         <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="financials">Financials</button>
                         <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="documents">Documents</button>
+                        <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap flex items-center gap-1.5" data-tab="ai">
+                          <i data-lucide="sparkles" class="h-4 w-4 text-violet-500"></i>AI Insights
+                        </button>
                     </div>
                 </div>
 
@@ -388,6 +395,73 @@ body { font-family: 'Inter', sans-serif; }
                     </div>
                 </div>
                 
+                <!-- AI Insights Tab -->
+                <div id="aiTab" class="tab-content hidden space-y-6">
+
+                  <!-- Loading state -->
+                  <div id="aiTabLoading" class="flex items-center gap-3 py-12 justify-center text-slate-400">
+                    <div class="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-sm">Running AI analysis…</span>
+                  </div>
+
+                  <!-- Content (shown after load) -->
+                  <div id="aiTabContent" class="hidden space-y-6">
+
+                    <!-- Health + Analysis -->
+                    <div class="rounded-[2rem] bg-slate-900 text-white p-8 relative overflow-hidden">
+                      <div class="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/5"></div>
+                      <div class="relative z-10">
+                        <div class="flex items-start justify-between mb-4">
+                          <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
+                            <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>AI Analysis
+                          </span>
+                          <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-400">Health Score</span>
+                            <span id="aiHealthScore" class="text-3xl font-bold"></span>
+                            <span class="text-xs text-slate-400">/10</span>
+                          </div>
+                        </div>
+                        <p id="aiAnalysisText" class="text-slate-300 text-sm leading-relaxed"></p>
+                        <p id="aiAnalysisSource" class="text-xs text-slate-500 mt-3"></p>
+                      </div>
+                    </div>
+
+                    <!-- Suggestions -->
+                    <div class="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm">
+                      <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center">
+                          <i data-lucide="trending-up" class="h-4 w-4 text-emerald-600"></i>
+                        </div>
+                        <h3 class="text-sm font-semibold text-slate-900">Income Suggestions</h3>
+                      </div>
+                      <div id="aiSuggestions" class="space-y-3"></div>
+                    </div>
+
+                    <!-- Maintenance with AI -->
+                    <div class="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm">
+                      <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center">
+                          <i data-lucide="wrench" class="h-4 w-4 text-orange-600"></i>
+                        </div>
+                        <h3 class="text-sm font-semibold text-slate-900">Open Maintenance</h3>
+                      </div>
+                      <div id="aiMaintList" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Applications with AI -->
+                    <div class="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm">
+                      <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
+                          <i data-lucide="users" class="h-4 w-4 text-blue-600"></i>
+                        </div>
+                        <h3 class="text-sm font-semibold text-slate-900">Recent Applications</h3>
+                      </div>
+                      <div id="aiAppList" class="space-y-2"></div>
+                    </div>
+
+                  </div>
+                </div>
+
                 <footer class="mt-12 pt-8 text-center md:text-left border-t border-slate-200">
                     <p class="text-xs text-slate-400">© 2024 LeasePilot AI Inc.</p>
                 </footer>
@@ -568,8 +642,82 @@ body { font-family: 'Inter', sans-serif; }
                 loadMaintenanceRequests();
             } else if (tabName === 'documents') {
                 loadPropertyDocuments();
+            } else if (tabName === 'ai') {
+                loadAIInsights();
             }
         }
+
+        var aiInsightsLoaded = false;
+        async function loadAIInsights() {
+          if (aiInsightsLoaded) return;
+          const propId = getPropertyId();
+          if (!propId) return;
+          try {
+            const data = await LeasePilot.API.request('/ai/property-insights/' + propId);
+            aiInsightsLoaded = true;
+            document.getElementById('aiTabLoading').classList.add('hidden');
+            document.getElementById('aiTabContent').classList.remove('hidden');
+
+            document.getElementById('aiHealthScore').textContent = data.health_score || '–';
+            document.getElementById('aiAnalysisText').textContent = data.analysis || '';
+            document.getElementById('aiAnalysisSource').textContent = data.source === 'ai' ? 'Powered by Gemini AI' : 'Rule-based analysis';
+
+            const actionMap = { properties: 'properties.html', tenants: 'tenants.html', financials: 'financials.html', maintenance: 'maintenance.html' };
+            const suggEl = document.getElementById('aiSuggestions');
+            if (data.suggestions?.length) {
+              suggEl.innerHTML = data.suggestions.map(function(s) {
+                return '<div class="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">'
+                  + '<div class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 mt-0.5"><i data-lucide="circle-dollar-sign" class="h-4 w-4 text-emerald-600"></i></div>'
+                  + '<div class="flex-1"><p class="text-sm text-slate-800 leading-snug">' + esc(s.suggestion) + '</p>'
+                  + (s.potential_impact ? '<p class="text-xs text-emerald-600 font-medium mt-0.5">' + esc(s.potential_impact) + '</p>' : '') + '</div>'
+                  + (actionMap[s.action] ? '<a href="' + actionMap[s.action] + '" class="text-xs text-slate-400 hover:text-slate-700 mt-1 flex-shrink-0">View →</a>' : '')
+                  + '</div>';
+              }).join('');
+            } else {
+              suggEl.innerHTML = '<p class="text-sm text-slate-400">No suggestions at this time.</p>';
+            }
+
+            const maintEl = document.getElementById('aiMaintList');
+            const priorityColors = { emergency: 'bg-red-100 text-red-700', high: 'bg-orange-100 text-orange-700', normal: 'bg-blue-100 text-blue-700', low: 'bg-slate-100 text-slate-600' };
+            if (data.maintenance?.length) {
+              maintEl.innerHTML = data.maintenance.map(function(m) {
+                const aiPri = m.ai_priority || m.priority;
+                const pc = priorityColors[aiPri] || priorityColors.normal;
+                return '<div class="flex items-center gap-3 p-3 rounded-xl border border-slate-100">'
+                  + '<span class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ' + pc + '">' + cap(aiPri) + '</span>'
+                  + '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-slate-800 truncate">' + esc(m.subject) + '</p>'
+                  + (m.ai_issue_type ? '<p class="text-xs text-slate-400 capitalize">' + esc(m.ai_issue_type) + '</p>' : '') + '</div>'
+                  + '</div>';
+              }).join('');
+            } else {
+              maintEl.innerHTML = '<p class="text-sm text-slate-400">No open maintenance requests.</p>';
+            }
+
+            const appEl = document.getElementById('aiAppList');
+            const recColors = { approve: 'bg-emerald-100 text-emerald-700', deny: 'bg-red-100 text-red-700', review: 'bg-amber-100 text-amber-700' };
+            if (data.applications?.length) {
+              appEl.innerHTML = data.applications.map(function(a) {
+                const rc = recColors[a.ai_recommendation] || '';
+                return '<div class="flex items-center gap-3 p-3 rounded-xl border border-slate-100">'
+                  + '<div class="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">'
+                  + esc((a.first_name||'')[0]||'') + esc((a.last_name||'')[0]||'') + '</div>'
+                  + '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-slate-800">' + esc(a.first_name + ' ' + a.last_name) + '</p>'
+                  + '<p class="text-xs text-slate-400 capitalize">' + esc(a.status||'') + '</p></div>'
+                  + (a.ai_recommendation ? '<span class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ' + (rc || 'bg-slate-100 text-slate-600') + '">' + cap(a.ai_recommendation) + '</span>' : '')
+                  + '</div>';
+              }).join('');
+            } else {
+              appEl.innerHTML = '<p class="text-sm text-slate-400">No applications received yet.</p>';
+            }
+
+            lucide.createIcons();
+          } catch(e) {
+            document.getElementById('aiTabLoading').innerHTML = '<p class="text-sm text-red-500 py-8 text-center">Failed to load AI insights.</p>';
+          }
+        }
+
+        function esc(s) { return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function cap(s) { s=s||''; return s.charAt(0).toUpperCase()+s.slice(1); }
 
         // Wire tab buttons via event delegation (CSP-safe, no onclick attributes)
         document.querySelector('.mb-8.border-b').addEventListener('click', function(e) {

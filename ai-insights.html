@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Insights – LeasePilot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="/app.js"></script>
+  <style>
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-[#F3F5F7]">
+
+<div class="flex h-screen overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside id="mobileSidebar" class="hidden md:flex w-72 flex-col justify-between border-r border-slate-200 bg-white p-6 fixed md:relative inset-y-0 left-0 z-40">
+    <div>
+      <div class="flex items-center gap-3 mb-10">
+        <a href="index.html" class="flex items-center">
+          <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-12">
+        </a>
+      </div>
+      <nav class="space-y-1">
+        <a href="index.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+          <i data-lucide="layout-grid" class="h-5 w-5"></i>Dashboard
+        </a>
+        <a href="properties.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+          <i data-lucide="home" class="h-5 w-5"></i>Properties
+        </a>
+        <a href="tenants.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+          <i data-lucide="users" class="h-5 w-5"></i>Tenants
+        </a>
+        <a href="applications.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+          <i data-lucide="file-text" class="h-5 w-5"></i>Applications
+        </a>
+        <a href="ai-insights.html" class="flex items-center gap-3 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900 transition-colors">
+          <i data-lucide="sparkles" class="h-5 w-5 text-slate-900"></i>AI Insights
+        </a>
+        <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+          <i data-lucide="wrench" class="h-5 w-5"></i>Maintenance
+        </a>
+        <a href="contractors.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+          <i data-lucide="hard-hat" class="h-5 w-5"></i>Contractors
+        </a>
+        <a href="messages.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+          <i data-lucide="message-square" class="h-5 w-5"></i>Messages
+        </a>
+        <a href="financials.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+          <i data-lucide="wallet" class="h-5 w-5"></i>Financials
+        </a>
+        <a href="settings.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+          <i data-lucide="settings" class="h-5 w-5"></i>Settings
+        </a>
+      </nav>
+    </div>
+    <div>
+      <div class="mb-6 rounded-3xl bg-[#EBC7B6] p-5 relative overflow-hidden">
+        <div class="relative z-10">
+          <p class="mb-2 text-lg font-medium tracking-tight text-slate-900">Upgrade to Pro</p>
+          <p class="mb-4 text-sm text-slate-700">Unlock advanced AI forecasting for your portfolio.</p>
+          <button onclick="window.location.href='settings.html'" class="rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-transform hover:scale-105">View Plans</button>
+        </div>
+        <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/20"></div>
+      </div>
+      <div class="flex items-center gap-3 border-t border-slate-100 pt-5">
+        <a href="settings.html" class="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity">
+          <img data-user-avatar src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100&h=100" alt="User" class="h-10 w-10 rounded-full object-cover ring-2 ring-white">
+          <div class="flex flex-col flex-1">
+            <span class="text-sm font-medium" data-user-name></span>
+            <span class="text-xs text-slate-500">Portfolio Manager</span>
+          </div>
+        </a>
+        <button onclick="LeasePilot.logout()" class="text-slate-400 hover:text-slate-600" title="Logout">
+          <i data-lucide="log-out" class="h-4 w-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 overflow-y-auto hide-scrollbar">
+
+    <!-- Mobile header -->
+    <div class="flex md:hidden items-center justify-between bg-white p-4 border-b border-slate-100">
+      <a href="index.html"><img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot AI" class="h-10"></a>
+      <button onclick="document.getElementById('mobileSidebar').classList.toggle('hidden')" class="p-2 rounded-full hover:bg-slate-100">
+        <i data-lucide="menu" class="h-5 w-5 text-slate-600"></i>
+      </button>
+    </div>
+
+    <div class="p-6 md:p-10 max-w-6xl mx-auto">
+
+      <!-- Page header -->
+      <div class="flex items-center gap-4 mb-8">
+        <div class="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center">
+          <i data-lucide="sparkles" class="h-6 w-6 text-violet-600"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-semibold text-slate-900">AI Insights</h1>
+          <p class="text-sm text-slate-500">Portfolio analysis and recommendations powered by Gemini AI</p>
+        </div>
+        <div id="aiSourceBadge" class="ml-auto hidden px-3 py-1 rounded-full text-xs font-medium bg-violet-100 text-violet-700">Gemini AI</div>
+      </div>
+
+      <!-- Top row: Portfolio Rec + Health -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+        <!-- Portfolio Recommendation -->
+        <div class="rounded-[2rem] bg-slate-900 p-8 text-white shadow-lg overflow-hidden relative">
+          <div class="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/5"></div>
+          <div class="absolute -right-2 bottom-4 w-24 h-24 rounded-full bg-white/5"></div>
+          <div class="relative z-10">
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium mb-4">
+              <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
+              <span id="recLabel">Portfolio Insight</span>
+            </span>
+            <h2 class="text-xl font-semibold mb-2" id="recTitle">Analyzing your portfolio…</h2>
+            <p class="text-slate-400 text-sm leading-relaxed mb-5" id="recDesc">Loading recommendation…</p>
+            <a id="recAction" href="properties.html" class="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-slate-900 hover:bg-slate-100 transition-colors">
+              Take Action <i data-lucide="arrow-right" class="h-4 w-4"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Income Opportunities -->
+        <div class="rounded-[2rem] bg-white border border-slate-100 p-8 shadow-sm">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+              <i data-lucide="trending-up" class="h-5 w-5 text-emerald-600"></i>
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Income</p>
+              <h2 class="text-base font-semibold text-slate-900" id="incomeTitle">Loading…</h2>
+            </div>
+          </div>
+          <div id="incomeBody">
+            <div class="flex items-center gap-2 text-sm text-slate-400">
+              <div class="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+              Analyzing income opportunities…
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Screened Applications -->
+      <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm mb-6">
+        <div class="flex items-center justify-between p-6 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center">
+              <i data-lucide="user-check" class="h-5 w-5 text-blue-600"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-semibold text-slate-900">Application Screenings</h2>
+              <p class="text-xs text-slate-400">Most recent AI-screened applicants</p>
+            </div>
+          </div>
+          <a href="applications.html" class="text-sm text-slate-500 hover:text-slate-900">View all →</a>
+        </div>
+        <div id="screeningsBody" class="p-6">
+          <div class="flex items-center gap-2 text-sm text-slate-400">
+            <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            Loading screenings…
+          </div>
+        </div>
+      </div>
+
+      <!-- Classified Maintenance -->
+      <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm mb-6">
+        <div class="flex items-center justify-between p-6 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center">
+              <i data-lucide="wrench" class="h-5 w-5 text-orange-600"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-semibold text-slate-900">Maintenance Classifications</h2>
+              <p class="text-xs text-slate-400">AI-analyzed maintenance requests</p>
+            </div>
+          </div>
+          <a href="maintenance.html" class="text-sm text-slate-500 hover:text-slate-900">View all →</a>
+        </div>
+        <div id="maintenanceBody" class="p-6">
+          <div class="flex items-center gap-2 text-sm text-slate-400">
+            <div class="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            Loading classifications…
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+(async function() {
+  var w = 0;
+  while (typeof LeasePilot === 'undefined' && w < 100) { await new Promise(r => setTimeout(r, 50)); w++; }
+  if (typeof LeasePilot === 'undefined') return;
+  await LeasePilot.checkAuth();
+  lucide.createIcons();
+
+  const actionMap = { maintenance: 'maintenance.html', tenants: 'tenants.html', properties: 'properties.html', financials: 'financials.html', messages: 'messages.html' };
+
+  // Load all data in parallel
+  const [rec, income, summary] = await Promise.allSettled([
+    LeasePilot.API.request('/ai/recommendation'),
+    LeasePilot.API.request('/ai/income-analysis'),
+    LeasePilot.API.request('/ai/insights-summary'),
+  ]);
+
+  // Portfolio recommendation
+  if (rec.status === 'fulfilled') {
+    const r = rec.value;
+    document.getElementById('recTitle').textContent = r.title || 'Portfolio Update';
+    document.getElementById('recDesc').textContent = r.description || '';
+    document.getElementById('recLabel').textContent = r.source === 'ai' ? 'AI Recommendation' : 'Portfolio Insight';
+    if (r.source === 'ai') document.getElementById('aiSourceBadge').classList.remove('hidden');
+    if (actionMap[r.action]) document.getElementById('recAction').href = actionMap[r.action];
+  } else {
+    document.getElementById('recTitle').textContent = 'Unable to load recommendation';
+    document.getElementById('recDesc').textContent = 'Check your connection and try again.';
+  }
+
+  // Income analysis
+  if (income.status === 'fulfilled' && income.value.suggestions?.length) {
+    const s = income.value.suggestions;
+    document.getElementById('incomeTitle').textContent = s.length + ' Opportunit' + (s.length === 1 ? 'y' : 'ies') + ' Found';
+    document.getElementById('incomeBody').innerHTML = s.map(function(sg) {
+      return '<div class="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">'
+        + '<div class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 mt-0.5"><i data-lucide="circle-dollar-sign" class="h-4 w-4 text-emerald-600"></i></div>'
+        + '<div class="flex-1">'
+        + '<p class="text-xs font-semibold text-slate-500 mb-0.5">' + esc(sg.property_name || 'Portfolio') + '</p>'
+        + '<p class="text-sm text-slate-800 leading-snug">' + esc(sg.suggestion) + '</p>'
+        + (sg.potential_impact ? '<p class="text-xs text-emerald-600 font-medium mt-0.5">' + esc(sg.potential_impact) + '</p>' : '')
+        + '</div>'
+        + (actionMap[sg.action] ? '<a href="' + actionMap[sg.action] + '" class="text-xs text-slate-400 hover:text-slate-700 mt-1 flex-shrink-0">View →</a>' : '')
+        + '</div>';
+    }).join('');
+  } else {
+    document.getElementById('incomeTitle').textContent = 'Portfolio Looks Healthy';
+    document.getElementById('incomeBody').innerHTML = '<p class="text-sm text-slate-400">No income optimization opportunities found.</p>';
+  }
+
+  // Screened applications
+  if (summary.status === 'fulfilled') {
+    const apps = summary.value.screened_applications || [];
+    const maint = summary.value.classified_maintenance || [];
+
+    if (apps.length > 0) {
+      document.getElementById('screeningsBody').innerHTML = '<div class="space-y-3">' + apps.map(function(a) {
+        const recColor = a.ai_recommendation === 'approve' ? 'bg-emerald-100 text-emerald-700' : a.ai_recommendation === 'deny' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700';
+        const recLabel = a.ai_recommendation === 'approve' ? '✓ Approve' : a.ai_recommendation === 'deny' ? '✗ Deny' : '⚠ Review';
+        return '<div class="flex items-start gap-4 p-4 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors cursor-pointer" onclick="window.location.href=\'applications.html\'">'
+          + '<div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">'
+          + esc((a.first_name||'')[0]||'') + esc((a.last_name||'')[0]||'') + '</div>'
+          + '<div class="flex-1 min-w-0">'
+          + '<div class="flex items-center gap-2 flex-wrap">'
+          + '<p class="text-sm font-semibold text-slate-900">' + esc(a.first_name + ' ' + a.last_name) + '</p>'
+          + '<span class="px-2 py-0.5 rounded-full text-xs font-semibold ' + recColor + '">' + recLabel + '</span>'
+          + (a.ai_score ? '<span class="text-xs text-slate-400">Score: ' + a.ai_score + '/10</span>' : '')
+          + '</div>'
+          + '<p class="text-xs text-slate-500 mt-0.5">' + esc(a.property_name || '') + '</p>'
+          + (a.ai_summary ? '<p class="text-sm text-slate-600 mt-1 leading-snug">' + esc(a.ai_summary) + '</p>' : '')
+          + '</div>'
+          + '<p class="text-xs text-slate-400 flex-shrink-0">' + new Date(a.ai_analyzed_at).toLocaleDateString() + '</p>'
+          + '</div>';
+      }).join('') + '</div>';
+    } else {
+      document.getElementById('screeningsBody').innerHTML = '<div class="text-center py-8"><i data-lucide="user-check" class="h-10 w-10 text-slate-200 mx-auto mb-3"></i><p class="text-sm text-slate-400">No applications have been AI-screened yet.</p><p class="text-xs text-slate-300 mt-1">Open an application and click <strong>Analyze</strong> to run a screening.</p></div>';
+    }
+
+    if (maint.length > 0) {
+      const priorityColors = { emergency: 'bg-red-100 text-red-700', high: 'bg-orange-100 text-orange-700', normal: 'bg-blue-100 text-blue-700', low: 'bg-slate-100 text-slate-600' };
+      document.getElementById('maintenanceBody').innerHTML = '<div class="space-y-3">' + maint.map(function(m) {
+        const pc = priorityColors[m.ai_priority] || priorityColors.normal;
+        return '<div class="flex items-start gap-4 p-4 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors cursor-pointer" onclick="window.location.href=\'maintenance.html\'">'
+          + '<div class="flex-1 min-w-0">'
+          + '<div class="flex items-center gap-2 flex-wrap mb-1">'
+          + '<p class="text-sm font-semibold text-slate-900">' + esc(m.subject) + '</p>'
+          + '<span class="px-2 py-0.5 rounded-full text-xs font-semibold ' + pc + '">' + cap(m.ai_priority) + ' Priority</span>'
+          + '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 capitalize">' + esc(m.ai_issue_type) + '</span>'
+          + '</div>'
+          + '<p class="text-xs text-slate-500">' + esc(m.property_name || '') + '</p>'
+          + (m.ai_summary ? '<p class="text-sm text-slate-600 mt-1 leading-snug">' + esc(m.ai_summary) + '</p>' : '')
+          + '</div>'
+          + '</div>';
+      }).join('') + '</div>';
+    } else {
+      document.getElementById('maintenanceBody').innerHTML = '<div class="text-center py-8"><i data-lucide="wrench" class="h-10 w-10 text-slate-200 mx-auto mb-3"></i><p class="text-sm text-slate-400">No maintenance requests have been AI-classified yet.</p><p class="text-xs text-slate-300 mt-1">Open a maintenance request to trigger automatic classification.</p></div>';
+    }
+  }
+
+  lucide.createIcons();
+})();
+
+function esc(s) { return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function cap(s) { s = s || 'normal'; return s.charAt(0).toUpperCase() + s.slice(1); }
+</script>
+</body>
+</html>

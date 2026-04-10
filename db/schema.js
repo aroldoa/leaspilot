@@ -438,6 +438,17 @@ export async function initializeDatabase(pool) {
       )
     `);
 
+    // AI columns on rental_applications
+    await pool.query(`ALTER TABLE rental_applications ADD COLUMN IF NOT EXISTS ai_recommendation VARCHAR(20)`);
+    await pool.query(`ALTER TABLE rental_applications ADD COLUMN IF NOT EXISTS ai_score INTEGER`);
+    await pool.query(`ALTER TABLE rental_applications ADD COLUMN IF NOT EXISTS ai_summary TEXT`);
+    await pool.query(`ALTER TABLE rental_applications ADD COLUMN IF NOT EXISTS ai_analyzed_at TIMESTAMP`);
+
+    // AI columns on maintenance_requests
+    await pool.query(`ALTER TABLE maintenance_requests ADD COLUMN IF NOT EXISTS ai_priority VARCHAR(50)`);
+    await pool.query(`ALTER TABLE maintenance_requests ADD COLUMN IF NOT EXISTS ai_issue_type VARCHAR(100)`);
+    await pool.query(`ALTER TABLE maintenance_requests ADD COLUMN IF NOT EXISTS ai_summary TEXT`);
+
     console.log('✅ Database schema created successfully');
   } catch (error) {
     console.error('Error initializing database:', error);

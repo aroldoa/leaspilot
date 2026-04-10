@@ -36,6 +36,7 @@
         <a href="properties.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="home" class="h-5 w-5"></i> Properties</a>
         <a href="tenants.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="users" class="h-5 w-5"></i> Tenants</a>
         <a href="applications.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="file-text" class="h-5 w-5"></i> Applications</a>
+        <a href="ai-insights.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="sparkles" class="h-5 w-5"></i> AI Insights</a>
         <a href="maintenance.html" class="flex items-center gap-3 rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900"><i data-lucide="wrench" class="h-5 w-5"></i> Maintenance</a>
         <a href="contractors.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="hard-hat" class="h-5 w-5"></i> Contractors</a>
         <a href="messages.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"><i data-lucide="message-square" class="h-5 w-5"></i> Messages</a>
@@ -416,6 +417,28 @@
 
       (r.property_id ? '<a href="property-detail.html?id=' + r.property_id + '" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900"><i data-lucide="external-link" class="h-3.5 w-3.5"></i> View property</a>' : '') +
 
+      '<div id="aiMaintCard" class="rounded-2xl border border-slate-200 bg-white p-4">' +
+        '<div class="flex items-center gap-2 mb-3">' +
+          '<div class="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">' +
+            '<i data-lucide="sparkles" class="h-4 w-4 text-violet-600"></i>' +
+          '</div>' +
+          '<p class="text-sm font-semibold text-slate-800">AI Analysis</p>' +
+        '</div>' +
+        '<div id="aiMaintLoading" class="flex items-center gap-2 text-xs text-slate-400 py-1">' +
+          '<div class="w-4 h-4 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>' +
+          'Classifying request…' +
+        '</div>' +
+        '<div id="aiMaintResult" class="hidden space-y-2">' +
+          '<div class="flex items-center gap-2 flex-wrap">' +
+            '<span id="aiMaintPriority" class="px-2.5 py-1 rounded-full text-xs font-semibold"></span>' +
+            '<span id="aiMaintType" class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 capitalize"></span>' +
+            '<span id="aiMaintWindow" class="text-xs text-slate-400"></span>' +
+          '</div>' +
+          '<p id="aiMaintSummary" class="text-sm text-slate-700 leading-relaxed"></p>' +
+          '<p id="aiMaintSource" class="text-xs text-slate-400"></p>' +
+        '</div>' +
+      '</div>' +
+
       '<div class="border-t border-slate-100 pt-5 space-y-2">' +
         '<div class="grid grid-cols-2 gap-2">' +
           '<button type="button" data-action="change-status" class="flex items-center justify-center gap-2 rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-medium hover:bg-slate-800"><i data-lucide="refresh-cw" class="h-4 w-4"></i> Change Status</button>' +
@@ -475,6 +498,7 @@
     content.innerHTML = renderDetailContent(r);
     lucide.createIcons();
     wireDetailButtons(r, content);
+    runAIMaintClassification(r);
   };
 
   window.closeDetailPanel = function() {
@@ -624,6 +648,51 @@
         .catch(function() { LeasePilot.Toast.show('Failed to update status', 'error'); });
     });
   });
+
+  // ── AI Maintenance Classification ─────────────────────────────────────────
+  async function runAIMaintClassification(r) {
+    // If already classified, show cached result immediately
+    if (r.ai_issue_type) {
+      renderAIMaintResult({ priority: r.ai_priority, issue_type: r.ai_issue_type, summary: r.ai_summary, cached: true });
+      return;
+    }
+    // Otherwise call the API
+    try {
+      var result = await LeasePilot.API.request('/ai/classify-maintenance/' + r.id, { method: 'POST' });
+      // Update the local request object so refreshes show cached
+      r.ai_priority = result.priority;
+      r.ai_issue_type = result.issue_type;
+      r.ai_summary = result.summary;
+      renderAIMaintResult(result);
+    } catch (e) {
+      var loading = document.getElementById('aiMaintLoading');
+      if (loading) loading.innerHTML = '<p class="text-xs text-slate-400">AI analysis unavailable.</p>';
+    }
+  }
+
+  function renderAIMaintResult(result) {
+    var loading = document.getElementById('aiMaintLoading');
+    var resultEl = document.getElementById('aiMaintResult');
+    if (!loading || !resultEl) return;
+    loading.classList.add('hidden');
+    resultEl.classList.remove('hidden');
+
+    var priorityEl = document.getElementById('aiMaintPriority');
+    var priorityColors = {
+      emergency: 'bg-red-100 text-red-700',
+      high: 'bg-orange-100 text-orange-700',
+      normal: 'bg-blue-100 text-blue-700',
+      low: 'bg-slate-100 text-slate-600',
+    };
+    priorityEl.className = 'px-2.5 py-1 rounded-full text-xs font-semibold ' + (priorityColors[result.priority] || priorityColors.normal);
+    priorityEl.textContent = (result.priority || 'normal').charAt(0).toUpperCase() + (result.priority || 'normal').slice(1) + ' Priority';
+
+    document.getElementById('aiMaintType').textContent = (result.issue_type || 'other').replace('_', ' ');
+    document.getElementById('aiMaintWindow').textContent = result.response_window ? '· ' + result.response_window : '';
+    document.getElementById('aiMaintSummary').textContent = result.summary || '';
+    document.getElementById('aiMaintSource').textContent = result.cached ? 'Cached result' : (result.source === 'ai' ? 'Powered by Gemini AI' : 'Rule-based analysis');
+    lucide.createIcons();
+  }
 
   async function init() {
     var w = 0;

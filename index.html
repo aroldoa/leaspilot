@@ -55,6 +55,10 @@
                         <i data-lucide="file-text" class="h-5 w-5"></i>
                         Applications
                     </a>
+                    <a href="ai-insights.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                      <i data-lucide="sparkles" class="h-5 w-5"></i>
+                      AI Insights
+                  </a>
                     <a href="maintenance.html" class="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
                       <i data-lucide="wrench" class="h-5 w-5"></i>
                       Maintenance
@@ -242,6 +246,28 @@
                       </div>
                     </div>
                   </div><!-- end aiCard -->
+
+                  <!-- Income Analysis Card -->
+                  <div id="incomeCard" class="col-span-1 md:col-span-12 rounded-[2rem] bg-white border border-slate-100 p-8 shadow-sm">
+                    <div class="flex items-center justify-between mb-5">
+                      <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center">
+                          <i data-lucide="trending-up" class="h-5 w-5 text-violet-600"></i>
+                        </div>
+                        <div>
+                          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Income Opportunities</p>
+                          <h3 class="text-base font-semibold text-slate-900" id="incomeCardTitle">Analyzing portfolio…</h3>
+                        </div>
+                      </div>
+                      <span id="incomeSourceBadge" class="hidden px-2.5 py-1 rounded-full text-xs font-medium bg-violet-100 text-violet-700">Gemini AI</span>
+                    </div>
+                    <div id="incomeCardBody">
+                      <div class="flex items-center gap-2 text-sm text-slate-400">
+                        <div class="w-4 h-4 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+                        Loading income insights…
+                      </div>
+                    </div>
+                  </div>
               </div><!-- end bento grid -->
 
               <!-- Maintenance requests from tenants -->
@@ -466,6 +492,40 @@
                             var aiDesc  = document.getElementById('aiCardDesc');
                             if (aiTitle) aiTitle.textContent = 'Portfolio Summary';
                             if (aiDesc)  aiDesc.textContent  = 'Could not load recommendation. Check your connection.';
+                          }
+                        })();
+
+                        // Income analysis card
+                        (async function() {
+                          try {
+                            var data = await LeasePilot.API.request('/ai/income-analysis');
+                            var title = document.getElementById('incomeCardTitle');
+                            var body = document.getElementById('incomeCardBody');
+                            var badge = document.getElementById('incomeSourceBadge');
+                            if (!body) return;
+                            if (data.suggestions && data.suggestions.length > 0) {
+                              if (title) title.textContent = data.suggestions.length + ' Income Opportunit' + (data.suggestions.length === 1 ? 'y' : 'ies') + ' Found';
+                              if (badge) { badge.classList.remove('hidden'); badge.textContent = data.source === 'ai' ? 'Gemini AI' : 'Analysis'; }
+                              var actionMap = { properties: 'properties.html', tenants: 'tenants.html', financials: 'financials.html', maintenance: 'maintenance.html' };
+                              body.innerHTML = data.suggestions.map(function(s) {
+                                return '<div class="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">'
+                                  + '<div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 mt-0.5"><i data-lucide="circle-dollar-sign" class="h-4 w-4 text-emerald-600"></i></div>'
+                                  + '<div class="flex-1 min-w-0">'
+                                  + '<p class="text-xs font-semibold text-slate-500 mb-0.5">' + (s.property_name || 'Portfolio') + '</p>'
+                                  + '<p class="text-sm text-slate-800 leading-snug">' + s.suggestion + '</p>'
+                                  + (s.potential_impact ? '<p class="text-xs text-emerald-600 font-medium mt-1">' + s.potential_impact + '</p>' : '')
+                                  + '</div>'
+                                  + (actionMap[s.action] ? '<a href="' + actionMap[s.action] + '" class="flex-shrink-0 text-xs text-slate-400 hover:text-slate-700 mt-1">View →</a>' : '')
+                                  + '</div>';
+                              }).join('');
+                              lucide.createIcons();
+                            } else {
+                              if (title) title.textContent = 'Portfolio Looks Healthy';
+                              body.innerHTML = '<p class="text-sm text-slate-400">No income optimization opportunities identified at this time.</p>';
+                            }
+                          } catch(e) {
+                            var body = document.getElementById('incomeCardBody');
+                            if (body) body.innerHTML = '<p class="text-sm text-slate-400">Could not load income analysis.</p>';
                           }
                         })();
 
