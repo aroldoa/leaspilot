@@ -217,6 +217,7 @@ body { font-family: 'Inter', sans-serif; }
                         <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="maintenance">Maintenance <span class="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600" id="maintenanceBadge">0</span></button>
                         <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="leases">Leases</button>
                         <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="financials">Financials</button>
+                        <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="mortgage">Mortgage</button>
                         <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="documents">Documents</button>
                         <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap flex items-center gap-1.5" data-tab="ai">
                           <i data-lucide="sparkles" class="h-4 w-4 text-violet-500"></i>AI Insights
@@ -395,6 +396,143 @@ body { font-family: 'Inter', sans-serif; }
                     </div>
                 </div>
                 
+                <!-- Mortgage Tab -->
+                <div id="mortgageTab" class="tab-content hidden">
+                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    <!-- Mortgage form -->
+                    <div class="lg:col-span-2 bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
+                      <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                          <div class="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center">
+                            <i data-lucide="landmark" class="h-5 w-5 text-white"></i>
+                          </div>
+                          <div>
+                            <h2 class="text-base font-semibold text-slate-900">Mortgage Details</h2>
+                            <p class="text-xs text-slate-400">Enter loan info for profit tracking</p>
+                          </div>
+                        </div>
+                        <button id="mortgageDeleteBtn" onclick="deleteMortgage()" class="hidden text-xs text-red-500 hover:text-red-700 px-3 py-1.5 border border-red-200 rounded-full">Remove</button>
+                      </div>
+
+                      <form id="mortgageForm" onsubmit="saveMortgage(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Lender Name</label>
+                            <input id="mLender" type="text" placeholder="e.g. Chase Bank" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-slate-400">
+                          </div>
+                          <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Original Loan Amount</label>
+                            <div class="relative">
+                              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                              <input id="mLoanAmount" type="number" min="0" step="1000" placeholder="250000" class="w-full rounded-xl border border-slate-200 pl-7 pr-4 py-2.5 text-sm outline-none focus:border-slate-400">
+                            </div>
+                          </div>
+                          <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Monthly Payment (P&amp;I)</label>
+                            <div class="relative">
+                              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                              <input id="mMonthlyPayment" type="number" min="0" step="1" placeholder="1450" class="w-full rounded-xl border border-slate-200 pl-7 pr-4 py-2.5 text-sm outline-none focus:border-slate-400">
+                            </div>
+                          </div>
+                          <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Interest Rate (%)</label>
+                            <input id="mInterestRate" type="number" min="0" step="0.001" placeholder="6.75" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-slate-400">
+                          </div>
+                          <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Loan Term (years)</label>
+                            <select id="mLoanTerm" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-slate-400">
+                              <option value="30">30 years</option>
+                              <option value="20">20 years</option>
+                              <option value="15">15 years</option>
+                              <option value="10">10 years</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Loan Start Date</label>
+                            <input id="mStartDate" type="date" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-slate-400">
+                          </div>
+                          <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Escrow / Insurance (monthly)</label>
+                            <div class="relative">
+                              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                              <input id="mEscrow" type="number" min="0" step="1" placeholder="300" class="w-full rounded-xl border border-slate-200 pl-7 pr-4 py-2.5 text-sm outline-none focus:border-slate-400">
+                            </div>
+                          </div>
+                          <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Notes</label>
+                            <textarea id="mNotes" rows="2" placeholder="e.g. ARM resets in 2027, PMI included…" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-slate-400 resize-none"></textarea>
+                          </div>
+                        </div>
+                        <div class="flex gap-3 pt-2">
+                          <button type="submit" id="mortgageSaveBtn" class="flex items-center gap-2 rounded-full bg-slate-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
+                            <i data-lucide="save" class="h-4 w-4"></i> Save Mortgage
+                          </button>
+                          <span id="mortgageSavedMsg" class="hidden text-sm text-emerald-600 flex items-center gap-1"><i data-lucide="check-circle-2" class="h-4 w-4"></i> Saved</span>
+                        </div>
+                      </form>
+                    </div>
+
+                    <!-- Summary panel -->
+                    <div class="space-y-4">
+                      <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 space-y-4">
+                        <h3 class="text-sm font-semibold text-slate-900">Monthly Cash Flow</h3>
+                        <div class="space-y-3">
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">Monthly Rent</span>
+                            <span id="mortSummaryRent" class="text-sm font-semibold text-emerald-600">–</span>
+                          </div>
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">Mortgage P&amp;I</span>
+                            <span id="mortSummaryPI" class="text-sm font-semibold text-red-500">–</span>
+                          </div>
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">Escrow</span>
+                            <span id="mortSummaryEscrow" class="text-sm font-semibold text-red-400">–</span>
+                          </div>
+                          <div class="border-t border-slate-100 pt-3 flex items-center justify-between">
+                            <span class="text-sm font-semibold text-slate-900">Net Profit</span>
+                            <span id="mortSummaryProfit" class="text-lg font-bold">–</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 space-y-4" id="mortAmortCard">
+                        <h3 class="text-sm font-semibold text-slate-900">Loan Progress</h3>
+                        <div class="space-y-3">
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">Original Amount</span>
+                            <span id="mortAmortOriginal" class="text-sm font-medium text-slate-700">–</span>
+                          </div>
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">Est. Balance Today</span>
+                            <span id="mortAmortBalance" class="text-sm font-medium text-slate-700">–</span>
+                          </div>
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">Equity Built</span>
+                            <span id="mortAmortEquity" class="text-sm font-semibold text-emerald-600">–</span>
+                          </div>
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">Payoff Date</span>
+                            <span id="mortAmortPayoff" class="text-sm font-medium text-slate-700">–</span>
+                          </div>
+                        </div>
+                        <!-- Progress bar -->
+                        <div class="mt-2">
+                          <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                            <span>Paid off</span>
+                            <span id="mortAmortPct">0%</span>
+                          </div>
+                          <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div id="mortAmortBar" class="h-full bg-emerald-500 rounded-full transition-all duration-700" style="width:0%"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
                 <!-- AI Insights Tab -->
                 <div id="aiTab" class="tab-content hidden space-y-6">
 
@@ -642,6 +780,8 @@ body { font-family: 'Inter', sans-serif; }
                 loadMaintenanceRequests();
             } else if (tabName === 'documents') {
                 loadPropertyDocuments();
+            } else if (tabName === 'mortgage') {
+                loadMortgage();
             } else if (tabName === 'ai') {
                 loadAIInsights();
             }
@@ -714,6 +854,122 @@ body { font-family: 'Inter', sans-serif; }
           } catch(e) {
             document.getElementById('aiTabLoading').innerHTML = '<p class="text-sm text-red-500 py-8 text-center">Failed to load AI insights.</p>';
           }
+        }
+
+        // ── Mortgage tab ──────────────────────────────────────────────────────
+        var mortgageLoaded = false;
+
+        async function loadMortgage() {
+          if (mortgageLoaded) return;
+          const propId = getPropertyId();
+          if (!propId) return;
+          try {
+            const m = await LeasePilot.API.request('/mortgages/' + propId);
+            if (m) {
+              document.getElementById('mLender').value        = m.lender_name || '';
+              document.getElementById('mLoanAmount').value    = m.loan_amount || '';
+              document.getElementById('mMonthlyPayment').value= m.monthly_payment || '';
+              document.getElementById('mInterestRate').value  = m.interest_rate || '';
+              document.getElementById('mLoanTerm').value      = m.loan_term_years || 30;
+              document.getElementById('mStartDate').value     = m.loan_start_date ? m.loan_start_date.split('T')[0] : '';
+              document.getElementById('mEscrow').value        = m.escrow_amount || '';
+              document.getElementById('mNotes').value         = m.notes || '';
+              document.getElementById('mortgageDeleteBtn').classList.remove('hidden');
+              updateMortgageSummary();
+            }
+            mortgageLoaded = true;
+          } catch(e) { console.error('loadMortgage error:', e); }
+        }
+
+        function updateMortgageSummary() {
+          const rent    = parseFloat(currentProperty?.rent || 0);
+          const pi      = parseFloat(document.getElementById('mMonthlyPayment').value || 0);
+          const escrow  = parseFloat(document.getElementById('mEscrow').value || 0);
+          const profit  = rent - pi - escrow;
+          const loanAmt = parseFloat(document.getElementById('mLoanAmount').value || 0);
+          const rate    = parseFloat(document.getElementById('mInterestRate').value || 0) / 100 / 12;
+          const term    = parseInt(document.getElementById('mLoanTerm').value || 30) * 12;
+          const startVal= document.getElementById('mStartDate').value;
+
+          document.getElementById('mortSummaryRent').textContent   = rent   ? '+$' + rent.toLocaleString() : '–';
+          document.getElementById('mortSummaryPI').textContent      = pi     ? '-$' + pi.toLocaleString()   : '–';
+          document.getElementById('mortSummaryEscrow').textContent  = escrow ? '-$' + escrow.toLocaleString(): '–';
+          const profitEl = document.getElementById('mortSummaryProfit');
+          profitEl.textContent = rent ? (profit >= 0 ? '+' : '') + '$' + Math.round(profit).toLocaleString() + '/mo' : '–';
+          profitEl.className = 'text-lg font-bold ' + (profit >= 0 ? 'text-emerald-600' : 'text-red-500');
+
+          if (loanAmt > 0 && startVal) {
+            const start  = new Date(startVal);
+            const now    = new Date();
+            const monthsPaid = Math.max(0, (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()));
+            let balance  = loanAmt;
+            if (rate > 0) {
+              balance = loanAmt * Math.pow(1 + rate, monthsPaid) - (pi / rate) * (Math.pow(1 + rate, monthsPaid) - 1);
+            } else {
+              balance = loanAmt - (pi * monthsPaid);
+            }
+            balance = Math.max(0, balance);
+            const equity = loanAmt - balance;
+            const pct    = Math.min(100, Math.round(equity / loanAmt * 100));
+            const payoff = new Date(start); payoff.setMonth(payoff.getMonth() + term);
+
+            document.getElementById('mortAmortOriginal').textContent = '$' + loanAmt.toLocaleString();
+            document.getElementById('mortAmortBalance').textContent  = '$' + Math.round(balance).toLocaleString();
+            document.getElementById('mortAmortEquity').textContent   = '$' + Math.round(equity).toLocaleString();
+            document.getElementById('mortAmortPayoff').textContent   = payoff.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            document.getElementById('mortAmortPct').textContent      = pct + '%';
+            document.getElementById('mortAmortBar').style.width      = pct + '%';
+          }
+          lucide.createIcons();
+        }
+
+        // Live summary update as user types
+        ['mMonthlyPayment','mEscrow','mLoanAmount','mInterestRate','mLoanTerm','mStartDate'].forEach(function(id) {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener('input', updateMortgageSummary);
+        });
+
+        async function saveMortgage(e) {
+          e.preventDefault();
+          const propId = getPropertyId();
+          if (!propId) return;
+          const btn = document.getElementById('mortgageSaveBtn');
+          btn.disabled = true; btn.textContent = 'Saving…';
+          try {
+            await LeasePilot.API.request('/mortgages/' + propId, {
+              method: 'POST',
+              body: JSON.stringify({
+                lender_name:     document.getElementById('mLender').value,
+                loan_amount:     document.getElementById('mLoanAmount').value,
+                monthly_payment: document.getElementById('mMonthlyPayment').value,
+                interest_rate:   document.getElementById('mInterestRate').value,
+                loan_start_date: document.getElementById('mStartDate').value || null,
+                loan_term_years: document.getElementById('mLoanTerm').value,
+                escrow_amount:   document.getElementById('mEscrow').value,
+                notes:           document.getElementById('mNotes').value,
+              }),
+            });
+            document.getElementById('mortgageDeleteBtn').classList.remove('hidden');
+            const msg = document.getElementById('mortgageSavedMsg');
+            msg.classList.remove('hidden'); setTimeout(() => msg.classList.add('hidden'), 3000);
+            updateMortgageSummary();
+          } catch(err) { alert('Failed to save mortgage: ' + (err.message || err)); }
+          btn.disabled = false; btn.innerHTML = '<i data-lucide="save" class="h-4 w-4"></i> Save Mortgage';
+          lucide.createIcons();
+        }
+
+        async function deleteMortgage() {
+          if (!confirm('Remove mortgage record for this property?')) return;
+          const propId = getPropertyId();
+          if (!propId) return;
+          try {
+            await LeasePilot.API.request('/mortgages/' + propId, { method: 'DELETE' });
+            ['mLender','mLoanAmount','mMonthlyPayment','mInterestRate','mStartDate','mEscrow','mNotes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            document.getElementById('mLoanTerm').value = 30;
+            document.getElementById('mortgageDeleteBtn').classList.add('hidden');
+            updateMortgageSummary();
+            mortgageLoaded = false;
+          } catch(err) { alert('Failed to remove mortgage: ' + (err.message || err)); }
         }
 
         function esc(s) { return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }

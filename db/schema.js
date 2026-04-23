@@ -449,6 +449,25 @@ export async function initializeDatabase(pool) {
     await pool.query(`ALTER TABLE maintenance_requests ADD COLUMN IF NOT EXISTS ai_issue_type VARCHAR(100)`);
     await pool.query(`ALTER TABLE maintenance_requests ADD COLUMN IF NOT EXISTS ai_summary TEXT`);
 
+    // Property mortgages
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS property_mortgages (
+        id SERIAL PRIMARY KEY,
+        property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+        lender_name VARCHAR(255),
+        loan_amount DECIMAL(12,2) DEFAULT 0,
+        monthly_payment DECIMAL(10,2) DEFAULT 0,
+        interest_rate DECIMAL(5,3) DEFAULT 0,
+        loan_start_date DATE,
+        loan_term_years INTEGER DEFAULT 30,
+        escrow_amount DECIMAL(10,2) DEFAULT 0,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS property_mortgages_property_id_idx ON property_mortgages(property_id)`);
+
     console.log('✅ Database schema created successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
