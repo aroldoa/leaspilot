@@ -45,7 +45,7 @@ router.post('/:propertyId', authenticateToken, async (req, res) => {
   const propId = parseInt(req.params.propertyId, 10);
   if (!propId) return res.status(400).json({ error: 'Invalid property ID' });
 
-  const { lender_name, loan_amount, monthly_payment, interest_rate, loan_start_date, loan_term_years, escrow_amount, notes } = req.body;
+  const { lender_name, loan_number, loan_amount, monthly_payment, interest_rate, loan_start_date, loan_term_years, escrow_amount, monthly_tax, monthly_insurance, notes } = req.body;
 
   try {
     // Verify ownership
@@ -54,20 +54,23 @@ router.post('/:propertyId', authenticateToken, async (req, res) => {
 
     const result = await pool.query(`
       INSERT INTO property_mortgages
-        (property_id, lender_name, loan_amount, monthly_payment, interest_rate, loan_start_date, loan_term_years, escrow_amount, notes, updated_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
+        (property_id, lender_name, loan_number, loan_amount, monthly_payment, interest_rate, loan_start_date, loan_term_years, escrow_amount, monthly_tax, monthly_insurance, notes, updated_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())
       ON CONFLICT (property_id) DO UPDATE SET
-        lender_name     = EXCLUDED.lender_name,
-        loan_amount     = EXCLUDED.loan_amount,
-        monthly_payment = EXCLUDED.monthly_payment,
-        interest_rate   = EXCLUDED.interest_rate,
-        loan_start_date = EXCLUDED.loan_start_date,
-        loan_term_years = EXCLUDED.loan_term_years,
-        escrow_amount   = EXCLUDED.escrow_amount,
-        notes           = EXCLUDED.notes,
-        updated_at      = NOW()
+        lender_name       = EXCLUDED.lender_name,
+        loan_number       = EXCLUDED.loan_number,
+        loan_amount       = EXCLUDED.loan_amount,
+        monthly_payment   = EXCLUDED.monthly_payment,
+        interest_rate     = EXCLUDED.interest_rate,
+        loan_start_date   = EXCLUDED.loan_start_date,
+        loan_term_years   = EXCLUDED.loan_term_years,
+        escrow_amount     = EXCLUDED.escrow_amount,
+        monthly_tax       = EXCLUDED.monthly_tax,
+        monthly_insurance = EXCLUDED.monthly_insurance,
+        notes             = EXCLUDED.notes,
+        updated_at        = NOW()
       RETURNING *
-    `, [propId, lender_name || null, loan_amount || 0, monthly_payment || 0, interest_rate || 0, loan_start_date || null, loan_term_years || 30, escrow_amount || 0, notes || null]);
+    `, [propId, lender_name || null, loan_number || null, loan_amount || 0, monthly_payment || 0, interest_rate || 0, loan_start_date || null, loan_term_years || 30, escrow_amount || 0, monthly_tax || 0, monthly_insurance || 0, notes || null]);
 
     res.json(result.rows[0]);
   } catch (err) {

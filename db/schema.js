@@ -467,6 +467,9 @@ export async function initializeDatabase(pool) {
       )
     `);
     await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS property_mortgages_property_id_idx ON property_mortgages(property_id)`);
+    await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS loan_number VARCHAR(100)`);
+    await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS monthly_tax DECIMAL(10,2) DEFAULT 0`);
+    await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS monthly_insurance DECIMAL(10,2) DEFAULT 0`);
 
     console.log('✅ Database schema created successfully');
   } catch (error) {
