@@ -12,6 +12,9 @@ router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req,
        FROM transactions t
        LEFT JOIN properties p ON t.property_id = p.id
        WHERE t.user_id = $1
+          OR t.property_id IN (
+            SELECT property_id FROM property_collaborators WHERE user_id = $1
+          )
        ORDER BY t.transaction_date DESC, t.created_at DESC`,
       [req.userId]
     );

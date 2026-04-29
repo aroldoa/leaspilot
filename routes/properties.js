@@ -38,13 +38,16 @@ const propertyDocUpload = multer({
 
 const router = express.Router();
 
-// Get all properties for user (manager only)
+// Get all properties for user (owned + collaborated)
 router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
-      `SELECT * FROM properties 
-       WHERE user_id = $1 
+      `SELECT DISTINCT p.* FROM properties p
+       WHERE p.user_id = $1
+       UNION
+       SELECT DISTINCT p.* FROM properties p
+       JOIN property_collaborators pc ON pc.property_id = p.id AND pc.user_id = $1
        ORDER BY created_at DESC`,
       [req.userId]
     );
@@ -60,8 +63,11 @@ router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
-      `SELECT * FROM properties 
-       WHERE id = $1 AND user_id = $2`,
+      `SELECT * FROM properties WHERE id = $1 AND (
+         user_id = $2 OR EXISTS (
+           SELECT 1 FROM property_collaborators WHERE property_id = $1 AND user_id = $2
+         )
+       )`,
       [req.params.id, req.userId]
     );
 

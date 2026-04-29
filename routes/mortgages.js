@@ -28,7 +28,12 @@ router.get('/:propertyId', authenticateToken, async (req, res) => {
   if (!propId) return res.status(400).json({ error: 'Invalid property ID' });
   try {
     // Verify ownership
-    const own = await pool.query(`SELECT id FROM properties WHERE id = $1 AND user_id = $2`, [propId, req.userId]);
+    const own = await pool.query(
+      `SELECT id FROM properties WHERE id = $1 AND (user_id = $2 OR EXISTS (
+         SELECT 1 FROM property_collaborators WHERE property_id = $1 AND user_id = $2
+       ))`,
+      [propId, req.userId]
+    );
     if (own.rows.length === 0) return res.status(404).json({ error: 'Property not found' });
 
     const result = await pool.query(`SELECT * FROM property_mortgages WHERE property_id = $1`, [propId]);
@@ -52,25 +57,34 @@ router.post('/:propertyId', authenticateToken, async (req, res) => {
     const own = await pool.query(`SELECT id FROM properties WHERE id = $1 AND user_id = $2`, [propId, req.userId]);
     if (own.rows.length === 0) return res.status(404).json({ error: 'Property not found' });
 
-    const result = await pool.query(`
-      INSERT INTO property_mortgages
-        (property_id, lender_name, loan_number, loan_amount, monthly_payment, interest_rate, loan_start_date, loan_term_years, escrow_amount, monthly_tax, monthly_insurance, notes, updated_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())
-      ON CONFLICT (property_id) DO UPDATE SET
-        lender_name       = EXCLUDED.lender_name,
-        loan_number       = EXCLUDED.loan_number,
-        loan_amount       = EXCLUDED.loan_amount,
-        monthly_payment   = EXCLUDED.monthly_payment,
-        interest_rate     = EXCLUDED.interest_rate,
-        loan_start_date   = EXCLUDED.loan_start_date,
-        loan_term_years   = EXCLUDED.loan_term_years,
-        escrow_amount     = EXCLUDED.escrow_amount,
-        monthly_tax       = EXCLUDED.monthly_tax,
-        monthly_insurance = EXCLUDED.monthly_insurance,
-        notes             = EXCLUDED.notes,
-        updated_at        = NOW()
-      RETURNING *
-    `, [propId, lender_name || null, loan_number || null, loan_amount || 0, monthly_payment || 0, interest_rate || 0, loan_start_date || null, loan_term_years || 30, escrow_amount || 0, monthly_tax || 0, monthly_insurance || 0, notes || null]);
+    const existing = await pool.query(`SELECT id FROM property_mortgages WHERE property_id = $1`, [propId]);
+    let result;
+    if (existing.rows.length > 0) {
+      result = await pool.query(`
+        UPDATE property_mortgages SET
+          lender_name       = $2,
+          loan_number       = $3,
+          loan_amount       = $4,
+          monthly_payment   = $5,
+          interest_rate     = $6,
+          loan_start_date   = $7,
+          loan_term_years   = $8,
+          escrow_amount     = $9,
+          monthly_tax       = $10,
+          monthly_insurance = $11,
+          notes             = $12,
+          updated_at        = NOW()
+        WHERE property_id = $1
+        RETURNING *
+      `, [propId, lender_name || null, loan_number || null, loan_amount || 0, monthly_payment || 0, interest_rate || 0, loan_start_date || null, loan_term_years || 30, escrow_amount || 0, monthly_tax || 0, monthly_insurance || 0, notes || null]);
+    } else {
+      result = await pool.query(`
+        INSERT INTO property_mortgages
+          (property_id, lender_name, loan_number, loan_amount, monthly_payment, interest_rate, loan_start_date, loan_term_years, escrow_amount, monthly_tax, monthly_insurance, notes, updated_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())
+        RETURNING *
+      `, [propId, lender_name || null, loan_number || null, loan_amount || 0, monthly_payment || 0, interest_rate || 0, loan_start_date || null, loan_term_years || 30, escrow_amount || 0, monthly_tax || 0, monthly_insurance || 0, notes || null]);
+    }
 
     res.json(result.rows[0]);
   } catch (err) {

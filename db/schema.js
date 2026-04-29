@@ -466,10 +466,38 @@ export async function initializeDatabase(pool) {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS property_mortgages_property_id_idx ON property_mortgages(property_id)`);
     await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS loan_number VARCHAR(100)`);
     await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS monthly_tax DECIMAL(10,2) DEFAULT 0`);
     await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS monthly_insurance DECIMAL(10,2) DEFAULT 0`);
+
+    // Team: invite tokens for property collaboration
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS property_invites (
+        id SERIAL PRIMARY KEY,
+        token VARCHAR(64) UNIQUE NOT NULL,
+        property_id INTEGER REFERENCES properties(id) ON DELETE CASCADE,
+        invited_email VARCHAR(255),
+        role VARCHAR(50) DEFAULT 'manager',
+        invited_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        expires_at TIMESTAMP NOT NULL,
+        accepted_at TIMESTAMP,
+        accepted_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Team: active property collaborators
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS property_collaborators (
+        id SERIAL PRIMARY KEY,
+        property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR(50) DEFAULT 'manager',
+        invited_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(property_id, user_id)
+      )
+    `);
 
     console.log('✅ Database schema created successfully');
   } catch (error) {

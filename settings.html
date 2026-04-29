@@ -350,6 +350,65 @@
                     <p id="stripeStatusLoading" class="text-sm text-slate-400 text-center py-4">Loading payment status…</p>
                 </div>
 
+                <!-- Team -->
+                <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-1">Team</h2>
+                    <p class="text-sm text-slate-500 mb-6">Invite a property manager to help manage one of your properties. They'll get a link to accept.</p>
+
+                    <!-- Invite form -->
+                    <div class="bg-slate-50 rounded-2xl p-5 mb-6">
+                        <h3 class="text-sm font-semibold text-slate-800 mb-4">Invite someone</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Property</label>
+                                <select id="invitePropertyId" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-slate-400 bg-white">
+                                    <option value="">Select property…</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Email (optional)</label>
+                                <input id="inviteEmail" type="email" placeholder="manager@email.com" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-slate-400">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Role</label>
+                                <select id="inviteRole" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-slate-400 bg-white">
+                                    <option value="manager">Property Manager</option>
+                                    <option value="viewer">Viewer (read-only)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="createInvite()" id="createInviteBtn" class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
+                            <i data-lucide="link" class="h-4 w-4"></i> Generate Invite Link
+                        </button>
+                    </div>
+
+                    <!-- Invite link result -->
+                    <div id="inviteLinkBox" class="hidden mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                        <p class="text-xs font-semibold text-emerald-800 mb-2">Invite link created — share it with your team member:</p>
+                        <div class="flex items-center gap-2">
+                            <input id="inviteLinkInput" type="text" readonly class="flex-1 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none select-all">
+                            <button onclick="copyInviteLink()" class="flex-shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-800 transition-colors">
+                                <i data-lucide="copy" class="h-3.5 w-3.5"></i> Copy
+                            </button>
+                        </div>
+                        <p class="text-xs text-emerald-700 mt-2">Link expires in 7 days. Anyone with the link can join as the selected role.</p>
+                    </div>
+
+                    <!-- Pending invites -->
+                    <div id="pendingInvitesSection" class="mb-6 hidden">
+                        <h3 class="text-sm font-semibold text-slate-800 mb-3">Pending Invites</h3>
+                        <div id="pendingInvitesList" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Active collaborators -->
+                    <div id="collaboratorsSection" class="hidden">
+                        <h3 class="text-sm font-semibold text-slate-800 mb-3">Active Team Members</h3>
+                        <div id="collaboratorsList" class="space-y-2"></div>
+                    </div>
+
+                    <p id="teamEmptyMsg" class="text-sm text-slate-400 text-center py-2 hidden">No team members yet. Generate an invite link above.</p>
+                </div>
+
                 <!-- Danger Zone -->
                 <div class="bg-white rounded-3xl border border-red-200 shadow-sm p-6">
                     <h2 class="text-lg font-semibold text-red-900 mb-6">Danger Zone</h2>
@@ -701,6 +760,138 @@
                 if (btn) btn.disabled = false;
             }
         };
+
+        // ── Team / Invite ────────────────────────────────────────────────────────
+        var currentInviteUrl = '';
+
+        async function loadTeam() {
+            try {
+                const data = await LeasePilot.API.request('/invites');
+                const { invites, collaborators } = data;
+
+                // Pending invites
+                const pendingSection = document.getElementById('pendingInvitesSection');
+                const pendingList = document.getElementById('pendingInvitesList');
+                if (invites.length > 0) {
+                    pendingList.innerHTML = invites.map(inv => `
+                        <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
+                            <div>
+                                <p class="text-sm font-medium text-slate-800">${inv.invited_email || 'Anyone with link'} <span class="text-xs text-slate-400 font-normal">→ ${inv.property_name}</span></p>
+                                <p class="text-xs text-slate-400">Expires ${new Date(inv.expires_at).toLocaleDateString()}</p>
+                            </div>
+                            <button onclick="cancelInvite(${inv.id})" class="text-xs text-red-500 hover:text-red-700 px-3 py-1.5 border border-red-200 rounded-full transition-colors">Revoke</button>
+                        </div>
+                    `).join('');
+                    pendingSection.classList.remove('hidden');
+                } else {
+                    pendingSection.classList.add('hidden');
+                }
+
+                // Active collaborators
+                const collabSection = document.getElementById('collaboratorsSection');
+                const collabList = document.getElementById('collaboratorsList');
+                if (collaborators.length > 0) {
+                    collabList.innerHTML = collaborators.map(c => `
+                        <div class="flex items-center justify-between bg-white border border-slate-100 rounded-xl px-4 py-3">
+                            <div class="flex items-center gap-3">
+                                <div class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">${(c.user_name || c.user_email || '?')[0].toUpperCase()}</div>
+                                <div>
+                                    <p class="text-sm font-medium text-slate-800">${c.user_name || c.user_email}</p>
+                                    <p class="text-xs text-slate-400">${c.user_email} · ${c.property_name} · ${c.role}</p>
+                                </div>
+                            </div>
+                            <button onclick="removeCollaborator(${c.property_id},${c.user_id})" class="text-xs text-red-500 hover:text-red-700 px-3 py-1.5 border border-red-200 rounded-full transition-colors">Remove</button>
+                        </div>
+                    `).join('');
+                    collabSection.classList.remove('hidden');
+                } else {
+                    collabSection.classList.add('hidden');
+                }
+
+                const teamEmptyMsg = document.getElementById('teamEmptyMsg');
+                if (invites.length === 0 && collaborators.length === 0) {
+                    teamEmptyMsg.classList.remove('hidden');
+                } else {
+                    teamEmptyMsg.classList.add('hidden');
+                }
+                lucide.createIcons();
+            } catch (e) {
+                console.error('loadTeam error:', e);
+            }
+        }
+
+        async function loadPropertiesForInvite() {
+            try {
+                const props = await LeasePilot.API.request('/properties');
+                const sel = document.getElementById('invitePropertyId');
+                if (!sel) return;
+                props.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.name;
+                    sel.appendChild(opt);
+                });
+            } catch (e) {}
+        }
+
+        window.createInvite = async function() {
+            const propertyId = document.getElementById('invitePropertyId').value;
+            const email = document.getElementById('inviteEmail').value.trim();
+            const role = document.getElementById('inviteRole').value;
+            if (!propertyId) { alert('Please select a property.'); return; }
+
+            const btn = document.getElementById('createInviteBtn');
+            btn.disabled = true; btn.textContent = 'Generating…';
+            try {
+                const result = await LeasePilot.API.request('/invites', {
+                    method: 'POST',
+                    body: JSON.stringify({ property_id: propertyId, invited_email: email || undefined, role }),
+                });
+                currentInviteUrl = result.invite_url;
+                const box = document.getElementById('inviteLinkBox');
+                const input = document.getElementById('inviteLinkInput');
+                input.value = currentInviteUrl;
+                box.classList.remove('hidden');
+                input.select();
+                loadTeam();
+            } catch (e) {
+                alert('Failed to create invite: ' + (e.message || e));
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="link" class="h-4 w-4"></i> Generate Invite Link';
+            lucide.createIcons();
+        };
+
+        window.copyInviteLink = function() {
+            const input = document.getElementById('inviteLinkInput');
+            input.select();
+            navigator.clipboard.writeText(input.value).catch(() => {
+                document.execCommand('copy');
+            });
+            const btn = event.currentTarget;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.innerHTML = '<i data-lucide="copy" class="h-3.5 w-3.5"></i> Copy'; lucide.createIcons(); }, 2000);
+        };
+
+        window.cancelInvite = async function(inviteId) {
+            if (!confirm('Revoke this invite?')) return;
+            try {
+                await LeasePilot.API.request('/invites/' + inviteId, { method: 'DELETE' });
+                loadTeam();
+            } catch (e) { alert('Failed to revoke invite.'); }
+        };
+
+        window.removeCollaborator = async function(propertyId, userId) {
+            if (!confirm('Remove this team member from the property?')) return;
+            try {
+                await LeasePilot.API.request('/invites/collaborators/' + propertyId + '/' + userId, { method: 'DELETE' });
+                loadTeam();
+            } catch (e) { alert('Failed to remove collaborator.'); }
+        };
+
+        // Load team data on page load
+        loadPropertiesForInvite();
+        loadTeam();
 
         window.deleteAccount = async function() {
             if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) return;

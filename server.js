@@ -29,6 +29,7 @@ import applicationsRoutes from './routes/applications.js';
 import aiRoutes from './routes/ai.js';
 import stripeConnectRoutes from './routes/stripe-connect.js';
 import mortgageRoutes from './routes/mortgages.js';
+import inviteRoutes from './routes/invites.js';
 
 dotenv.config();
 
@@ -244,6 +245,7 @@ app.use('/api/applications', requirePool, applicationsRoutes);
 app.use('/api/ai', requirePool, aiRoutes);
 app.use('/api/stripe', requirePool, stripeConnectRoutes);
 app.use('/api/mortgages', requirePool, mortgageRoutes);
+app.use('/api/invites', requirePool, inviteRoutes);
 
 // 404 for unknown API routes
 app.use('/api', (req, res) => {
