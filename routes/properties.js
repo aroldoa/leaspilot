@@ -196,6 +196,28 @@ router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
   }
 });
 
+// PATCH /api/properties/:id/rent — update only the property-level rent
+router.patch('/:id/rent', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
+  const pool = req.app.locals.pool;
+  const propId = parseInt(req.params.id, 10);
+  const rent = parseFloat(req.body.rent);
+  if (isNaN(rent) || rent < 0) return res.status(400).json({ error: 'Invalid rent value' });
+  try {
+    const result = await pool.query(
+      `UPDATE properties SET rent = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2 AND (user_id = $3 OR EXISTS (
+         SELECT 1 FROM property_collaborators WHERE property_id = $2 AND user_id = $3
+       )) RETURNING id, rent`,
+      [rent, propId, req.userId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Property not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('PATCH /api/properties/:id/rent error:', err);
+    res.status(500).json({ error: 'Failed to update rent' });
+  }
+});
+
 // PATCH /api/properties/:id/units/:unitId — update rent for a single unit
 router.patch('/:id/units/:unitId', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;

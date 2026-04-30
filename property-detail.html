@@ -180,6 +180,15 @@ body { font-family: 'Inter', sans-serif; }
                              <div id="statProfitLoss" class="text-3xl font-medium tracking-tight text-slate-900">–</div>
                              <div class="mt-4 flex flex-col gap-2">
                                 <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-500">Monthly Rent</span>
+                                    <span class="flex items-center gap-1.5">
+                                        <span id="statRentDisplay" class="font-medium text-slate-900">–</span>
+                                        <button onclick="startEditRent()" id="editRentBtn" class="text-slate-300 hover:text-slate-600 transition-colors" title="Edit rent">
+                                            <i data-lucide="pencil" class="h-3 w-3"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between text-xs">
                                     <span class="text-slate-500">Income this month</span>
                                     <span id="statMonthlyIncome" class="font-medium text-slate-900">–</span>
                                 </div>
@@ -1612,6 +1621,74 @@ body { font-family: 'Inter', sans-serif; }
             if (incomeEl) incomeEl.textContent = monthlyIncome ? '$' + monthlyIncome.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}) : '–';
             const expEl = document.getElementById('statMonthlyExpenses');
             if (expEl) expEl.textContent = monthlyExpenses ? '-$' + monthlyExpenses.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}) : '–';
+
+            renderRentDisplay();
+        }
+
+        function renderRentDisplay() {
+            const el = document.getElementById('statRentDisplay');
+            if (!el) return;
+            const rent = parseFloat(currentProperty?.rent || 0);
+            el.textContent = rent > 0 ? '$' + rent.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + '/mo' : 'Set rent';
+            el.className = 'font-medium ' + (rent > 0 ? 'text-slate-900' : 'text-slate-400');
+            lucide.createIcons();
+        }
+
+        function startEditRent() {
+            const displayEl = document.getElementById('statRentDisplay');
+            const editBtn   = document.getElementById('editRentBtn');
+            if (!displayEl || !editBtn) return;
+
+            const currentRent = parseFloat(currentProperty?.rent || 0);
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.step = '0.01';
+            input.value = currentRent || '';
+            input.placeholder = '0.00';
+            input.className = 'w-24 rounded-lg border border-blue-300 px-2 py-1 text-xs text-right outline-none focus:ring-2 focus:ring-blue-200';
+
+            displayEl.replaceWith(input);
+            editBtn.classList.add('hidden');
+            input.focus();
+            input.select();
+
+            async function save() {
+                const rent = parseFloat(input.value);
+                if (isNaN(rent) || rent < 0) { restoreDisplay(); return; }
+                try {
+                    const result = await LeasePilot.API.request('/properties/' + currentProperty.id + '/rent', {
+                        method: 'PATCH',
+                        body: JSON.stringify({ rent }),
+                    });
+                    currentProperty.rent = result.rent;
+                    // Rebuild display span and restore
+                    const newSpan = document.createElement('span');
+                    newSpan.id = 'statRentDisplay';
+                    input.replaceWith(newSpan);
+                    editBtn.classList.remove('hidden');
+                    renderRentDisplay();
+                    updateStats();
+                    updateMortgageSummary();
+                } catch(e) {
+                    alert('Failed to save rent: ' + (e.message || e));
+                    restoreDisplay();
+                }
+            }
+
+            function restoreDisplay() {
+                const newSpan = document.createElement('span');
+                newSpan.id = 'statRentDisplay';
+                input.replaceWith(newSpan);
+                editBtn.classList.remove('hidden');
+                renderRentDisplay();
+            }
+
+            input.addEventListener('blur', save);
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') input.blur();
+                if (e.key === 'Escape') { input.removeEventListener('blur', save); restoreDisplay(); }
+            });
         }
 
         // Render units table (for Units tab)
