@@ -196,63 +196,52 @@
             </div>
           </div>
 
-                  <!-- Occupancy Card -->
-                  <div class="col-span-1 md:col-span-4 rounded-[2rem] bg-white p-8 shadow-sm border border-slate-100 flex flex-col justify-between">
-        <div>
+                  <!-- Right column: Occupancy + Profit stacked -->
+                  <div class="col-span-1 md:col-span-4 flex flex-col gap-6">
+
+                    <!-- Occupancy Card -->
+                    <div class="flex-1 rounded-[2rem] bg-white p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
+                      <div class="flex items-center justify-between">
+                        <div>
                           <h3 class="text-sm font-medium text-slate-500 mb-1">Occupancy Rate</h3>
                           <span id="dashOccupancy" class="text-3xl font-medium tracking-tight text-slate-900">—</span>
-          </div>
-
-                      <div class="relative mx-auto my-6 flex h-40 w-40 items-center justify-center">
-                          <!-- Circular Progress -->
+                        </div>
+                        <div class="relative flex h-20 w-20 items-center justify-center flex-shrink-0">
                           <svg class="h-full w-full -rotate-90 transform" viewBox="0 0 36 36">
-                              <path class="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2"></path>
-                              <path id="dashOccupancyRing" class="text-slate-900" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2"></path>
+                            <path class="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2"></path>
+                            <path id="dashOccupancyRing" class="text-slate-900" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2"></path>
                           </svg>
                           <div class="absolute flex flex-col items-center">
-                              <span class="text-xs text-slate-400">Target 95%</span>
-          </div>
-        </div>
+                            <span class="text-[10px] text-slate-400">95% target</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2 mt-4">
+                        <i data-lucide="users" class="h-4 w-4 text-slate-400"></i>
+                        <span class="text-xs text-slate-500"><span id="dashActiveTenants">—</span> active tenants</span>
+                      </div>
+                    </div>
 
-                      <div class="flex items-center justify-between">
-                          <div class="flex items-center gap-2">
-                              <i data-lucide="users" class="h-5 w-5 text-slate-400"></i>
-                              <span class="text-xs text-slate-500"><span id="dashActiveTenants">—</span> active tenants</span>
-            </div>
-          </div>
-          </div>
-
-                  <!-- Profit Chart -->
-                  <div class="col-span-1 md:col-span-12 bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 md:p-8">
-                    <div class="flex items-start justify-between mb-6">
+                    <!-- Monthly Profit Card -->
+                    <div class="flex-1 rounded-[2rem] bg-white p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
                       <div>
-                        <h2 class="text-lg font-semibold text-slate-900">Monthly Profit</h2>
-                        <p class="text-xs text-slate-400 mt-0.5">Rent income minus mortgage payments</p>
+                        <h3 class="text-sm font-medium text-slate-500 mb-1">Monthly Profit / Loss</h3>
+                        <span id="profitNet" class="text-3xl font-medium tracking-tight text-slate-900">–</span>
                       </div>
-                      <div class="flex items-center gap-6 text-right">
-                        <div>
-                          <p class="text-xs text-slate-400">Total Rent / mo</p>
-                          <p id="profitTotalRent" class="text-base font-semibold text-emerald-600">–</p>
+                      <div class="space-y-2 mt-4">
+                        <div class="flex items-center justify-between text-xs">
+                          <span class="text-slate-500">Total Rent</span>
+                          <span id="profitTotalRent" class="font-semibold text-emerald-600">–</span>
                         </div>
-                        <div>
-                          <p class="text-xs text-slate-400">Total Mortgage / mo</p>
-                          <p id="profitTotalMortgage" class="text-base font-semibold text-red-500">–</p>
-                        </div>
-                        <div>
-                          <p class="text-xs text-slate-400">Net Profit / mo</p>
-                          <p id="profitNet" class="text-xl font-bold text-slate-900">–</p>
+                        <div class="h-px bg-slate-100"></div>
+                        <div class="flex items-center justify-between text-xs">
+                          <span class="text-slate-500">Mortgage &amp; Expenses</span>
+                          <span id="profitTotalMortgage" class="font-semibold text-red-500">–</span>
                         </div>
                       </div>
                     </div>
-                    <div id="profitChart" class="flex items-end gap-3 h-48 w-full">
-                      <p class="text-sm text-slate-400 self-center w-full text-center">Loading profit data…</p>
-                    </div>
-                    <div class="flex items-center gap-5 mt-4 pt-4 border-t border-slate-100">
-                      <span class="flex items-center gap-1.5 text-xs text-slate-500"><span class="w-3 h-3 rounded-sm bg-emerald-500 inline-block"></span> Rent Income</span>
-                      <span class="flex items-center gap-1.5 text-xs text-slate-500"><span class="w-3 h-3 rounded-sm bg-red-400 inline-block"></span> Mortgage</span>
-                      <span class="flex items-center gap-1.5 text-xs text-slate-500"><span class="w-3 h-3 rounded-sm bg-slate-900 inline-block"></span> Net Profit</span>
-                    </div>
-                  </div>
+
+                  </div><!-- end right column -->
 
                   <!-- AI Actions Card -->
                   <div id="aiCard" class="col-span-1 md:col-span-12 rounded-[2rem] bg-slate-900 p-8 text-white shadow-lg overflow-hidden relative">
@@ -561,63 +550,31 @@
                           }
                         })();
 
-                        // Profit chart — rent income vs mortgage payments
+                        // Monthly Profit box — total rent minus total mortgage payments
                         (async function() {
                           try {
                             var mortgages = await LeasePilot.API.request('/mortgages');
-                            var totalMonthlyMortgage = mortgages.reduce(function(s, m) { return s + parseFloat(m.monthly_payment || 0) + parseFloat(m.escrow_amount || 0); }, 0);
-                            var totalMonthlyRent = props.reduce(function(s, p) { return s + parseFloat(p.rent || 0); }, 0);
-                            var netProfit = totalMonthlyRent - totalMonthlyMortgage;
+                            var totalMortgage = mortgages.reduce(function(s, m) {
+                              return s + parseFloat(m.monthly_payment || 0)
+                                       + parseFloat(m.monthly_tax || 0)
+                                       + parseFloat(m.monthly_insurance || 0)
+                                       + parseFloat(m.escrow_amount || 0);
+                            }, 0);
+                            var totalRent = props.reduce(function(s, p) { return s + parseFloat(p.rent || 0); }, 0);
+                            var net = totalRent - totalMortgage;
 
                             var rentEl = document.getElementById('profitTotalRent');
                             var mortEl = document.getElementById('profitTotalMortgage');
                             var netEl  = document.getElementById('profitNet');
-                            if (rentEl) rentEl.textContent = '$' + Math.round(totalMonthlyRent).toLocaleString();
-                            if (mortEl) mortEl.textContent = totalMonthlyMortgage > 0 ? '-$' + Math.round(totalMonthlyMortgage).toLocaleString() : '–';
+                            if (rentEl) rentEl.textContent = totalRent ? '$' + Math.round(totalRent).toLocaleString() : '–';
+                            if (mortEl) mortEl.textContent = totalMortgage ? '-$' + Math.round(totalMortgage).toLocaleString() : '–';
                             if (netEl) {
-                              netEl.textContent = (netProfit >= 0 ? '+' : '') + '$' + Math.round(netProfit).toLocaleString() + '/mo';
-                              netEl.className = 'text-xl font-bold ' + (netProfit >= 0 ? 'text-emerald-600' : 'text-red-500');
+                              netEl.textContent = totalRent || totalMortgage
+                                ? (net >= 0 ? '+' : '-') + '$' + Math.abs(Math.round(net)).toLocaleString() + '/mo'
+                                : '–';
+                              netEl.className = 'text-3xl font-medium tracking-tight ' + (net >= 0 ? 'text-emerald-600' : 'text-red-500');
                             }
-
-                            // Build 6-month profit bar chart
-                            var months6 = [];
-                            for (var i = 5; i >= 0; i--) {
-                              var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                              months6.push({ label: d.toLocaleString('en-US', { month: 'short' }), year: d.getFullYear(), month: d.getMonth() });
-                            }
-                            var monthlyData = months6.map(function(m) {
-                              var income = txns.filter(function(t) {
-                                if (t.type !== 'income') return false;
-                                var td = t.transaction_date ? new Date(t.transaction_date) : null;
-                                return td && td.getFullYear() === m.year && td.getMonth() === m.month;
-                              }).reduce(function(s, t) { return s + parseFloat(t.amount || 0); }, 0);
-                              var mortgage = totalMonthlyMortgage;
-                              return { label: m.label, income: income, mortgage: mortgage, profit: income - mortgage };
-                            });
-                            var maxVal = Math.max.apply(null, monthlyData.map(function(d) { return Math.max(d.income, d.mortgage, Math.abs(d.profit)); })) || 1;
-
-                            var chartEl = document.getElementById('profitChart');
-                            if (chartEl) {
-                              chartEl.innerHTML = monthlyData.map(function(d, i) {
-                                var incPct  = Math.max(Math.round(d.income / maxVal * 85), d.income > 0 ? 4 : 0);
-                                var mortPct = Math.max(Math.round(d.mortgage / maxVal * 85), d.mortgage > 0 ? 4 : 0);
-                                var profPct = Math.max(Math.round(Math.abs(d.profit) / maxVal * 85), d.profit !== 0 ? 4 : 0);
-                                var isCurrent = i === 5;
-                                var labelCls = isCurrent ? 'text-slate-900 font-semibold' : 'text-slate-400';
-                                return '<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group">'
-                                  + '<div class="w-full flex items-end justify-center gap-0.5 h-full">'
-                                  + '<div class="flex-1 rounded-t-lg bg-emerald-500 transition-all duration-700 relative" style="height:' + incPct + '%" title="Rent: $' + Math.round(d.income).toLocaleString() + '"></div>'
-                                  + '<div class="flex-1 rounded-t-lg bg-red-400 transition-all duration-700" style="height:' + mortPct + '%" title="Mortgage: $' + Math.round(d.mortgage).toLocaleString() + '"></div>'
-                                  + '<div class="flex-1 rounded-t-lg transition-all duration-700 ' + (d.profit >= 0 ? 'bg-slate-900' : 'bg-red-600') + '" style="height:' + profPct + '%" title="Profit: $' + Math.round(d.profit).toLocaleString() + '"></div>'
-                                  + '</div>'
-                                  + '<span class="text-[10px] font-medium ' + labelCls + '">' + d.label + '</span>'
-                                  + '</div>';
-                              }).join('');
-                            }
-                          } catch(e) {
-                            var chartEl = document.getElementById('profitChart');
-                            if (chartEl) chartEl.innerHTML = '<p class="text-sm text-slate-400 self-center w-full text-center">Add mortgage details to each property to see profit chart.</p>';
-                          }
+                          } catch(e) {}
                         })();
 
                         var vacant = props.filter(function(p) { return (p.status || '').toLowerCase() === 'vacant'; });
