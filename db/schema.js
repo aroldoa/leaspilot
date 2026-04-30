@@ -466,6 +466,7 @@ export async function initializeDatabase(pool) {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    await pool.query(`ALTER TABLE property_units ADD COLUMN IF NOT EXISTS rent DECIMAL(10,2) DEFAULT 0`);
     await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS loan_number VARCHAR(100)`);
     await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS monthly_tax DECIMAL(10,2) DEFAULT 0`);
     await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS monthly_insurance DECIMAL(10,2) DEFAULT 0`);

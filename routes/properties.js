@@ -77,11 +77,11 @@ router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
 
     const property = result.rows[0];
     const unitsResult = await pool.query(
-      `SELECT id, unit_label, display_order FROM property_units 
+      `SELECT id, unit_label, rent, display_order FROM property_units
        WHERE property_id = $1 ORDER BY display_order ASC, id ASC`,
       [req.params.id]
     );
-    property.units = unitsResult.rows.map(u => ({ id: u.id, unit_label: u.unit_label }));
+    property.units = unitsResult.rows.map(u => ({ id: u.id, unit_label: u.unit_label, rent: u.rent }));
     if (property.number_of_units == null) property.number_of_units = 1;
     else property.number_of_units = Math.max(1, parseInt(property.number_of_units, 10) || 1);
     res.json(property);
@@ -193,6 +193,33 @@ router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
   } catch (error) {
     console.error('Error updating property:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PATCH /api/properties/:id/units/:unitId — update rent for a single unit
+router.patch('/:id/units/:unitId', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
+  const pool = req.app.locals.pool;
+  const propId = parseInt(req.params.id, 10);
+  const unitId = parseInt(req.params.unitId, 10);
+  const rent = parseFloat(req.body.rent);
+  if (isNaN(rent) || rent < 0) return res.status(400).json({ error: 'Invalid rent value' });
+  try {
+    const own = await pool.query(
+      `SELECT id FROM properties WHERE id = $1 AND (user_id = $2 OR EXISTS (
+         SELECT 1 FROM property_collaborators WHERE property_id = $1 AND user_id = $2
+       ))`,
+      [propId, req.userId]
+    );
+    if (own.rows.length === 0) return res.status(404).json({ error: 'Property not found' });
+    const result = await pool.query(
+      `UPDATE property_units SET rent = $1 WHERE id = $2 AND property_id = $3 RETURNING id, unit_label, rent`,
+      [rent, unitId, propId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Unit not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('PATCH /api/properties/:id/units/:unitId error:', err);
+    res.status(500).json({ error: 'Failed to update unit rent' });
   }
 });
 
