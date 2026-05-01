@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
+import { getOwnerIds } from '../middleware/teamAccess.js';
 
 const router = express.Router();
 
@@ -11,12 +12,9 @@ router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req,
       `SELECT t.*, p.name as property_name
        FROM transactions t
        LEFT JOIN properties p ON t.property_id = p.id
-       WHERE t.user_id = $1
-          OR t.property_id IN (
-            SELECT p.id FROM properties p JOIN team_members tm ON tm.owner_user_id = p.user_id AND tm.member_user_id = $1
-          )
+       WHERE t.user_id = ANY($1::int[])
        ORDER BY t.transaction_date DESC, t.created_at DESC`,
-      [req.userId]
+      [await getOwnerIds(pool, req.userId)]
     );
     res.json(result.rows);
   } catch (error) {

@@ -5,6 +5,7 @@ import os from 'os';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
+import { getOwnerIds } from '../middleware/teamAccess.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const propertyDocsDir = process.env.VERCEL === '1' || __dirname.startsWith('/var/task')
@@ -43,13 +44,8 @@ router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req,
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
-      `SELECT DISTINCT p.* FROM properties p
-       WHERE p.user_id = $1
-       UNION
-       SELECT DISTINCT p.* FROM properties p
-       JOIN team_members tm ON tm.owner_user_id = p.user_id AND tm.member_user_id = $1
-       ORDER BY created_at DESC`,
-      [req.userId]
+      `SELECT * FROM properties WHERE user_id = ANY($1::int[]) ORDER BY created_at DESC`,
+      [await getOwnerIds(pool, req.userId)]
     );
     res.json(result.rows);
   } catch (error) {
@@ -62,13 +58,10 @@ router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req,
 router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
+    const ownerIds = await getOwnerIds(pool, req.userId);
     const result = await pool.query(
-      `SELECT * FROM properties WHERE id = $1 AND (
-         user_id = $2 OR EXISTS (
-           SELECT 1 FROM team_members WHERE owner_user_id = (SELECT user_id FROM properties WHERE id = $1) AND member_user_id = $2
-         )
-       )`,
-      [req.params.id, req.userId]
+      `SELECT * FROM properties WHERE id = $1 AND user_id = ANY($2::int[])`,
+      [req.params.id, ownerIds]
     );
 
     if (result.rows.length === 0) {
@@ -205,10 +198,8 @@ router.patch('/:id/rent', authenticateToken, requireRole('Portfolio Manager'), a
   try {
     const result = await pool.query(
       `UPDATE properties SET rent = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2 AND (user_id = $3 OR EXISTS (
-         SELECT 1 FROM team_members WHERE owner_user_id = (SELECT user_id FROM properties WHERE id = $2) AND member_user_id = $3
-       )) RETURNING id, rent`,
-      [rent, propId, req.userId]
+       WHERE id = $2 AND user_id = ANY($3::int[]) RETURNING id, rent`,
+      [rent, propId, await getOwnerIds(pool, req.userId)]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Property not found' });
     res.json(result.rows[0]);
@@ -227,10 +218,8 @@ router.patch('/:id/units/:unitId', authenticateToken, requireRole('Portfolio Man
   if (isNaN(rent) || rent < 0) return res.status(400).json({ error: 'Invalid rent value' });
   try {
     const own = await pool.query(
-      `SELECT id FROM properties WHERE id = $1 AND (user_id = $2 OR EXISTS (
-         SELECT 1 FROM team_members WHERE owner_user_id = (SELECT user_id FROM properties WHERE id = $1) AND member_user_id = $2
-       ))`,
-      [propId, req.userId]
+      `SELECT id FROM properties WHERE id = $1 AND user_id = ANY($2::int[])`,
+      [propId, await getOwnerIds(pool, req.userId)]
     );
     if (own.rows.length === 0) return res.status(404).json({ error: 'Property not found' });
     const result = await pool.query(

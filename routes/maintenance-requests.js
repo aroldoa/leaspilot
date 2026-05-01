@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 import { sendSms } from '../lib/twilio.js';
+import { getOwnerIds } from '../middleware/teamAccess.js';
 
 const router = express.Router();
 
@@ -15,18 +16,17 @@ router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req,
   try {
     const pool = req.app.locals.pool;
     const propertyId = req.query.property_id ? parseInt(req.query.property_id, 10) : null;
+    const ownerIds = await getOwnerIds(pool, req.userId);
     const propFilter = propertyId && Number.isInteger(propertyId) ? ' AND p.id = $2' : '';
     const query = `
       SELECT ${COLS}
       FROM maintenance_requests mr
-      JOIN properties p ON p.id = mr.property_id AND (p.user_id = $1 OR EXISTS (
-        SELECT 1 FROM team_members WHERE owner_user_id = p.user_id AND member_user_id = $1
-      ))${propFilter}
+      JOIN properties p ON p.id = mr.property_id AND p.user_id = ANY($1::int[])${propFilter}
       LEFT JOIN tenants t ON t.id = mr.tenant_id
       LEFT JOIN contractors c ON c.id = mr.assigned_contractor_id
       ${ORDER}
     `;
-    const params = propertyId && Number.isInteger(propertyId) ? [req.userId, propertyId] : [req.userId];
+    const params = propertyId && Number.isInteger(propertyId) ? [ownerIds, propertyId] : [ownerIds];
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (error) {

@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import { getOwnerIds } from '../middleware/teamAccess.js';
 
 const router = express.Router();
 
@@ -29,10 +30,8 @@ router.get('/:propertyId', authenticateToken, async (req, res) => {
   try {
     // Verify ownership
     const own = await pool.query(
-      `SELECT id FROM properties WHERE id = $1 AND (user_id = $2 OR EXISTS (
-         SELECT 1 FROM team_members WHERE owner_user_id = (SELECT user_id FROM properties WHERE id = $1) AND member_user_id = $2
-       ))`,
-      [propId, req.userId]
+      `SELECT id FROM properties WHERE id = $1 AND user_id = ANY($2::int[])`,
+      [propId, await getOwnerIds(pool, req.userId)]
     );
     if (own.rows.length === 0) return res.status(404).json({ error: 'Property not found' });
 
