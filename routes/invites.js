@@ -4,27 +4,20 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// POST /api/invites — owner creates an invite link for a property
+// POST /api/invites — create an invite (grants access to ALL of the owner's properties)
 router.post('/', authenticateToken, async (req, res) => {
   const pool = req.app.locals.pool;
-  const { property_id, invited_email, role = 'manager' } = req.body;
-  if (!property_id) return res.status(400).json({ error: 'property_id is required' });
+  const { invited_email, role = 'manager' } = req.body;
 
   try {
-    const own = await pool.query(
-      `SELECT id FROM properties WHERE id = $1 AND user_id = $2`,
-      [property_id, req.userId]
-    );
-    if (own.rows.length === 0) return res.status(404).json({ error: 'Property not found' });
-
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     const result = await pool.query(`
       INSERT INTO property_invites (token, property_id, invited_email, role, invited_by, expires_at)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      VALUES ($1, NULL, $2, $3, $4, $5)
       RETURNING *
-    `, [token, property_id, invited_email?.trim() || null, role, req.userId, expiresAt]);
+    `, [token, invited_email?.trim() || null, role, req.userId, expiresAt]);
 
     const origin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
     const inviteUrl = `${origin}/accept-invite.html?token=${token}`;
@@ -35,31 +28,28 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/invites — list pending invites + active collaborators for owned properties
+// GET /api/invites — list pending invites + active team members
 router.get('/', authenticateToken, async (req, res) => {
   const pool = req.app.locals.pool;
   try {
-    const [invites, collabs] = await Promise.all([
+    const [invites, members] = await Promise.all([
       pool.query(`
-        SELECT pi.id, pi.invited_email, pi.role, pi.expires_at, pi.created_at,
-               p.id as property_id, p.name as property_name
-        FROM property_invites pi
-        JOIN properties p ON p.id = pi.property_id
-        WHERE p.user_id = $1 AND pi.accepted_at IS NULL AND pi.expires_at > NOW()
-        ORDER BY pi.created_at DESC
+        SELECT id, invited_email, role, expires_at, created_at
+        FROM property_invites
+        WHERE invited_by = $1 AND property_id IS NULL
+          AND accepted_at IS NULL AND expires_at > NOW()
+        ORDER BY created_at DESC
       `, [req.userId]),
       pool.query(`
-        SELECT pc.id, pc.role, pc.created_at,
-               p.id as property_id, p.name as property_name,
+        SELECT tm.id, tm.role, tm.created_at,
                u.id as user_id, u.name as user_name, u.email as user_email
-        FROM property_collaborators pc
-        JOIN properties p ON p.id = pc.property_id
-        JOIN users u ON u.id = pc.user_id
-        WHERE p.user_id = $1
-        ORDER BY pc.created_at DESC
+        FROM team_members tm
+        JOIN users u ON u.id = tm.member_user_id
+        WHERE tm.owner_user_id = $1
+        ORDER BY tm.created_at DESC
       `, [req.userId]),
     ]);
-    res.json({ invites: invites.rows, collaborators: collabs.rows });
+    res.json({ invites: invites.rows, collaborators: members.rows });
   } catch (err) {
     console.error('GET /api/invites error:', err);
     res.status(500).json({ error: 'Failed to load invites' });
@@ -70,13 +60,11 @@ router.get('/', authenticateToken, async (req, res) => {
 router.delete('/:id', authenticateToken, async (req, res) => {
   const pool = req.app.locals.pool;
   try {
-    const check = await pool.query(`
-      SELECT pi.id FROM property_invites pi
-      JOIN properties p ON p.id = pi.property_id AND p.user_id = $1
-      WHERE pi.id = $2
-    `, [req.userId, req.params.id]);
+    const check = await pool.query(
+      `SELECT id FROM property_invites WHERE id = $1 AND invited_by = $2`,
+      [req.params.id, req.userId]
+    );
     if (check.rows.length === 0) return res.status(404).json({ error: 'Invite not found' });
-
     await pool.query(`DELETE FROM property_invites WHERE id = $1`, [req.params.id]);
     res.json({ success: true });
   } catch (err) {
@@ -85,24 +73,19 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// DELETE /api/invites/collaborators/:propertyId/:userId — remove a collaborator
-router.delete('/collaborators/:propertyId/:userId', authenticateToken, async (req, res) => {
+// DELETE /api/invites/members/:memberId — remove a team member
+router.delete('/members/:memberId', authenticateToken, async (req, res) => {
   const pool = req.app.locals.pool;
   try {
-    const own = await pool.query(
-      `SELECT id FROM properties WHERE id = $1 AND user_id = $2`,
-      [req.params.propertyId, req.userId]
+    const result = await pool.query(
+      `DELETE FROM team_members WHERE owner_user_id = $1 AND member_user_id = $2`,
+      [req.userId, req.params.memberId]
     );
-    if (own.rows.length === 0) return res.status(404).json({ error: 'Property not found' });
-
-    await pool.query(
-      `DELETE FROM property_collaborators WHERE property_id = $1 AND user_id = $2`,
-      [req.params.propertyId, req.params.userId]
-    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Team member not found' });
     res.json({ success: true });
   } catch (err) {
-    console.error('DELETE /api/invites/collaborators error:', err);
-    res.status(500).json({ error: 'Failed to remove collaborator' });
+    console.error('DELETE /api/invites/members/:memberId error:', err);
+    res.status(500).json({ error: 'Failed to remove team member' });
   }
 });
 
@@ -112,10 +95,8 @@ router.get('/accept/:token', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT pi.role, pi.expires_at, pi.invited_email,
-             p.name as property_name, p.address as property_address,
-             u.name as invited_by_name
+             u.name as invited_by_name, u.email as invited_by_email
       FROM property_invites pi
-      JOIN properties p ON p.id = pi.property_id
       JOIN users u ON u.id = pi.invited_by
       WHERE pi.token = $1 AND pi.expires_at > NOW() AND pi.accepted_at IS NULL
     `, [req.params.token]);
@@ -128,7 +109,7 @@ router.get('/accept/:token', async (req, res) => {
   }
 });
 
-// POST /api/invites/accept/:token — authenticated user accepts the invite
+// POST /api/invites/accept/:token — authenticated user accepts invite
 router.post('/accept/:token', authenticateToken, async (req, res) => {
   const pool = req.app.locals.pool;
   try {
@@ -140,26 +121,20 @@ router.post('/accept/:token', authenticateToken, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Invite not found or expired' });
     const inv = result.rows[0];
 
-    // Don't allow the owner to accept their own invite
-    const isOwner = await pool.query(
-      `SELECT id FROM properties WHERE id = $1 AND user_id = $2`,
-      [inv.property_id, req.userId]
-    );
-    if (isOwner.rows.length > 0) return res.status(400).json({ error: 'You already own this property' });
+    if (inv.invited_by === req.userId) return res.status(400).json({ error: 'You cannot accept your own invite' });
 
-    // Upsert collaborator
     await pool.query(`
-      INSERT INTO property_collaborators (property_id, user_id, role, invited_by)
+      INSERT INTO team_members (owner_user_id, member_user_id, role, invited_by)
       VALUES ($1, $2, $3, $4)
-      ON CONFLICT (property_id, user_id) DO NOTHING
-    `, [inv.property_id, req.userId, inv.role, inv.invited_by]);
+      ON CONFLICT (owner_user_id, member_user_id) DO NOTHING
+    `, [inv.invited_by, req.userId, inv.role, inv.invited_by]);
 
     await pool.query(
       `UPDATE property_invites SET accepted_at = NOW(), accepted_by_user_id = $1 WHERE id = $2`,
       [req.userId, inv.id]
     );
 
-    res.json({ success: true, property_id: inv.property_id });
+    res.json({ success: true });
   } catch (err) {
     console.error('POST /api/invites/accept/:token error:', err);
     res.status(500).json({ error: 'Failed to accept invite' });

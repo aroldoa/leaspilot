@@ -30,7 +30,7 @@ router.get('/:propertyId', authenticateToken, async (req, res) => {
     // Verify ownership
     const own = await pool.query(
       `SELECT id FROM properties WHERE id = $1 AND (user_id = $2 OR EXISTS (
-         SELECT 1 FROM property_collaborators WHERE property_id = $1 AND user_id = $2
+         SELECT 1 FROM team_members WHERE owner_user_id = (SELECT user_id FROM properties WHERE id = $1) AND member_user_id = $2
        ))`,
       [propId, req.userId]
     );

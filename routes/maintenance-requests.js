@@ -20,7 +20,7 @@ router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req,
       SELECT ${COLS}
       FROM maintenance_requests mr
       JOIN properties p ON p.id = mr.property_id AND (p.user_id = $1 OR EXISTS (
-        SELECT 1 FROM property_collaborators WHERE property_id = p.id AND user_id = $1
+        SELECT 1 FROM team_members WHERE owner_user_id = p.user_id AND member_user_id = $1
       ))${propFilter}
       LEFT JOIN tenants t ON t.id = mr.tenant_id
       LEFT JOIN contractors c ON c.id = mr.assigned_contractor_id

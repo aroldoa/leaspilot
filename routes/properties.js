@@ -47,7 +47,7 @@ router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req,
        WHERE p.user_id = $1
        UNION
        SELECT DISTINCT p.* FROM properties p
-       JOIN property_collaborators pc ON pc.property_id = p.id AND pc.user_id = $1
+       JOIN team_members tm ON tm.owner_user_id = p.user_id AND tm.member_user_id = $1
        ORDER BY created_at DESC`,
       [req.userId]
     );
@@ -65,7 +65,7 @@ router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
     const result = await pool.query(
       `SELECT * FROM properties WHERE id = $1 AND (
          user_id = $2 OR EXISTS (
-           SELECT 1 FROM property_collaborators WHERE property_id = $1 AND user_id = $2
+           SELECT 1 FROM team_members WHERE owner_user_id = (SELECT user_id FROM properties WHERE id = $1) AND member_user_id = $2
          )
        )`,
       [req.params.id, req.userId]
@@ -206,7 +206,7 @@ router.patch('/:id/rent', authenticateToken, requireRole('Portfolio Manager'), a
     const result = await pool.query(
       `UPDATE properties SET rent = $1, updated_at = CURRENT_TIMESTAMP
        WHERE id = $2 AND (user_id = $3 OR EXISTS (
-         SELECT 1 FROM property_collaborators WHERE property_id = $2 AND user_id = $3
+         SELECT 1 FROM team_members WHERE owner_user_id = (SELECT user_id FROM properties WHERE id = $2) AND member_user_id = $3
        )) RETURNING id, rent`,
       [rent, propId, req.userId]
     );
@@ -228,7 +228,7 @@ router.patch('/:id/units/:unitId', authenticateToken, requireRole('Portfolio Man
   try {
     const own = await pool.query(
       `SELECT id FROM properties WHERE id = $1 AND (user_id = $2 OR EXISTS (
-         SELECT 1 FROM property_collaborators WHERE property_id = $1 AND user_id = $2
+         SELECT 1 FROM team_members WHERE owner_user_id = (SELECT user_id FROM properties WHERE id = $1) AND member_user_id = $2
        ))`,
       [propId, req.userId]
     );

@@ -353,18 +353,12 @@
                 <!-- Team -->
                 <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
                     <h2 class="text-lg font-semibold text-slate-900 mb-1">Team</h2>
-                    <p class="text-sm text-slate-500 mb-6">Invite a property manager to help manage one of your properties. They'll get a link to accept.</p>
+                    <p class="text-sm text-slate-500 mb-6">Invite someone to help manage all of your properties. They'll see everything you see.</p>
 
                     <!-- Invite form -->
                     <div class="bg-slate-50 rounded-2xl p-5 mb-6">
-                        <h3 class="text-sm font-semibold text-slate-800 mb-4">Invite someone</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">Property</label>
-                                <select id="invitePropertyId" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-slate-400 bg-white">
-                                    <option value="">Select property…</option>
-                                </select>
-                            </div>
+                        <h3 class="text-sm font-semibold text-slate-800 mb-4">Invite a team member</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                             <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">Email (optional)</label>
                                 <input id="inviteEmail" type="email" placeholder="manager@email.com" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-slate-400">
@@ -391,7 +385,7 @@
                                 <i data-lucide="copy" class="h-3.5 w-3.5"></i> Copy
                             </button>
                         </div>
-                        <p class="text-xs text-emerald-700 mt-2">Link expires in 7 days. Anyone with the link can join as the selected role.</p>
+                        <p class="text-xs text-emerald-700 mt-2">Link expires in 7 days. The invited person will have access to all your properties.</p>
                     </div>
 
                     <!-- Pending invites -->
@@ -400,7 +394,7 @@
                         <div id="pendingInvitesList" class="space-y-2"></div>
                     </div>
 
-                    <!-- Active collaborators -->
+                    <!-- Active team members -->
                     <div id="collaboratorsSection" class="hidden">
                         <h3 class="text-sm font-semibold text-slate-800 mb-3">Active Team Members</h3>
                         <div id="collaboratorsList" class="space-y-2"></div>
@@ -776,8 +770,8 @@
                     pendingList.innerHTML = invites.map(inv => `
                         <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
                             <div>
-                                <p class="text-sm font-medium text-slate-800">${inv.invited_email || 'Anyone with link'} <span class="text-xs text-slate-400 font-normal">→ ${inv.property_name}</span></p>
-                                <p class="text-xs text-slate-400">Expires ${new Date(inv.expires_at).toLocaleDateString()}</p>
+                                <p class="text-sm font-medium text-slate-800">${inv.invited_email || 'Anyone with link'}</p>
+                                <p class="text-xs text-slate-400">${inv.role} · Expires ${new Date(inv.expires_at).toLocaleDateString()}</p>
                             </div>
                             <button onclick="cancelInvite(${inv.id})" class="text-xs text-red-500 hover:text-red-700 px-3 py-1.5 border border-red-200 rounded-full transition-colors">Revoke</button>
                         </div>
@@ -787,7 +781,7 @@
                     pendingSection.classList.add('hidden');
                 }
 
-                // Active collaborators
+                // Active team members
                 const collabSection = document.getElementById('collaboratorsSection');
                 const collabList = document.getElementById('collaboratorsList');
                 if (collaborators.length > 0) {
@@ -797,10 +791,10 @@
                                 <div class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">${(c.user_name || c.user_email || '?')[0].toUpperCase()}</div>
                                 <div>
                                     <p class="text-sm font-medium text-slate-800">${c.user_name || c.user_email}</p>
-                                    <p class="text-xs text-slate-400">${c.user_email} · ${c.property_name} · ${c.role}</p>
+                                    <p class="text-xs text-slate-400">${c.user_email} · ${c.role} · All properties</p>
                                 </div>
                             </div>
-                            <button onclick="removeCollaborator(${c.property_id},${c.user_id})" class="text-xs text-red-500 hover:text-red-700 px-3 py-1.5 border border-red-200 rounded-full transition-colors">Remove</button>
+                            <button onclick="removeMember(${c.user_id})" class="text-xs text-red-500 hover:text-red-700 px-3 py-1.5 border border-red-200 rounded-full transition-colors">Remove</button>
                         </div>
                     `).join('');
                     collabSection.classList.remove('hidden');
@@ -820,32 +814,16 @@
             }
         }
 
-        async function loadPropertiesForInvite() {
-            try {
-                const props = await LeasePilot.API.request('/properties');
-                const sel = document.getElementById('invitePropertyId');
-                if (!sel) return;
-                props.forEach(p => {
-                    const opt = document.createElement('option');
-                    opt.value = p.id;
-                    opt.textContent = p.name;
-                    sel.appendChild(opt);
-                });
-            } catch (e) {}
-        }
-
         window.createInvite = async function() {
-            const propertyId = document.getElementById('invitePropertyId').value;
             const email = document.getElementById('inviteEmail').value.trim();
             const role = document.getElementById('inviteRole').value;
-            if (!propertyId) { alert('Please select a property.'); return; }
 
             const btn = document.getElementById('createInviteBtn');
             btn.disabled = true; btn.textContent = 'Generating…';
             try {
                 const result = await LeasePilot.API.request('/invites', {
                     method: 'POST',
-                    body: JSON.stringify({ property_id: propertyId, invited_email: email || undefined, role }),
+                    body: JSON.stringify({ invited_email: email || undefined, role }),
                 });
                 currentInviteUrl = result.invite_url;
                 const box = document.getElementById('inviteLinkBox');
@@ -881,16 +859,15 @@
             } catch (e) { alert('Failed to revoke invite.'); }
         };
 
-        window.removeCollaborator = async function(propertyId, userId) {
-            if (!confirm('Remove this team member from the property?')) return;
+        window.removeMember = async function(userId) {
+            if (!confirm('Remove this team member? They will lose access to all your properties.')) return;
             try {
-                await LeasePilot.API.request('/invites/collaborators/' + propertyId + '/' + userId, { method: 'DELETE' });
+                await LeasePilot.API.request('/invites/members/' + userId, { method: 'DELETE' });
                 loadTeam();
-            } catch (e) { alert('Failed to remove collaborator.'); }
+            } catch (e) { alert('Failed to remove team member.'); }
         };
 
         // Load team data on page load
-        loadPropertiesForInvite();
         loadTeam();
 
         window.deleteAccount = async function() {

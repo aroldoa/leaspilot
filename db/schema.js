@@ -471,6 +471,19 @@ export async function initializeDatabase(pool) {
     await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS monthly_tax DECIMAL(10,2) DEFAULT 0`);
     await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS monthly_insurance DECIMAL(10,2) DEFAULT 0`);
 
+    // Team: user-level team membership (member can access all owner's properties)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS team_members (
+        id SERIAL PRIMARY KEY,
+        owner_user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        member_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role           VARCHAR(50) DEFAULT 'manager',
+        invited_by     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(owner_user_id, member_user_id)
+      )
+    `);
+
     // Team: invite tokens for property collaboration
     await pool.query(`
       CREATE TABLE IF NOT EXISTS property_invites (

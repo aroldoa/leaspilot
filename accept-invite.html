@@ -46,8 +46,8 @@
 
       <div class="bg-slate-50 rounded-2xl p-4 mb-6 space-y-3">
         <div class="flex items-center justify-between">
-          <span class="text-xs text-slate-500">Property</span>
-          <span id="invitePropertyName" class="text-sm font-semibold text-slate-900"></span>
+          <span class="text-xs text-slate-500">Access</span>
+          <span class="text-sm font-semibold text-slate-900">All properties</span>
         </div>
         <div class="flex items-center justify-between">
           <span class="text-xs text-slate-500">Role</span>
@@ -146,7 +146,7 @@
         document.getElementById('inviteRole').textContent = inviteData.role === 'manager' ? 'Property Manager' : inviteData.role;
         document.getElementById('inviteExpires').textContent = new Date(inviteData.expires_at).toLocaleDateString();
         document.getElementById('inviteSubtitle').textContent =
-          inviteData.invited_by_name + ' has invited you to help manage a property on LeasePilot AI.';
+          inviteData.invited_by_name + ' has invited you to help manage their properties on LeasePilot AI.';
 
         // Check if already logged in
         const stored = localStorage.getItem('user');
