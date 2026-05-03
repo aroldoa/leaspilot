@@ -588,16 +588,88 @@ body { font-family: 'Inter', sans-serif; }
                 </div>
 
                 <!-- AI Insights Tab -->
-                <div id="aiTab" class="tab-content hidden space-y-6">
+                <div id="aiTab" class="tab-content hidden space-y-5">
 
-                  <!-- Loading state -->
-                  <div id="aiTabLoading" class="flex items-center gap-3 py-12 justify-center text-slate-400">
-                    <div class="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span class="text-sm">Running AI analysis…</span>
+                  <!-- Analysis Tool Buttons -->
+                  <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">AI Analysis Tools</p>
+                    <div class="grid grid-cols-2 gap-2.5">
+
+                      <button onclick="runPropertyAnalysis('market-rent')" data-analysis-btn="market-rent"
+                        class="ai-analysis-btn flex items-start gap-3 p-4 rounded-2xl border-2 border-slate-100 bg-white text-left hover:border-violet-300 hover:bg-violet-50 transition-all">
+                        <div class="w-8 h-8 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                          <i data-lucide="trending-up" class="h-4 w-4 text-violet-600"></i>
+                        </div>
+                        <div>
+                          <p class="text-sm font-semibold text-slate-900 leading-tight">Market Rent</p>
+                          <p class="text-xs text-slate-500 mt-0.5">Rent optimization</p>
+                        </div>
+                      </button>
+
+                      <button onclick="runPropertyAnalysis('property-value')" data-analysis-btn="property-value"
+                        class="ai-analysis-btn flex items-start gap-3 p-4 rounded-2xl border-2 border-slate-100 bg-white text-left hover:border-blue-300 hover:bg-blue-50 transition-all">
+                        <div class="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                          <i data-lucide="landmark" class="h-4 w-4 text-blue-600"></i>
+                        </div>
+                        <div>
+                          <p class="text-sm font-semibold text-slate-900 leading-tight">Property Value</p>
+                          <p class="text-xs text-slate-500 mt-0.5">Estimate &amp; equity</p>
+                        </div>
+                      </button>
+
+                      <button onclick="runPropertyAnalysis('expense-leaks')" data-analysis-btn="expense-leaks"
+                        class="ai-analysis-btn flex items-start gap-3 p-4 rounded-2xl border-2 border-slate-100 bg-white text-left hover:border-amber-300 hover:bg-amber-50 transition-all">
+                        <div class="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                          <i data-lucide="search" class="h-4 w-4 text-amber-600"></i>
+                        </div>
+                        <div>
+                          <p class="text-sm font-semibold text-slate-900 leading-tight">Expense Leaks</p>
+                          <p class="text-xs text-slate-500 mt-0.5">Cost detection</p>
+                        </div>
+                      </button>
+
+                      <button onclick="runPropertyAnalysis('tenant-risk')" data-analysis-btn="tenant-risk"
+                        class="ai-analysis-btn flex items-start gap-3 p-4 rounded-2xl border-2 border-slate-100 bg-white text-left hover:border-rose-300 hover:bg-rose-50 transition-all">
+                        <div class="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0">
+                          <i data-lucide="shield-check" class="h-4 w-4 text-rose-600"></i>
+                        </div>
+                        <div>
+                          <p class="text-sm font-semibold text-slate-900 leading-tight">Tenant Risk</p>
+                          <p class="text-xs text-slate-500 mt-0.5">Risk scoring</p>
+                        </div>
+                      </button>
+
+                      <button onclick="runPropertyAnalysis('cashflow')" data-analysis-btn="cashflow"
+                        class="ai-analysis-btn col-span-2 flex items-center gap-3 p-4 rounded-2xl border-2 border-slate-100 bg-white text-left hover:border-emerald-300 hover:bg-emerald-50 transition-all">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                          <i data-lucide="bar-chart-2" class="h-4 w-4 text-emerald-600"></i>
+                        </div>
+                        <div>
+                          <p class="text-sm font-semibold text-slate-900 leading-tight">Cash Flow Prediction</p>
+                          <p class="text-xs text-slate-500 mt-0.5">Future income &amp; risk forecast</p>
+                        </div>
+                      </button>
+
+                    </div>
                   </div>
 
-                  <!-- Content (shown after load) -->
-                  <div id="aiTabContent" class="hidden space-y-6">
+                  <!-- Analysis Result Panel -->
+                  <div id="aiAnalysisResult" class="hidden">
+                    <div id="aiAnalysisLoading" class="hidden flex items-center gap-3 py-6 justify-center text-slate-400">
+                      <div class="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span class="text-sm">Running analysis…</span>
+                    </div>
+                    <div id="aiAnalysisContent" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6"></div>
+                  </div>
+
+                  <!-- Overview loading state -->
+                  <div id="aiTabLoading" class="flex items-center gap-3 py-8 justify-center text-slate-400">
+                    <div class="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-sm">Loading overview…</span>
+                  </div>
+
+                  <!-- Overview content (shown after auto-load) -->
+                  <div id="aiTabContent" class="hidden space-y-5">
 
                     <!-- Health + Analysis -->
                     <div class="rounded-[2rem] bg-slate-900 text-white p-8 relative overflow-hidden">
@@ -605,7 +677,7 @@ body { font-family: 'Inter', sans-serif; }
                       <div class="relative z-10">
                         <div class="flex items-start justify-between mb-4">
                           <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
-                            <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>AI Analysis
+                            <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>Overview
                           </span>
                           <div class="flex items-center gap-2">
                             <span class="text-xs text-slate-400">Health Score</span>
@@ -629,7 +701,7 @@ body { font-family: 'Inter', sans-serif; }
                       <div id="aiSuggestions" class="space-y-3"></div>
                     </div>
 
-                    <!-- Maintenance with AI -->
+                    <!-- Maintenance -->
                     <div class="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm">
                       <div class="flex items-center gap-3 mb-4">
                         <div class="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center">
@@ -640,7 +712,7 @@ body { font-family: 'Inter', sans-serif; }
                       <div id="aiMaintList" class="space-y-2"></div>
                     </div>
 
-                    <!-- Applications with AI -->
+                    <!-- Applications -->
                     <div class="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm">
                       <div class="flex items-center gap-3 mb-4">
                         <div class="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
@@ -972,6 +1044,137 @@ body { font-family: 'Inter', sans-serif; }
           } catch(e) {
             document.getElementById('aiTabLoading').innerHTML = '<p class="text-sm text-red-500 py-8 text-center">Failed to load AI insights.</p>';
           }
+        }
+
+        // ── On-demand AI analysis buttons ─────────────────────────────────────
+        async function runPropertyAnalysis(type) {
+          const propId = getPropertyId();
+          if (!propId) return;
+
+          // Highlight active button
+          document.querySelectorAll('.ai-analysis-btn').forEach(btn => {
+            btn.classList.remove('border-violet-400', 'bg-violet-50', 'border-blue-400', 'bg-blue-50',
+              'border-amber-400', 'bg-amber-50', 'border-rose-400', 'bg-rose-50',
+              'border-emerald-400', 'bg-emerald-50');
+          });
+          const colorMap = { 'market-rent': 'violet', 'property-value': 'blue', 'expense-leaks': 'amber', 'tenant-risk': 'rose', 'cashflow': 'emerald' };
+          const activeBtn = document.querySelector('[data-analysis-btn="' + type + '"]');
+          const col = colorMap[type] || 'violet';
+          if (activeBtn) activeBtn.classList.add('border-' + col + '-400', 'bg-' + col + '-50');
+
+          const resultEl = document.getElementById('aiAnalysisResult');
+          const loadingEl = document.getElementById('aiAnalysisLoading');
+          const contentEl = document.getElementById('aiAnalysisContent');
+
+          resultEl.classList.remove('hidden');
+          loadingEl.classList.remove('hidden');
+          contentEl.classList.add('hidden');
+          contentEl.innerHTML = '';
+          resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+          try {
+            const data = await LeasePilot.API.request('/ai/property-analysis/' + propId + '/' + type, { method: 'POST' });
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+            contentEl.innerHTML = renderAnalysisResult(type, data);
+            lucide.createIcons();
+          } catch (e) {
+            loadingEl.classList.add('hidden');
+            contentEl.classList.remove('hidden');
+            contentEl.innerHTML = '<p class="text-sm text-red-500 text-center py-4">Analysis failed. Please try again.</p>';
+          }
+        }
+
+        function renderAnalysisResult(type, data) {
+          const cfgMap = {
+            'market-rent':    { icon: 'trending-up',  color: 'violet',  label: 'Market Rent Analysis' },
+            'property-value': { icon: 'landmark',      color: 'blue',    label: 'Property Value Estimate' },
+            'expense-leaks':  { icon: 'search',        color: 'amber',   label: 'Expense Leak Detection' },
+            'tenant-risk':    { icon: 'shield-check',  color: 'rose',    label: 'Tenant Risk Scoring' },
+            'cashflow':       { icon: 'bar-chart-2',   color: 'emerald', label: 'Cash Flow Prediction' },
+          };
+          const cfg = cfgMap[type] || cfgMap['cashflow'];
+          const src = data.source === 'ai' ? 'Powered by AI' : 'Rule-based estimate';
+
+          let metrics = '', details = '';
+
+          if (type === 'market-rent') {
+            const actionLabel = data.action === 'raise' ? '▲ Consider raising rent' : data.action === 'reduce' ? '▼ Consider reducing rent' : '→ Hold current rent';
+            const actionColor = data.action === 'raise' ? 'text-emerald-700' : data.action === 'reduce' ? 'text-red-600' : 'text-slate-600';
+            metrics = '<div class="grid grid-cols-2 gap-2 mb-4">'
+              + '<div class="bg-slate-50 rounded-xl p-3 text-center"><p class="text-xs text-slate-500 mb-1">Suggested Range</p><p class="text-sm font-semibold text-slate-900">$' + (data.suggested_rent_min||0).toLocaleString() + ' – $' + (data.suggested_rent_max||0).toLocaleString() + '/mo</p></div>'
+              + '<div class="bg-slate-50 rounded-xl p-3 text-center"><p class="text-xs text-slate-500 mb-1">Confidence</p><p class="text-sm font-semibold text-slate-900 capitalize">' + esc(data.confidence||'—') + '</p></div>'
+              + '</div>'
+              + '<p class="text-xs font-semibold ' + actionColor + ' mb-2">' + actionLabel + '</p>';
+            if (data.factors?.length) {
+              details = '<div class="flex flex-wrap gap-1.5 mt-3">' + data.factors.map(f => '<span class="px-2 py-0.5 rounded-full bg-slate-100 text-xs text-slate-600">' + esc(f) + '</span>').join('') + '</div>';
+            }
+
+          } else if (type === 'property-value') {
+            const mid = ((data.estimated_value_low||0) + (data.estimated_value_high||0)) / 2;
+            const equity = data.loan_amount ? Math.round(mid - data.loan_amount) : null;
+            metrics = '<div class="grid grid-cols-2 gap-2 mb-4">'
+              + '<div class="bg-slate-50 rounded-xl p-3 text-center col-span-2"><p class="text-xs text-slate-500 mb-1">Estimated Value Range</p><p class="text-base font-bold text-slate-900">$' + (data.estimated_value_low||0).toLocaleString() + ' – $' + (data.estimated_value_high||0).toLocaleString() + '</p></div>'
+              + (data.estimated_cap_rate != null ? '<div class="bg-slate-50 rounded-xl p-3 text-center"><p class="text-xs text-slate-500 mb-1">Est. Cap Rate</p><p class="text-sm font-semibold text-slate-900">' + data.estimated_cap_rate + '%</p></div>' : '')
+              + (equity != null ? '<div class="bg-slate-50 rounded-xl p-3 text-center"><p class="text-xs text-slate-500 mb-1">Est. Equity</p><p class="text-sm font-semibold ' + (equity >= 0 ? 'text-emerald-700' : 'text-red-600') + '">' + (equity >= 0 ? '' : '-') + '$' + Math.abs(equity).toLocaleString() + '</p></div>' : '')
+              + '</div>';
+            if (data.notes) details = '<p class="text-xs text-slate-400 italic mt-2">' + esc(data.notes) + '</p>';
+
+          } else if (type === 'expense-leaks') {
+            const assessColors = { healthy: 'text-emerald-700 bg-emerald-50', elevated: 'text-amber-700 bg-amber-50', concerning: 'text-red-700 bg-red-50' };
+            const ac = assessColors[data.expense_ratio_assessment] || assessColors.healthy;
+            metrics = '<div class="grid grid-cols-2 gap-2 mb-4">'
+              + '<div class="bg-slate-50 rounded-xl p-3 text-center"><p class="text-xs text-slate-500 mb-1">Total Expenses (12mo)</p><p class="text-sm font-semibold text-slate-900">$' + (data.total_expenses||0).toLocaleString() + '</p></div>'
+              + (data.expense_ratio != null ? '<div class="rounded-xl p-3 text-center ' + ac + '"><p class="text-xs mb-1 opacity-70">Expense Ratio</p><p class="text-sm font-semibold">' + data.expense_ratio + '%</p></div>' : '')
+              + '</div>';
+            if (data.leaks?.length) {
+              details = '<div class="space-y-2 mt-3">'
+                + data.leaks.map(l => '<div class="p-3 rounded-xl bg-amber-50 border border-amber-100">'
+                  + '<div class="flex items-center justify-between mb-0.5"><span class="text-xs font-semibold text-amber-900">' + esc(l.category) + '</span><span class="text-xs font-semibold text-amber-900">$' + (l.amount||0).toLocaleString() + '/yr</span></div>'
+                  + '<p class="text-xs text-amber-700">' + esc(l.concern) + '</p>'
+                  + (l.suggestion ? '<p class="text-xs text-amber-600 mt-0.5">💡 ' + esc(l.suggestion) + '</p>' : '')
+                  + '</div>').join('')
+                + '</div>';
+            } else {
+              details = '<p class="text-xs text-slate-400 mt-2">No significant expense leaks detected.</p>';
+            }
+
+          } else if (type === 'tenant-risk') {
+            const riskColors = { low: 'bg-emerald-100 text-emerald-700', medium: 'bg-amber-100 text-amber-700', high: 'bg-red-100 text-red-700' };
+            if (data.tenants?.length) {
+              details = '<div class="space-y-2 mt-2">' + data.tenants.map(t => {
+                const rc = riskColors[t.risk_level] || riskColors.low;
+                return '<div class="flex items-center gap-3 p-3 rounded-xl border border-slate-100">'
+                  + '<div class="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">' + esc((t.name||'')[0]||'?') + '</div>'
+                  + '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-slate-900 truncate">' + esc(t.name) + '</p>'
+                  + (t.factors?.length ? '<div class="flex flex-wrap gap-1 mt-0.5">' + t.factors.map(f => '<span class="px-1.5 py-0.5 rounded bg-slate-100 text-xs text-slate-500">' + esc(f) + '</span>').join('') + '</div>' : '') + '</div>'
+                  + '<div class="text-right flex-shrink-0"><span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold ' + rc + ' mb-0.5">' + cap(t.risk_level) + '</span><p class="text-xs text-slate-400">' + (t.score||'—') + '/10</p></div>'
+                  + '</div>';
+              }).join('') + '</div>';
+            } else {
+              details = '<p class="text-xs text-slate-400 mt-2">No active tenants to assess.</p>';
+            }
+
+          } else if (type === 'cashflow') {
+            const cf = data.predicted_monthly_cashflow || 0;
+            const outlookColor = { positive: 'text-emerald-700', neutral: 'text-slate-700', negative: 'text-red-600' }[data.outlook] || 'text-slate-700';
+            metrics = '<div class="grid grid-cols-2 gap-2 mb-4">'
+              + '<div class="bg-slate-50 rounded-xl p-3 text-center"><p class="text-xs text-slate-500 mb-1">Projected Monthly Net</p><p class="text-xl font-bold ' + outlookColor + '">' + (cf >= 0 ? '+' : '') + '$' + Math.abs(cf).toLocaleString() + '</p></div>'
+              + '<div class="bg-slate-50 rounded-xl p-3 text-center"><p class="text-xs text-slate-500 mb-1">Outlook</p><p class="text-sm font-semibold capitalize ' + outlookColor + '">' + esc(data.outlook||'—') + '</p></div>'
+              + '</div>';
+            const riskHtml = data.risks?.length ? '<div class="mb-3"><p class="text-xs font-semibold text-slate-500 mb-1.5">Risks</p>' + data.risks.map(r => '<div class="flex items-start gap-1.5 text-xs text-slate-600 mb-1"><span class="text-red-400 flex-shrink-0">⚠</span>' + esc(r) + '</div>').join('') + '</div>' : '';
+            const oppHtml = data.opportunities?.length ? '<div><p class="text-xs font-semibold text-slate-500 mb-1.5">Opportunities</p>' + data.opportunities.map(o => '<div class="flex items-start gap-1.5 text-xs text-slate-600 mb-1"><span class="text-emerald-500 flex-shrink-0">✓</span>' + esc(o) + '</div>').join('') + '</div>' : '';
+            details = riskHtml + oppHtml;
+          }
+
+          return '<div class="flex items-center justify-between mb-4">'
+            + '<div class="flex items-center gap-2.5">'
+            + '<div class="w-8 h-8 rounded-xl bg-' + cfg.color + '-100 flex items-center justify-center"><i data-lucide="' + cfg.icon + '" class="h-4 w-4 text-' + cfg.color + '-600"></i></div>'
+            + '<div><p class="text-sm font-semibold text-slate-900">' + cfg.label + '</p><p class="text-xs text-slate-400">' + src + '</p></div>'
+            + '</div></div>'
+            + (data.headline ? '<p class="text-sm font-medium text-slate-800 mb-2">' + esc(data.headline) + '</p>' : '')
+            + (data.analysis ? '<p class="text-sm text-slate-600 leading-relaxed mb-3">' + esc(data.analysis) + '</p>' : '')
+            + metrics + details;
         }
 
         // ── Mortgage tab ──────────────────────────────────────────────────────

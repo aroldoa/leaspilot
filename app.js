@@ -1,5 +1,26 @@
 // LeasePilot AI - Main Application JavaScript
 
+// Fix: prevent modal backdrops from closing when the user clicks inside
+// the modal then releases the mouse on the backdrop (e.g. clicking an input
+// then clicking elsewhere). We track where mousedown started; if it wasn't
+// on the backdrop itself, we cancel the click on the backdrop.
+(function () {
+  let _mousedownTarget = null;
+  document.addEventListener('mousedown', (e) => {
+    _mousedownTarget = e.target;
+  }, true);
+  document.addEventListener('click', (e) => {
+    if (
+      _mousedownTarget &&
+      e.target !== _mousedownTarget &&
+      e.target.classList.contains('fixed') &&
+      e.target.classList.contains('inset-0')
+    ) {
+      e.stopImmediatePropagation();
+    }
+  }, true);
+})();
+
 // Use same origin when served over http(s); fallback to localhost when opened via file:// or origin missing
 const API_BASE_URL = (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http'))
   ? `${window.location.origin}/api`

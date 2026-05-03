@@ -142,7 +142,6 @@
         if (!res.ok) throw new Error();
         inviteData = await res.json();
 
-        document.getElementById('invitePropertyName').textContent = inviteData.property_name;
         document.getElementById('inviteRole').textContent = inviteData.role === 'manager' ? 'Property Manager' : inviteData.role;
         document.getElementById('inviteExpires').textContent = new Date(inviteData.expires_at).toLocaleDateString();
         document.getElementById('inviteSubtitle').textContent =
@@ -185,7 +184,7 @@
         const res = await fetch('/api/invites/accept/' + token, { method: 'POST', credentials: 'include' });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed');
-        document.getElementById('successPropertyName').textContent = inviteData?.property_name || 'the property';
+        document.getElementById('successPropertyName').textContent = inviteData?.invited_by_name ? inviteData.invited_by_name + "'s properties" : 'all properties';
         show('successCard');
         lucide.createIcons();
       } catch (e) {

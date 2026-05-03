@@ -602,4 +602,225 @@ function generatePropertySuggestions(c) {
   return s;
 }
 
+// ── POST /api/ai/property-analysis/:id/:type ─────────────────────────────────
+// type: market-rent | property-value | expense-leaks | tenant-risk | cashflow
+router.post('/property-analysis/:id/:type', authenticateToken, async (req, res) => {
+  const pool = req.app.locals.pool;
+  const userId = req.userId;
+  const propId = parseInt(req.params.id, 10);
+  const type = req.params.type;
+  const validTypes = ['market-rent', 'property-value', 'expense-leaks', 'tenant-risk', 'cashflow'];
+  if (!propId) return res.status(400).json({ error: 'Invalid property ID' });
+  if (!validTypes.includes(type)) return res.status(400).json({ error: 'Invalid analysis type' });
+
+  try {
+    const propRes = await pool.query(`
+      SELECT p.*, pm.monthly_payment, pm.monthly_tax, pm.monthly_insurance,
+             pm.escrow_amount, pm.loan_amount, pm.interest_rate, pm.loan_term_years
+      FROM properties p
+      LEFT JOIN property_mortgages pm ON pm.property_id = p.id
+      WHERE p.id = $1 AND p.user_id = $2
+    `, [propId, userId]);
+    if (propRes.rows.length === 0) return res.status(404).json({ error: 'Property not found' });
+    const prop = propRes.rows[0];
+    const today = new Date();
+
+    // ── Market Rent ──────────────────────────────────────────────────────────
+    if (type === 'market-rent') {
+      const tenantsRes = await pool.query(
+        `SELECT lease_end FROM tenants WHERE property_id = $1 AND status = 'active'`, [propId]
+      );
+      const rent = parseFloat(prop.rent || 0);
+      const context = {
+        property_name: prop.name, current_rent: rent,
+        bedrooms: prop.bedrooms, bathrooms: prop.bathrooms, sqft: prop.sqft,
+        property_type: prop.type, city: prop.city, state: prop.state,
+        status: prop.status, active_tenants: tenantsRes.rows.length,
+      };
+      const raw = await callGemini(
+        `You are a rental market expert. Analyze this property and suggest optimal rent pricing. Return only valid JSON with no markdown:\n{"headline":"one sentence summary","analysis":"2-3 sentence market analysis","suggested_rent_min":number,"suggested_rent_max":number,"confidence":"low|medium|high","factors":["up to 4 key market factors"],"action":"raise|hold|reduce"}\n\nProperty: ${JSON.stringify(context)}`
+      );
+      const parsed = parseJSON(raw);
+      if (parsed?.analysis) return res.json({ ...parsed, source: 'ai' });
+      const min = Math.round(rent * 0.95), max = Math.round(rent * 1.08);
+      return res.json({
+        headline: 'Rent review for ' + prop.name,
+        analysis: `Current rent is $${rent.toLocaleString()}/mo${prop.sqft > 0 ? ` ($${(rent / prop.sqft).toFixed(2)}/sqft)` : ''}. Review comparable listings in ${prop.city || 'your area'} to validate pricing. Industry standard is to review rent at each lease renewal.`,
+        suggested_rent_min: min, suggested_rent_max: max, confidence: 'low', action: 'hold',
+        factors: ['Review local comparables', 'Annual rent review recommended', 'Adjust at lease renewal'],
+        source: 'rules',
+      });
+    }
+
+    // ── Property Value ───────────────────────────────────────────────────────
+    if (type === 'property-value') {
+      const rent = parseFloat(prop.rent || 0);
+      const loanAmt = parseFloat(prop.loan_amount || 0);
+      const fixedMonthly = parseFloat(prop.monthly_payment || 0) + parseFloat(prop.monthly_tax || 0) +
+        parseFloat(prop.monthly_insurance || 0) + parseFloat(prop.escrow_amount || 0);
+      const annualRent = rent * 12;
+      const noi = annualRent - fixedMonthly * 12;
+      const context = {
+        property_name: prop.name, property_type: prop.type,
+        city: prop.city, state: prop.state,
+        bedrooms: prop.bedrooms, bathrooms: prop.bathrooms, sqft: prop.sqft,
+        monthly_rent: rent, annual_gross_rent: annualRent,
+        total_monthly_costs: Math.round(fixedMonthly), estimated_noi: Math.round(noi),
+        outstanding_loan: loanAmt,
+      };
+      const raw = await callGemini(
+        `You are a real estate appraiser. Estimate this property's current market value. Return only valid JSON with no markdown:\n{"headline":"one sentence summary","analysis":"2-3 sentence valuation analysis","estimated_value_low":number,"estimated_value_high":number,"estimated_cap_rate":number,"notes":"key assumptions made"}\n\nProperty: ${JSON.stringify(context)}`
+      );
+      const parsed = parseJSON(raw);
+      if (parsed?.analysis) return res.json({ ...parsed, loan_amount: loanAmt, source: 'ai' });
+      const low = Math.round(annualRent * 10), high = Math.round(annualRent * 15);
+      const midVal = (low + high) / 2;
+      const capRate = midVal > 0 ? parseFloat(((noi / midVal) * 100).toFixed(1)) : null;
+      return res.json({
+        headline: 'Value estimate for ' + prop.name,
+        analysis: `Based on a 10–15× annual rent multiplier, ${prop.name} may be worth $${low.toLocaleString()}–$${high.toLocaleString()}. For an accurate figure, consult a local appraiser familiar with the ${prop.city || ''} market.`,
+        estimated_value_low: low, estimated_value_high: high,
+        estimated_cap_rate: capRate,
+        notes: 'Estimate uses gross rent multiplier (10–15× annual rent). Actual value depends on condition, location, and local market.',
+        loan_amount: loanAmt, source: 'rules',
+      });
+    }
+
+    // ── Expense Leaks ────────────────────────────────────────────────────────
+    if (type === 'expense-leaks') {
+      const twelveMonthsAgo = new Date(today); twelveMonthsAgo.setFullYear(today.getFullYear() - 1);
+      const txnRes = await pool.query(`
+        SELECT category, SUM(amount) AS total, COUNT(*) AS count
+        FROM transactions
+        WHERE property_id = $1 AND type = 'expense' AND transaction_date >= $2
+        GROUP BY category ORDER BY total DESC
+      `, [propId, twelveMonthsAgo.toISOString().split('T')[0]]);
+      const rent = parseFloat(prop.rent || 0);
+      const annualRent = rent * 12;
+      const totalExpenses = txnRes.rows.reduce((s, r) => s + parseFloat(r.total || 0), 0);
+      const expenseRatio = annualRent > 0 ? parseFloat(((totalExpenses / annualRent) * 100).toFixed(1)) : null;
+      const context = {
+        property_name: prop.name, monthly_rent: rent, annual_rent: annualRent,
+        total_expenses_12m: Math.round(totalExpenses), expense_to_rent_ratio: expenseRatio,
+        expenses_by_category: txnRes.rows.map(r => ({
+          category: r.category || 'Uncategorized',
+          annual_total: Math.round(parseFloat(r.total)), count: parseInt(r.count),
+        })),
+      };
+      const raw = await callGemini(
+        `You are a property expense auditor. Identify expense leaks and savings opportunities. Return only valid JSON with no markdown:\n{"headline":"one sentence summary","analysis":"2-3 sentence expense assessment","leaks":[{"category":"name","amount":number,"concern":"why it is high","suggestion":"how to reduce it"}],"expense_ratio_assessment":"healthy|elevated|concerning"}\n\nInclude up to 3 genuine leaks only.\n\nData: ${JSON.stringify(context)}`
+      );
+      const parsed = parseJSON(raw);
+      if (parsed?.analysis) return res.json({ ...parsed, total_expenses: Math.round(totalExpenses), expense_ratio: expenseRatio, source: 'ai' });
+      const leaks = txnRes.rows.slice(0, 3).filter(r => annualRent > 0 && parseFloat(r.total) / annualRent > 0.15).map(r => ({
+        category: r.category || 'Uncategorized',
+        amount: Math.round(parseFloat(r.total)),
+        concern: `${((parseFloat(r.total) / annualRent) * 100).toFixed(0)}% of annual rent`,
+        suggestion: 'Review for alternative vendors or negotiation',
+      }));
+      const ratio = expenseRatio || 0;
+      return res.json({
+        headline: 'Expense analysis for ' + prop.name,
+        analysis: `Total expenses over 12 months: $${Math.round(totalExpenses).toLocaleString()}${expenseRatio != null ? ` (${expenseRatio}% of annual rent)` : ''}. ${ratio > 60 ? 'Expense ratio is high — review largest categories for savings.' : ratio > 40 ? 'Expense ratio is slightly elevated.' : 'Expense ratio looks healthy.'}`,
+        leaks, expense_ratio_assessment: ratio > 60 ? 'concerning' : ratio > 40 ? 'elevated' : 'healthy',
+        total_expenses: Math.round(totalExpenses), expense_ratio: expenseRatio, source: 'rules',
+      });
+    }
+
+    // ── Tenant Risk ──────────────────────────────────────────────────────────
+    if (type === 'tenant-risk') {
+      const tenantsRes = await pool.query(
+        `SELECT first_name, last_name, lease_start, lease_end, balance FROM tenants WHERE property_id = $1 AND status = 'active'`,
+        [propId]
+      );
+      if (tenantsRes.rows.length === 0) {
+        return res.json({ headline: 'No active tenants', analysis: 'There are no active tenants at this property to assess.', tenants: [], source: 'rules' });
+      }
+      const tenantData = tenantsRes.rows.map(t => {
+        const leaseEnd = t.lease_end ? new Date(t.lease_end) : null;
+        const daysToExpiry = leaseEnd ? Math.floor((leaseEnd - today) / (1000 * 60 * 60 * 24)) : null;
+        return {
+          name: `${t.first_name} ${t.last_name}`,
+          days_to_lease_expiry: daysToExpiry,
+          outstanding_balance: parseFloat(t.balance || 0),
+          overdue: parseFloat(t.balance || 0) < 0,
+        };
+      });
+      const raw = await callGemini(
+        `You are a tenant risk analyst. Score payment and retention risk for each tenant. Return only valid JSON with no markdown:\n{"headline":"one sentence summary","analysis":"2-3 sentence overall risk assessment","tenants":[{"name":"full name","risk_level":"low|medium|high","score":1-10,"factors":["key risk factors"]}]}\n\nScore: 8-10 = low risk, 4-7 = medium, 1-3 = high risk.\n\nData: ${JSON.stringify({ property_name: prop.name, monthly_rent: parseFloat(prop.rent || 0), tenants: tenantData })}`
+      );
+      const parsed = parseJSON(raw);
+      if (parsed?.analysis) return res.json({ ...parsed, source: 'ai' });
+      const tenants = tenantData.map(t => {
+        let score = 8; const factors = [];
+        if (t.overdue) { score -= 3; factors.push('Outstanding balance'); }
+        if (t.days_to_lease_expiry != null && t.days_to_lease_expiry < 30) { score -= 2; factors.push('Lease expiring < 30 days'); }
+        else if (t.days_to_lease_expiry != null && t.days_to_lease_expiry < 60) { score -= 1; factors.push('Lease expiring < 60 days'); }
+        if (!factors.length) factors.push('No immediate concerns');
+        const risk = score >= 7 ? 'low' : score >= 5 ? 'medium' : 'high';
+        return { name: t.name, risk_level: risk, score: Math.max(1, score), factors };
+      });
+      const highRisk = tenants.filter(t => t.risk_level === 'high').length;
+      return res.json({
+        headline: 'Tenant risk assessment',
+        analysis: `${tenants.length} active tenant(s) assessed. ${highRisk > 0 ? `${highRisk} tenant(s) flagged as high risk — follow up recommended.` : 'No high-risk tenants detected at this time.'}`,
+        tenants, source: 'rules',
+      });
+    }
+
+    // ── Cash Flow Prediction ─────────────────────────────────────────────────
+    if (type === 'cashflow') {
+      const sixMonthsAgo = new Date(today); sixMonthsAgo.setMonth(today.getMonth() - 6);
+      const txnRes = await pool.query(`
+        SELECT DATE_TRUNC('month', transaction_date) AS month, type, SUM(amount) AS total
+        FROM transactions
+        WHERE property_id = $1 AND transaction_date >= $2
+        GROUP BY month, type ORDER BY month
+      `, [propId, sixMonthsAgo.toISOString().split('T')[0]]);
+      const rent = parseFloat(prop.rent || 0);
+      const fixedCosts = parseFloat(prop.monthly_payment || 0) + parseFloat(prop.monthly_tax || 0) +
+        parseFloat(prop.monthly_insurance || 0) + parseFloat(prop.escrow_amount || 0);
+      const monthMap = {};
+      for (const r of txnRes.rows) {
+        const m = new Date(r.month).toISOString().slice(0, 7);
+        if (!monthMap[m]) monthMap[m] = { income: 0, expenses: 0 };
+        if (r.type === 'income') monthMap[m].income += parseFloat(r.total);
+        else monthMap[m].expenses += parseFloat(r.total);
+      }
+      const months = Object.entries(monthMap).map(([month, v]) => ({ month, income: Math.round(v.income), expenses: Math.round(v.expenses), net: Math.round(v.income - v.expenses) }));
+      const avgIncome = months.length > 0 ? months.reduce((s, m) => s + m.income, 0) / months.length : rent;
+      const avgVarExp = months.length > 0 ? months.reduce((s, m) => s + m.expenses, 0) / months.length : 0;
+      const predicted = Math.round(avgIncome - avgVarExp - fixedCosts);
+      const context = {
+        property_name: prop.name, monthly_rent: rent, fixed_monthly_costs: Math.round(fixedCosts),
+        status: prop.status, last_6_months: months,
+        avg_monthly_income: Math.round(avgIncome), avg_monthly_variable_expenses: Math.round(avgVarExp),
+      };
+      const raw = await callGemini(
+        `You are a rental property cash flow analyst. Predict the next 3-6 months and identify risks. Return only valid JSON with no markdown:\n{"headline":"one sentence summary","analysis":"2-3 sentence cash flow assessment","predicted_monthly_cashflow":number,"risks":["up to 3 risks"],"opportunities":["up to 2 opportunities"],"outlook":"positive|neutral|negative"}\n\nData: ${JSON.stringify(context)}`
+      );
+      const parsed = parseJSON(raw);
+      if (parsed?.analysis) return res.json({ ...parsed, history: months, source: 'ai' });
+      const risks = [], opps = [];
+      if (prop.status === 'vacant') risks.push('Property is currently vacant — no rental income');
+      if (fixedCosts > rent * 0.8) risks.push('Fixed costs exceed 80% of monthly rent');
+      if (months.some(m => m.net < 0)) risks.push('Negative net cash flow observed in recent months');
+      if (predicted > 0) opps.push(`Projected positive cash flow of $${predicted.toLocaleString()}/mo`);
+      if (prop.status === 'occupied' && rent > 0) opps.push('Stable rental income expected if lease is maintained');
+      return res.json({
+        headline: 'Cash flow projection for ' + prop.name,
+        analysis: `Projected monthly net: $${predicted.toLocaleString()} ($${rent.toLocaleString()} rent − $${Math.round(fixedCosts).toLocaleString()} fixed costs${avgVarExp > 0 ? ` − $${Math.round(avgVarExp).toLocaleString()} avg variable expenses` : ''}).`,
+        predicted_monthly_cashflow: predicted, risks, opportunities: opps,
+        outlook: predicted > 200 ? 'positive' : predicted < 0 ? 'negative' : 'neutral',
+        history: months, source: 'rules',
+      });
+    }
+
+    res.status(400).json({ error: 'Unknown analysis type' });
+  } catch (err) {
+    console.error(`AI property-analysis/${type} error:`, err);
+    res.status(500).json({ error: 'Analysis failed. Please try again.' });
+  }
+});
+
 export default router;
