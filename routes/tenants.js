@@ -7,6 +7,20 @@ const router = express.Router();
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
 
+// Sets property status to 'occupied' if it has active tenants, 'vacant' otherwise.
+async function syncPropertyStatus(pool, propertyId) {
+  if (!propertyId) return;
+  const { rows } = await pool.query(
+    `SELECT COUNT(*) AS cnt FROM tenants WHERE property_id = $1 AND status = 'active'`,
+    [propertyId]
+  );
+  const occupied = parseInt(rows[0].cnt, 10) > 0;
+  await pool.query(
+    `UPDATE properties SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+    [occupied ? 'occupied' : 'vacant', propertyId]
+  );
+}
+
 // All routes below require manager role (except invite which has its own requireRole)
 // Get all tenants for user
 router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
@@ -139,6 +153,7 @@ router.post('/', authenticateToken, requireRole('Portfolio Manager'), async (req
 
     const row = result.rows[0];
     console.log('Tenant created:', row?.id, first_name, last_name);
+    await syncPropertyStatus(pool, property_id);
     res.status(201).json(row);
   } catch (error) {
     console.error('Error creating tenant:', error);
@@ -161,8 +176,13 @@ router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
     const lease_end = (body.lease_end ?? '').toString().trim() || null;
 
     const pool = req.app.locals.pool;
+
+    // Fetch old property_id so we can sync it if the tenant moved properties
+    const old = await pool.query('SELECT property_id FROM tenants WHERE id = $1 AND user_id = $2', [req.params.id, req.userId]);
+    const oldPropertyId = old.rows[0]?.property_id ?? null;
+
     const result = await pool.query(
-      `UPDATE tenants 
+      `UPDATE tenants
        SET first_name = $1, last_name = $2, email = $3, phone = $4,
            property_id = $5, unit = $6, status = $7, lease_start = $8,
            lease_end = $9, updated_at = CURRENT_TIMESTAMP
@@ -175,6 +195,10 @@ router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
       return res.status(404).json({ error: 'Tenant not found' });
     }
 
+    // Sync status for affected properties
+    const propertiesToSync = new Set([property_id, oldPropertyId].filter(Boolean));
+    await Promise.all([...propertiesToSync].map(pid => syncPropertyStatus(pool, pid)));
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating tenant:', error);
@@ -186,6 +210,9 @@ router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
 router.delete('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
+    const old = await pool.query('SELECT property_id FROM tenants WHERE id = $1 AND user_id = $2', [req.params.id, req.userId]);
+    const propertyId = old.rows[0]?.property_id ?? null;
+
     const result = await pool.query(
       'DELETE FROM tenants WHERE id = $1 AND user_id = $2 RETURNING id',
       [req.params.id, req.userId]
@@ -195,6 +222,7 @@ router.delete('/:id', authenticateToken, requireRole('Portfolio Manager'), async
       return res.status(404).json({ error: 'Tenant not found' });
     }
 
+    await syncPropertyStatus(pool, propertyId);
     res.json({ message: 'Tenant deleted successfully' });
   } catch (error) {
     console.error('Error deleting tenant:', error);
