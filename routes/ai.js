@@ -846,9 +846,9 @@ router.post('/score-tenant/:id', authenticateToken, async (req, res) => {
 
     const [txRes, maintRes] = await Promise.all([
       pool.query(`
-        SELECT amount, type, date FROM transactions
-        WHERE property_id = $1 AND type = 'income' AND date >= NOW() - INTERVAL '12 months'
-        ORDER BY date DESC
+        SELECT amount, type, transaction_date FROM transactions
+        WHERE property_id = $1 AND type = 'income' AND transaction_date >= NOW() - INTERVAL '12 months'
+        ORDER BY transaction_date DESC
       `, [tenant.property_id || -1]),
       pool.query(`
         SELECT COUNT(*) AS total,
