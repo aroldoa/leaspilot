@@ -6,9 +6,11 @@
  * POST /api/ai/screen-applicant/:id    → tenant application screening
  * POST /api/ai/classify-maintenance/:id → maintenance priority/type classification
  * GET  /api/ai/income-analysis         → per-property income optimization suggestions
+ * POST /api/ai/score-tenant/:id        → individual tenant risk scoring
  */
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import { getOwnerIds } from '../middleware/teamAccess.js';
 
 const router = express.Router();
 
@@ -820,6 +822,112 @@ router.post('/property-analysis/:id/:type', authenticateToken, async (req, res) 
   } catch (err) {
     console.error(`AI property-analysis/${type} error:`, err);
     res.status(500).json({ error: 'Analysis failed. Please try again.' });
+  }
+});
+
+// ── POST /api/ai/score-tenant/:id ─────────────────────────────────────────────
+router.post('/score-tenant/:id', authenticateToken, async (req, res) => {
+  const pool = req.app.locals.pool;
+  const tenantId = parseInt(req.params.id, 10);
+  if (!tenantId) return res.status(400).json({ error: 'Invalid tenant ID' });
+
+  try {
+    const ownerIds = await getOwnerIds(pool, req.userId);
+
+    const tenantRes = await pool.query(`
+      SELECT t.*, p.rent, p.name AS property_name, p.address AS property_address
+      FROM tenants t
+      LEFT JOIN properties p ON p.id = t.property_id
+      WHERE t.id = $1 AND (t.user_id = ANY($2::int[]) OR p.user_id = ANY($2::int[]))
+    `, [tenantId, ownerIds]);
+
+    if (tenantRes.rows.length === 0) return res.status(404).json({ error: 'Tenant not found' });
+    const tenant = tenantRes.rows[0];
+
+    const [txRes, maintRes] = await Promise.all([
+      pool.query(`
+        SELECT amount, type, date FROM transactions
+        WHERE property_id = $1 AND type = 'income' AND date >= NOW() - INTERVAL '12 months'
+        ORDER BY date DESC
+      `, [tenant.property_id || -1]),
+      pool.query(`
+        SELECT COUNT(*) AS total,
+               COUNT(*) FILTER (WHERE priority = 'emergency' OR priority = 'high') AS urgent_count
+        FROM maintenance_requests
+        WHERE property_id = $1 AND created_at >= NOW() - INTERVAL '12 months'
+      `, [tenant.property_id || -1]),
+    ]);
+
+    const transactions = txRes.rows;
+    const monthlyRent = parseFloat(tenant.rent || 0);
+    const leaseStart = tenant.lease_start ? new Date(tenant.lease_start) : null;
+    const leaseEnd = tenant.lease_end ? new Date(tenant.lease_end) : null;
+    const now = new Date();
+    const tenureMonths = leaseStart ? Math.floor((now - leaseStart) / (1000 * 60 * 60 * 24 * 30)) : 0;
+    const daysToExpiry = leaseEnd ? Math.floor((leaseEnd - now) / (1000 * 60 * 60 * 24)) : null;
+    const paymentCount = transactions.length;
+    const totalPaid = transactions.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+    const urgentMaint = parseInt(maintRes.rows[0]?.urgent_count || 0);
+    const totalMaint = parseInt(maintRes.rows[0]?.total || 0);
+
+    const prompt = `You are a tenant risk scoring AI for a property management system. Analyze this tenant and return a reliability score.
+
+Tenant: ${tenant.first_name} ${tenant.last_name}
+Status: ${tenant.status}
+Property: ${tenant.property_name || tenant.property_address || 'Unknown'}
+Monthly Rent: $${monthlyRent}
+Tenure: ${tenureMonths} months${leaseStart ? ` (since ${leaseStart.toDateString()})` : ''}
+Lease expiry: ${leaseEnd ? leaseEnd.toDateString() : 'Unknown'}${daysToExpiry !== null ? ` (${daysToExpiry} days)` : ''}
+Payments recorded last 12mo: ${paymentCount} payments totaling $${totalPaid.toFixed(0)}
+Expected payments last 12mo: ~12 @ $${monthlyRent}/mo = $${(monthlyRent * 12).toFixed(0)}
+Maintenance requests last 12mo: ${totalMaint} total, ${urgentMaint} urgent/emergency
+
+Return JSON only, no markdown:
+{
+  "score": <integer 1-10, 10=excellent>,
+  "risk_level": "low" | "medium" | "high",
+  "summary": "<2-3 sentence assessment>",
+  "factors": ["<factor 1>", "<factor 2>", ...],
+  "churn_risk": "low" | "medium" | "high",
+  "churn_reason": "<one sentence on renewal likelihood>"
+}`;
+
+    let result;
+    try {
+      const aiText = await callGemini(prompt);
+      const m = aiText.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error('no JSON');
+      result = JSON.parse(m[0]);
+      result.source = 'ai';
+    } catch {
+      // Rule-based fallback
+      let score = 6;
+      const factors = [];
+      if (paymentCount >= 10) { score += 1; factors.push('Consistent payment history'); }
+      else if (paymentCount < 5 && monthlyRent > 0) { score -= 2; factors.push('Few recorded payments'); }
+      if (tenureMonths >= 18) { score += 1; factors.push(`Long-term tenant (${tenureMonths} months)`); }
+      else if (tenureMonths >= 6) { factors.push(`Established tenant (${tenureMonths} months)`); }
+      else { factors.push('Newer tenant'); }
+      if (daysToExpiry !== null && daysToExpiry < 60 && daysToExpiry >= 0) { score -= 1; factors.push('Lease expiring soon'); }
+      if (urgentMaint > 2) { score -= 1; factors.push('Frequent urgent maintenance requests'); }
+      if (tenant.status === 'active') { score += 1; factors.push('Active lease'); }
+      score = Math.max(1, Math.min(10, score));
+      const risk_level = score >= 7 ? 'low' : score >= 4 ? 'medium' : 'high';
+      result = {
+        score,
+        risk_level,
+        summary: `${paymentCount} payment(s) recorded in the last 12 months. Tenant has been at the property for ${tenureMonths} months.`,
+        factors,
+        churn_risk: daysToExpiry !== null && daysToExpiry < 60 && daysToExpiry >= 0 ? 'high' : tenureMonths >= 12 ? 'low' : 'medium',
+        churn_reason: daysToExpiry !== null && daysToExpiry < 60 && daysToExpiry >= 0 ? 'Lease expiring within 60 days — renewal conversation recommended.' : tenureMonths >= 12 ? 'Long-term tenant likely to renew.' : 'Renewal likelihood unknown — consider proactive outreach.',
+        source: 'rules',
+      };
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('score-tenant error:', err);
+    res.status(500).json({ error: 'Failed to score tenant' });
   }
 });
 

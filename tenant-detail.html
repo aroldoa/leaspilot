@@ -239,6 +239,60 @@ body { font-family: 'Inter', sans-serif; }
                         </div>
                     </div>
 
+                    <!-- AI Risk Score Card -->
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mt-6">
+                      <div class="flex items-center justify-between mb-5">
+                        <div class="flex items-center gap-3">
+                          <div class="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="sparkles" class="h-5 w-5 text-violet-600"></i>
+                          </div>
+                          <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">AI Tenant Scoring</p>
+                            <h3 class="text-sm font-semibold text-slate-900">Risk Assessment</h3>
+                          </div>
+                        </div>
+                        <button onclick="runTenantScore()" id="aiScoreReBtn" class="hidden text-xs font-medium text-violet-600 hover:text-violet-800 transition-colors">Re-analyze</button>
+                      </div>
+
+                      <!-- Loading -->
+                      <div id="aiScoreLoading" class="flex items-center gap-2 text-sm text-slate-400">
+                        <div class="w-4 h-4 border-2 border-violet-500 border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
+                        Analyzing tenant…
+                      </div>
+
+                      <!-- Result -->
+                      <div id="aiScoreResult" class="hidden">
+                        <div class="flex items-center gap-5 mb-4">
+                          <div id="aiScoreCircle" class="w-20 h-20 rounded-full flex items-center justify-center border-4 border-slate-200 flex-shrink-0">
+                            <div class="text-center">
+                              <span id="aiScoreNum" class="text-2xl font-bold text-slate-900">—</span>
+                              <span class="text-xs text-slate-400 block leading-none">/10</span>
+                            </div>
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-2 flex-wrap">
+                              <span id="aiRiskBadge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-slate-100 text-slate-600">—</span>
+                              <span id="aiScoreSource" class="text-xs text-slate-400"></span>
+                            </div>
+                            <p id="aiScoreSummary" class="text-sm text-slate-600 leading-relaxed"></p>
+                          </div>
+                        </div>
+                        <div id="aiFactorsWrap" class="hidden mb-3">
+                          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Factors</p>
+                          <div id="aiFactorsList" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <div id="aiChurnWrap" class="hidden p-3 rounded-xl">
+                          <p id="aiChurnTitle" class="text-xs font-semibold mb-0.5"></p>
+                          <p id="aiChurnReason" class="text-xs"></p>
+                        </div>
+                      </div>
+
+                      <!-- Error -->
+                      <div id="aiScoreError" class="hidden text-sm text-red-500">
+                        Unable to score tenant. <button onclick="runTenantScore()" class="underline">Try again</button>
+                      </div>
+                    </div>
+
                     <!-- Tenant Portal -->
                     <div id="portalCard" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mt-6">
                         <h2 class="text-lg font-medium text-slate-900 mb-4">Tenant portal</h2>
@@ -989,13 +1043,92 @@ body { font-family: 'Inter', sans-serif; }
             } catch (e) {}
 
             await loadTenant();
+            runTenantScore();
         })();
-        
+
         lucide.createIcons({
             attrs: {
                 'stroke-width': 1.5
             }
         });
+
+        // ── AI Tenant Scoring ──────────────────────────────────────────────────
+        async function runTenantScore() {
+            const tenantId = getTenantId();
+            if (!tenantId) return;
+            const loading = document.getElementById('aiScoreLoading');
+            const result  = document.getElementById('aiScoreResult');
+            const error   = document.getElementById('aiScoreError');
+            const reBtn   = document.getElementById('aiScoreReBtn');
+            if (!loading) return;
+            loading.classList.remove('hidden');
+            result.classList.add('hidden');
+            error.classList.add('hidden');
+            reBtn.classList.add('hidden');
+            try {
+                const data = await LeasePilot.API.request('/ai/score-tenant/' + tenantId, { method: 'POST' });
+                renderTenantScore(data);
+            } catch (e) {
+                loading.classList.add('hidden');
+                error.classList.remove('hidden');
+            }
+        }
+
+        function renderTenantScore(data) {
+            document.getElementById('aiScoreLoading').classList.add('hidden');
+            document.getElementById('aiScoreResult').classList.remove('hidden');
+            document.getElementById('aiScoreReBtn').classList.remove('hidden');
+
+            const score     = data.score || 0;
+            const riskLevel = data.risk_level || 'medium';
+            const riskColors = {
+                low:    { border: 'border-emerald-400', num: 'text-emerald-600', badge: 'bg-emerald-100 text-emerald-700', churn: 'bg-emerald-50 text-emerald-800' },
+                medium: { border: 'border-amber-400',   num: 'text-amber-600',   badge: 'bg-amber-100 text-amber-700',   churn: 'bg-amber-50 text-amber-800'   },
+                high:   { border: 'border-red-400',     num: 'text-red-600',     badge: 'bg-red-100 text-red-700',     churn: 'bg-red-50 text-red-800'       },
+            };
+            const c = riskColors[riskLevel] || riskColors.medium;
+
+            const circle = document.getElementById('aiScoreCircle');
+            circle.className = 'w-20 h-20 rounded-full flex items-center justify-center border-4 flex-shrink-0 ' + c.border;
+            const num = document.getElementById('aiScoreNum');
+            num.className = 'text-2xl font-bold ' + c.num;
+            num.textContent = score;
+
+            const badge = document.getElementById('aiRiskBadge');
+            badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide ' + c.badge;
+            badge.textContent = riskLevel + ' risk';
+
+            document.getElementById('aiScoreSource').textContent = data.source === 'ai' ? '· Powered by AI' : '· Rule-based estimate';
+            document.getElementById('aiScoreSummary').textContent = data.summary || '';
+
+            if (data.factors && data.factors.length) {
+                document.getElementById('aiFactorsList').innerHTML = data.factors.map(function(f) {
+                    return '<span class="px-2 py-0.5 rounded-full bg-slate-100 text-xs text-slate-600">' + f + '</span>';
+                }).join('');
+                document.getElementById('aiFactorsWrap').classList.remove('hidden');
+            }
+
+            if (data.churn_reason) {
+                const wrap = document.getElementById('aiChurnWrap');
+                wrap.className = 'p-3 rounded-xl ' + c.churn;
+                document.getElementById('aiChurnTitle').textContent = 'Renewal risk: ' + (data.churn_risk || 'unknown');
+                document.getElementById('aiChurnReason').textContent = data.churn_reason;
+                wrap.classList.remove('hidden');
+            }
+
+            // Inject a small score badge next to the status badge in the header
+            var existing = document.getElementById('aiHeaderRiskBadge');
+            if (!existing) {
+                existing = document.createElement('span');
+                existing.id = 'aiHeaderRiskBadge';
+                var statusBadge = document.getElementById('tenantStatusBadge');
+                if (statusBadge && statusBadge.parentNode) {
+                    statusBadge.parentNode.insertBefore(existing, statusBadge.nextSibling);
+                }
+            }
+            existing.className = 'rounded-full border px-2.5 py-0.5 text-xs font-medium ' + c.badge;
+            existing.textContent = 'Score ' + score + '/10';
+        }
     </script>
 
 </body></html>
