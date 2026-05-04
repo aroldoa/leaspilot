@@ -94,15 +94,18 @@ router.get('/accept/:token', async (req, res) => {
   const pool = req.app.locals.pool;
   try {
     const result = await pool.query(`
-      SELECT pi.role, pi.expires_at, pi.invited_email,
+      SELECT pi.id, pi.role, pi.expires_at, pi.invited_email, pi.accepted_at,
              u.name as invited_by_name, u.email as invited_by_email
       FROM property_invites pi
       JOIN users u ON u.id = pi.invited_by
-      WHERE pi.token = $1 AND pi.expires_at > NOW() AND pi.accepted_at IS NULL
+      WHERE pi.token = $1
     `, [req.params.token]);
 
     if (result.rows.length === 0) return res.status(404).json({ error: 'Invite not found or expired' });
-    res.json(result.rows[0]);
+    const inv = result.rows[0];
+    if (inv.accepted_at) return res.status(410).json({ error: 'This invite has already been used' });
+    if (new Date(inv.expires_at) < new Date()) return res.status(410).json({ error: 'This invite has expired' });
+    res.json(inv);
   } catch (err) {
     console.error('GET /api/invites/accept/:token error:', err);
     res.status(500).json({ error: 'Failed to load invite' });

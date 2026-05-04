@@ -499,6 +499,9 @@ export async function initializeDatabase(pool) {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    // Ensure columns added after initial deploy exist
+    await pool.query(`ALTER TABLE property_invites ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMP`);
+    await pool.query(`ALTER TABLE property_invites ADD COLUMN IF NOT EXISTS accepted_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL`);
 
     // Team: active property collaborators
     await pool.query(`

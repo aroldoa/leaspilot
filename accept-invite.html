@@ -139,7 +139,13 @@
       if (!token) { show('errorCard'); return; }
       try {
         const res = await fetch('/api/invites/accept/' + token);
-        if (!res.ok) throw new Error();
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          document.getElementById('errorMsg').textContent = data.error || 'This invite link is invalid or has expired.';
+          show('errorCard');
+          lucide.createIcons();
+          return;
+        }
         inviteData = await res.json();
 
         document.getElementById('inviteRole').textContent = inviteData.role === 'manager' ? 'Property Manager' : inviteData.role;
@@ -172,6 +178,7 @@
         show('inviteCard');
         lucide.createIcons();
       } catch (e) {
+        document.getElementById('errorMsg').textContent = 'Could not reach the server. Please check your connection and try again.';
         show('errorCard');
         lucide.createIcons();
       }
