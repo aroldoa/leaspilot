@@ -114,10 +114,10 @@ router.post('/', authenticateToken, requireRole('Portfolio Manager'), async (req
     }
 
     const unitsResult = await pool.query(
-      `SELECT id, unit_label FROM property_units WHERE property_id = $1 ORDER BY display_order ASC, id ASC`,
+      `SELECT id, unit_label, rent FROM property_units WHERE property_id = $1 ORDER BY display_order ASC, id ASC`,
       [property.id]
     );
-    property.units = unitsResult.rows.map(u => ({ id: u.id, unit_label: u.unit_label }));
+    property.units = unitsResult.rows.map(u => ({ id: u.id, unit_label: u.unit_label, rent: u.rent }));
     res.status(201).json(property);
   } catch (error) {
     console.error('Error creating property:', error);
@@ -164,23 +164,33 @@ router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
       return res.status(404).json({ error: 'Property not found' });
     }
 
-    // Replace property_units
-    await pool.query('DELETE FROM property_units WHERE property_id = $1', [req.params.id]);
+    // Upsert property_units preserving per-unit rent
     const unitLabels = Array.isArray(units) ? units : (typeof units === 'string' && units ? units.split(',').map(s => s.trim()).filter(Boolean) : []);
-    for (let i = 0; i < unitLabels.length; i++) {
-      const label = String(unitLabels[i]).slice(0, 100);
-      if (label) await pool.query(
-        `INSERT INTO property_units (property_id, unit_label, display_order) VALUES ($1, $2, $3)`,
-        [req.params.id, label, i]
+    const safeLabels = unitLabels.map(u => String(u).slice(0, 100)).filter(Boolean);
+    for (let i = 0; i < safeLabels.length; i++) {
+      await pool.query(
+        `INSERT INTO property_units (property_id, unit_label, display_order)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (property_id, unit_label) DO UPDATE SET display_order = EXCLUDED.display_order`,
+        [req.params.id, safeLabels[i], i]
       );
+    }
+    // Remove units no longer in the list
+    if (safeLabels.length > 0) {
+      await pool.query(
+        `DELETE FROM property_units WHERE property_id = $1 AND unit_label != ALL($2::text[])`,
+        [req.params.id, safeLabels]
+      );
+    } else {
+      await pool.query('DELETE FROM property_units WHERE property_id = $1', [req.params.id]);
     }
 
     const property = result.rows[0];
     const unitsResult = await pool.query(
-      `SELECT id, unit_label FROM property_units WHERE property_id = $1 ORDER BY display_order ASC, id ASC`,
+      `SELECT id, unit_label, rent FROM property_units WHERE property_id = $1 ORDER BY display_order ASC, id ASC`,
       [req.params.id]
     );
-    property.units = unitsResult.rows.map(u => ({ id: u.id, unit_label: u.unit_label }));
+    property.units = unitsResult.rows.map(u => ({ id: u.id, unit_label: u.unit_label, rent: u.rent }));
     property.number_of_units = safeNumUnits;
     res.json(property);
   } catch (error) {
