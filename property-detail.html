@@ -238,18 +238,6 @@ body { font-family: 'Inter', sans-serif; }
                 <!-- Units Tab Content -->
                 <div id="unitsTab" class="tab-content">
 
-                    <!-- Unit Rents Card (dedicated, never rebuilt by renderUnitsTable) -->
-                    <div id="unitRentsCard" class="hidden bg-white rounded-2xl border border-slate-200 p-5 mb-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="text-sm font-semibold text-slate-800">Unit Rents</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Set monthly rent per unit. Changes save automatically.</p>
-                            </div>
-                            <span id="unitRentsTotal" class="text-sm font-semibold text-slate-900"></span>
-                        </div>
-                        <div id="unitRentsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
-                    </div>
-
                     <!-- Unit List Header & Filters -->
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                         <h2 class="text-lg font-medium text-slate-900">Units</h2>
@@ -1012,7 +1000,6 @@ body { font-family: 'Inter', sans-serif; }
             
             // Load tab-specific data
             if (tabName === 'units') {
-                renderUnitRentsCard();
                 renderUnitsTable();
             } else if (tabName === 'leases') {
                 renderLeasesTable();
@@ -1830,7 +1817,6 @@ body { font-family: 'Inter', sans-serif; }
                 renderProperty();
                 await Promise.all([loadPropertyTenants(), loadAllTenants(), loadPropertyTransactions(), loadMortgage()]);
                 updateStats();
-                renderUnitRentsCard();
                 renderUnitsTable(); // Initial render for units tab
                 await loadMaintenanceRequests(); // Update maintenance badge
                 renderActionRequired(); // Populate Action Required box with real data
@@ -1902,8 +1888,6 @@ body { font-family: 'Inter', sans-serif; }
             try {
                 const list = await LeasePilot.DataManager.getTenants();
                 propertyTenants = list.filter(t => t.property_id == currentProperty.id);
-                console.log('Property tenants:', propertyTenants);
-                renderUnitsTable();
             } catch (error) {
                 console.error('Error loading tenants:', error);
             }
@@ -2232,15 +2216,7 @@ body { font-family: 'Inter', sans-serif; }
             const initials = tenant ? `${tenant.first_name?.[0] || ''}${tenant.last_name?.[0] || ''}`.toUpperCase() : '';
             const leaseEnd = tenant?.lease_end ? new Date(tenant.lease_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '–';
 
-            // Per-unit rent display (read-only in table — edit via the Unit Rents card above)
-            const unitRent = unit && parseFloat(unit.rent) > 0
-                ? parseFloat(unit.rent)
-                : parseFloat(currentProperty?.rent || 0);
-            const rentCell = `<td class="px-6 py-4 text-right">
-                <span class="text-sm font-medium ${unitRent > 0 ? 'text-slate-900' : 'text-slate-400'} tabular-nums">
-                  ${unitRent > 0 ? '$' + unitRent.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}) : '–'}
-                </span>
-              </td>`;
+            const unitRent = unit && parseFloat(unit.rent) > 0 ? parseFloat(unit.rent) : 0;
 
             const tenantCell = tenant
                 ? `<div class="flex items-center gap-3">
@@ -2265,95 +2241,60 @@ body { font-family: 'Inter', sans-serif; }
                 </td>
                 <td class="px-6 py-4">${tenantCell}</td>
                 <td class="px-6 py-4"><span class="text-sm text-slate-600">${leaseEnd}</span></td>
-                ${rentCell}
+                <td class="px-6 py-4 text-right rent-cell"></td>
                 <td class="px-6 py-4 text-right"><span class="text-sm text-slate-400">–</span></td>
                 <td class="px-6 py-4 text-right">${actionCell}</td>
             `;
             tbody.appendChild(row);
-        }
 
-        // ── Unit Rents Card ───────────────────────────────────────────────────
-        // Renders a stable card with one input per unit — lives OUTSIDE the
-        // dynamically rebuilt units table so re-renders never destroy inputs.
-        function renderUnitRentsCard() {
-            const card = document.getElementById('unitRentsCard');
-            const grid = document.getElementById('unitRentsGrid');
-            const totalEl = document.getElementById('unitRentsTotal');
-            if (!card || !grid) return;
-
-            const sfp = isSingleFamilyProperty(currentProperty);
-            const units = currentProperty?.units;
-
-            // For single-family or no units: hide the card
-            if (sfp || !units || units.length === 0) {
-                card.classList.add('hidden');
-                return;
-            }
-
-            card.classList.remove('hidden');
-
-            // Build inputs — one per unit
-            grid.innerHTML = '';
-            units.forEach(unit => {
-                const rent = parseFloat(unit.rent) || 0;
-                const wrapper = document.createElement('div');
-                wrapper.className = 'flex flex-col gap-1';
-                wrapper.innerHTML = `
-                  <label class="text-xs font-medium text-slate-500">${unit.unit_label}</label>
-                  <div class="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 focus-within:border-blue-400 focus-within:bg-white transition-colors">
-                    <span class="text-xs text-slate-400">$</span>
-                    <input type="number" min="0" step="1"
-                      value="${rent > 0 ? rent : ''}"
-                      placeholder="0"
-                      class="flex-1 bg-transparent text-sm text-right outline-none tabular-nums w-0 min-w-0">
-                  </div>
-                  <span class="text-[10px] text-slate-400 unit-rent-status hidden">Saved</span>
-                `;
-                const input = wrapper.querySelector('input');
-                const status = wrapper.querySelector('.unit-rent-status');
-
+            // Build the rent input programmatically so the listener is a real closure,
+            // not an onchange attribute that gets re-parsed each render.
+            const rentTd = row.querySelector('.rent-cell');
+            if (unit && unit.id) {
+                const wrap = document.createElement('div');
+                wrap.className = 'flex items-center justify-end gap-1';
+                const dollar = document.createElement('span');
+                dollar.className = 'text-xs text-slate-400';
+                dollar.textContent = '$';
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '0';
+                input.step = '1';
+                input.value = unitRent > 0 ? unitRent : '';
+                input.placeholder = '0';
+                input.className = 'w-20 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-right outline-none focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-100 tabular-nums transition-colors';
+                // Capture unit by closure — immune to table re-renders
+                const savedUnit = unit;
                 input.addEventListener('blur', async () => {
                     const newRent = parseFloat(input.value);
-                    if (isNaN(newRent) || newRent < 0) return;
-                    if (newRent === (parseFloat(unit.rent) || 0)) return; // no change
+                    const oldRent = parseFloat(savedUnit.rent) || 0;
+                    if (isNaN(newRent) || newRent < 0 || newRent === oldRent) return;
                     input.disabled = true;
                     try {
                         const result = await LeasePilot.API.request(
-                            '/properties/' + currentProperty.id + '/units/' + unit.id,
+                            '/properties/' + currentProperty.id + '/units/' + savedUnit.id,
                             { method: 'PATCH', body: JSON.stringify({ rent: newRent }) }
                         );
-                        unit.rent = parseFloat(result.rent);
+                        savedUnit.rent = parseFloat(result.rent);
                         input.value = result.rent > 0 ? result.rent : '';
-                        status.textContent = '✓ Saved';
-                        status.classList.remove('hidden', 'text-red-500');
-                        status.classList.add('text-emerald-600');
-                        setTimeout(() => status.classList.add('hidden'), 2000);
-                        updateUnitRentsTotal();
                         renderRentDisplay();
-                        renderUnitsTable(); // refresh read-only rent column in table
-                    } catch(e) {
-                        status.textContent = 'Error saving';
-                        status.classList.remove('hidden', 'text-emerald-600');
-                        status.classList.add('text-red-500');
-                        input.value = parseFloat(unit.rent) || '';
+                    } catch (e) {
+                        alert('Failed to save rent: ' + (e.message || e));
+                        input.value = oldRent > 0 ? oldRent : '';
                     }
                     input.disabled = false;
                 });
-
                 input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
-                grid.appendChild(wrapper);
-            });
-
-            updateUnitRentsTotal();
-        }
-
-        function updateUnitRentsTotal() {
-            const totalEl = document.getElementById('unitRentsTotal');
-            if (!totalEl || !currentProperty?.units) return;
-            const total = currentProperty.units.reduce((s, u) => s + (parseFloat(u.rent) || 0), 0);
-            totalEl.textContent = total > 0
-                ? 'Total: $' + total.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + '/mo'
-                : '';
+                wrap.appendChild(dollar);
+                wrap.appendChild(input);
+                rentTd.appendChild(wrap);
+            } else {
+                // SFH — show property-level rent, editable via stats card
+                const span = document.createElement('span');
+                span.className = 'text-sm font-medium ' + (unitRent > 0 ? 'text-slate-900' : 'text-slate-400') + ' tabular-nums';
+                span.textContent = unitRent > 0 ? '$' + unitRent.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}) : '–';
+                rentTd.appendChild(span);
+            }
         }
 
         function filterUnitsSearch() {
