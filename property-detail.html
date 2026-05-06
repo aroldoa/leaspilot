@@ -134,9 +134,9 @@ body { font-family: 'Inter', sans-serif; }
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
-                         <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-                            <i data-lucide="share" class="h-4 w-4"></i>
-                            Share
+                        <button onclick="confirmDeleteProperty()" class="flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                            <i data-lucide="trash-2" class="h-4 w-4"></i>
+                            Delete
                         </button>
                         <button onclick="editProperty()" class="flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors shadow-sm hover:shadow-md">
                             <i data-lucide="pencil" class="h-4 w-4"></i>
@@ -228,6 +228,9 @@ body { font-family: 'Inter', sans-serif; }
                         <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap" data-tab="documents">Documents</button>
                         <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap flex items-center gap-1.5" data-tab="ai">
                           <i data-lucide="sparkles" class="h-4 w-4 text-violet-500"></i>AI Insights
+                        </button>
+                        <button class="tab-button border-b-2 border-transparent pb-3 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all whitespace-nowrap flex items-center gap-1.5" data-tab="notes">
+                          <i data-lucide="sticky-note" class="h-4 w-4"></i>Notes <span class="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 hidden" id="notesBadge">0</span>
                         </button>
                     </div>
                 </div>
@@ -705,6 +708,50 @@ body { font-family: 'Inter', sans-serif; }
                   </div>
                 </div>
 
+                <!-- Notes Tab Content -->
+                <div id="notesTab" class="tab-content hidden">
+                  <div class="flex items-center justify-between mb-5">
+                    <div>
+                      <h2 class="text-lg font-medium text-slate-900">Notes &amp; Reminders</h2>
+                      <p class="text-sm text-slate-500 mt-0.5">Keep track of important details, tasks, and reminders for this property.</p>
+                    </div>
+                  </div>
+
+                  <!-- Add Note Form -->
+                  <div class="bg-white rounded-2xl border border-slate-200 p-5 mb-6">
+                    <h3 class="text-sm font-semibold text-slate-700 mb-3">Add Note or Reminder</h3>
+                    <div class="space-y-3">
+                      <textarea id="newNoteContent" rows="3" placeholder="Write a note, task, or reminder…"
+                        class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-400 resize-none"></textarea>
+                      <div class="flex flex-col sm:flex-row gap-3">
+                        <select id="newNoteType" class="rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400 bg-white">
+                          <option value="note">Note</option>
+                          <option value="todo">To-Do</option>
+                          <option value="reminder">Reminder</option>
+                        </select>
+                        <div class="flex items-center gap-2 flex-1">
+                          <label class="text-xs text-slate-500 whitespace-nowrap">Reminder date:</label>
+                          <input id="newNoteDate" type="date" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400">
+                        </div>
+                        <button onclick="addNote()" class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors whitespace-nowrap">
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Notes List -->
+                  <div id="notesLoading" class="text-center py-8 text-slate-400 text-sm">Loading notes…</div>
+                  <div id="notesList" class="hidden space-y-3"></div>
+                  <div id="notesEmpty" class="hidden text-center py-12">
+                    <div class="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                      <i data-lucide="sticky-note" class="h-6 w-6 text-slate-400"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-500">No notes yet</p>
+                    <p class="text-xs text-slate-400 mt-1">Add a note or reminder above to get started.</p>
+                  </div>
+                </div>
+
                 <footer class="mt-12 pt-8 text-center md:text-left border-t border-slate-200">
                     <p class="text-xs text-slate-400">© 2024 LeasePilot AI Inc.</p>
                 </footer>
@@ -741,6 +788,21 @@ body { font-family: 'Inter', sans-serif; }
                         </div>
                     </form>
                 </div>
+            </div>
+
+            <!-- Delete Property Confirmation Modal -->
+            <div id="deletePropertyModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" onclick="if(event.target===this)closeDeletePropertyModal()">
+              <div class="bg-white rounded-3xl shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+                <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                  <i data-lucide="trash-2" class="h-6 w-6 text-red-500"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-900 text-center mb-2">Delete Property?</h3>
+                <p class="text-sm text-slate-500 text-center mb-6">This will permanently delete <strong id="deletePropertyName" class="text-slate-800"></strong> and all its data including tenants, transactions, and documents. This cannot be undone.</p>
+                <div class="flex gap-3">
+                  <button onclick="closeDeletePropertyModal()" class="flex-1 rounded-full border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
+                  <button onclick="deleteProperty()" id="deletePropertyConfirmBtn" class="flex-1 rounded-full bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 transition-colors">Delete Property</button>
+                </div>
+              </div>
             </div>
 
             <!-- Edit Property modal (stays on this page) -->
@@ -953,6 +1015,8 @@ body { font-family: 'Inter', sans-serif; }
                 loadMortgage();
             } else if (tabName === 'ai') {
                 // panels are user-triggered, no auto-load
+            } else if (tabName === 'notes') {
+                loadNotes();
             }
         }
 
@@ -2584,6 +2648,177 @@ body { font-family: 'Inter', sans-serif; }
                 'stroke-width': 1.5
             }
         });
+
+        // ── Delete Property ───────────────────────────────────────────────────
+        function confirmDeleteProperty() {
+            const name = currentProperty?.name || 'this property';
+            document.getElementById('deletePropertyName').textContent = name;
+            const modal = document.getElementById('deletePropertyModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function closeDeletePropertyModal() {
+            const modal = document.getElementById('deletePropertyModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function deleteProperty() {
+            const btn = document.getElementById('deletePropertyConfirmBtn');
+            btn.disabled = true;
+            btn.textContent = 'Deleting…';
+            try {
+                const res = await fetch('/api/properties/' + getPropertyId(), {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data.error || 'Failed to delete property');
+                }
+                window.location.href = 'properties.html';
+            } catch (err) {
+                alert(err.message || 'Failed to delete property');
+                btn.disabled = false;
+                btn.textContent = 'Delete Property';
+            }
+        }
+
+        // ── Notes & Reminders ─────────────────────────────────────────────────
+        let propertyNotes = [];
+
+        async function loadNotes() {
+            document.getElementById('notesLoading').classList.remove('hidden');
+            document.getElementById('notesList').classList.add('hidden');
+            document.getElementById('notesEmpty').classList.add('hidden');
+            try {
+                const res = await fetch('/api/properties/' + getPropertyId() + '/notes', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to load notes');
+                propertyNotes = await res.json();
+                renderNotes();
+            } catch (err) {
+                document.getElementById('notesLoading').textContent = 'Failed to load notes.';
+            }
+        }
+
+        function renderNotes() {
+            document.getElementById('notesLoading').classList.add('hidden');
+            const badge = document.getElementById('notesBadge');
+            if (propertyNotes.length === 0) {
+                document.getElementById('notesEmpty').classList.remove('hidden');
+                badge.classList.add('hidden');
+                return;
+            }
+            badge.textContent = propertyNotes.length;
+            badge.classList.remove('hidden');
+            const list = document.getElementById('notesList');
+            list.innerHTML = propertyNotes.map(note => {
+                const typeConfig = {
+                    note:     { icon: 'file-text',  color: 'bg-slate-100 text-slate-600',  label: 'Note' },
+                    todo:     { icon: 'check-square', color: 'bg-blue-100 text-blue-600',   label: 'To-Do' },
+                    reminder: { icon: 'bell',        color: 'bg-amber-100 text-amber-600',  label: 'Reminder' },
+                }[note.note_type] || { icon: 'file-text', color: 'bg-slate-100 text-slate-600', label: 'Note' };
+
+                const isOverdue = note.reminder_date && new Date(note.reminder_date) < new Date() && !note.is_pinned;
+                const remindStr = note.reminder_date
+                    ? `<span class="text-xs ${isOverdue ? 'text-red-500 font-medium' : 'text-slate-400'} flex items-center gap-1"><i data-lucide="calendar" class="h-3 w-3"></i>${new Date(note.reminder_date + 'T00:00:00').toLocaleDateString()}</span>`
+                    : '';
+
+                return `
+                <div class="bg-white rounded-2xl border ${note.is_pinned ? 'border-amber-200' : 'border-slate-200'} p-4 group">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-xl ${typeConfig.color} flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i data-lucide="${typeConfig.icon}" class="h-4 w-4"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 mb-1 flex-wrap">
+                        <span class="text-xs font-semibold ${typeConfig.color} px-2 py-0.5 rounded-full">${typeConfig.label}</span>
+                        ${note.is_pinned ? '<span class="text-xs text-amber-600 font-medium flex items-center gap-1"><i data-lucide="pin" class="h-3 w-3"></i>Pinned</span>' : ''}
+                        ${remindStr}
+                      </div>
+                      <p class="text-sm text-slate-800 whitespace-pre-wrap break-words">${escapeHtml(note.content)}</p>
+                      <p class="text-xs text-slate-400 mt-2">${new Date(note.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                      <button onclick="togglePinNote(${note.id}, ${note.is_pinned})" title="${note.is_pinned ? 'Unpin' : 'Pin'}"
+                        class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-amber-500 transition-colors">
+                        <i data-lucide="pin" class="h-3.5 w-3.5"></i>
+                      </button>
+                      <button onclick="deleteNote(${note.id})" title="Delete"
+                        class="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
+                        <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>`;
+            }).join('');
+            list.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        async function addNote() {
+            const content = document.getElementById('newNoteContent').value.trim();
+            if (!content) { document.getElementById('newNoteContent').focus(); return; }
+            const note_type = document.getElementById('newNoteType').value;
+            const reminder_date = document.getElementById('newNoteDate').value || null;
+            try {
+                const res = await fetch('/api/properties/' + getPropertyId() + '/notes', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content, note_type, reminder_date })
+                });
+                if (!res.ok) throw new Error((await res.json()).error || 'Failed to add note');
+                const note = await res.json();
+                propertyNotes.unshift(note);
+                document.getElementById('newNoteContent').value = '';
+                document.getElementById('newNoteDate').value = '';
+                document.getElementById('newNoteType').value = 'note';
+                renderNotes();
+            } catch (err) {
+                alert(err.message || 'Failed to add note');
+            }
+        }
+
+        async function togglePinNote(noteId, isPinned) {
+            try {
+                const res = await fetch('/api/properties/' + getPropertyId() + '/notes/' + noteId, {
+                    method: 'PATCH',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_pinned: !isPinned })
+                });
+                if (!res.ok) throw new Error('Failed to update note');
+                const updated = await res.json();
+                const idx = propertyNotes.findIndex(n => n.id === noteId);
+                if (idx !== -1) propertyNotes[idx] = updated;
+                propertyNotes.sort((a, b) => b.is_pinned - a.is_pinned);
+                renderNotes();
+            } catch (err) {
+                alert(err.message || 'Failed to update note');
+            }
+        }
+
+        async function deleteNote(noteId) {
+            if (!confirm('Delete this note?')) return;
+            try {
+                const res = await fetch('/api/properties/' + getPropertyId() + '/notes/' + noteId, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                if (!res.ok) throw new Error('Failed to delete note');
+                propertyNotes = propertyNotes.filter(n => n.id !== noteId);
+                renderNotes();
+            } catch (err) {
+                alert(err.message || 'Failed to delete note');
+            }
+        }
     </script>
 
 </body></html>

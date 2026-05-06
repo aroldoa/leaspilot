@@ -517,6 +517,20 @@ export async function initializeDatabase(pool) {
       )
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS property_notes (
+        id SERIAL PRIMARY KEY,
+        property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
+        note_type VARCHAR(20) DEFAULT 'note',
+        reminder_date DATE,
+        is_pinned BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     console.log('✅ Database schema created successfully');
   } catch (error) {
     console.error('Error initializing database:', error);

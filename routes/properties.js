@@ -319,6 +319,91 @@ router.post('/:id/documents', authenticateToken, requireRole('Portfolio Manager'
   }
 });
 
+// GET /api/properties/:id/notes
+router.get('/:id/notes', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
+  try {
+    const pool = req.app.locals.pool;
+    const ownerIds = await getOwnerIds(pool, req.userId);
+    const prop = await pool.query('SELECT id FROM properties WHERE id = $1 AND user_id = ANY($2::int[])', [req.params.id, ownerIds]);
+    if (prop.rows.length === 0) return res.status(404).json({ error: 'Property not found' });
+    const result = await pool.query(
+      `SELECT id, content, note_type, reminder_date, is_pinned, created_at, updated_at
+       FROM property_notes WHERE property_id = $1
+       ORDER BY is_pinned DESC, created_at DESC`,
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('GET /api/properties/:id/notes error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/properties/:id/notes
+router.post('/:id/notes', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
+  try {
+    const pool = req.app.locals.pool;
+    const ownerIds = await getOwnerIds(pool, req.userId);
+    const prop = await pool.query('SELECT id FROM properties WHERE id = $1 AND user_id = ANY($2::int[])', [req.params.id, ownerIds]);
+    if (prop.rows.length === 0) return res.status(404).json({ error: 'Property not found' });
+    const content = (req.body.content || '').toString().trim();
+    if (!content) return res.status(400).json({ error: 'Content is required' });
+    const note_type = ['note', 'reminder', 'todo'].includes(req.body.note_type) ? req.body.note_type : 'note';
+    const reminder_date = req.body.reminder_date || null;
+    const result = await pool.query(
+      `INSERT INTO property_notes (property_id, user_id, content, note_type, reminder_date)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [req.params.id, req.userId, content, note_type, reminder_date]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('POST /api/properties/:id/notes error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PATCH /api/properties/:id/notes/:noteId
+router.patch('/:id/notes/:noteId', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
+  try {
+    const pool = req.app.locals.pool;
+    const fields = [];
+    const vals = [];
+    let idx = 1;
+    if (req.body.content !== undefined) { fields.push(`content = $${idx++}`); vals.push(req.body.content); }
+    if (req.body.note_type !== undefined) { fields.push(`note_type = $${idx++}`); vals.push(req.body.note_type); }
+    if (req.body.reminder_date !== undefined) { fields.push(`reminder_date = $${idx++}`); vals.push(req.body.reminder_date || null); }
+    if (req.body.is_pinned !== undefined) { fields.push(`is_pinned = $${idx++}`); vals.push(!!req.body.is_pinned); }
+    if (fields.length === 0) return res.status(400).json({ error: 'Nothing to update' });
+    fields.push(`updated_at = CURRENT_TIMESTAMP`);
+    vals.push(req.params.noteId, req.userId);
+    const result = await pool.query(
+      `UPDATE property_notes SET ${fields.join(', ')} WHERE id = $${idx++} AND user_id = $${idx++} RETURNING *`,
+      vals
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Note not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('PATCH /api/properties/:id/notes/:noteId error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/properties/:id/notes/:noteId
+router.delete('/:id/notes/:noteId', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
+  try {
+    const pool = req.app.locals.pool;
+    const result = await pool.query(
+      'DELETE FROM property_notes WHERE id = $1 AND user_id = $2 RETURNING id',
+      [req.params.noteId, req.userId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Note not found' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DELETE /api/properties/:id/notes/:noteId error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
 
 
