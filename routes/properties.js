@@ -69,14 +69,33 @@ router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
     }
 
     const property = result.rows[0];
-    const unitsResult = await pool.query(
+    const numUnits = Math.max(1, parseInt(property.number_of_units, 10) || 1);
+    property.number_of_units = numUnits;
+
+    let unitsResult = await pool.query(
       `SELECT id, unit_label, rent, display_order FROM property_units
        WHERE property_id = $1 ORDER BY display_order ASC, id ASC`,
       [req.params.id]
     );
+
+    // Auto-create unit rows for multi-unit properties that have none yet
+    const isSingleFamily = /(single|house|sfr)/i.test(property.type || '');
+    if (!isSingleFamily && numUnits > 1 && unitsResult.rows.length === 0) {
+      for (let i = 0; i < numUnits; i++) {
+        await pool.query(
+          `INSERT INTO property_units (property_id, unit_label, display_order) VALUES ($1, $2, $3)
+           ON CONFLICT (property_id, unit_label) DO NOTHING`,
+          [req.params.id, `Unit ${i + 1}`, i]
+        );
+      }
+      unitsResult = await pool.query(
+        `SELECT id, unit_label, rent, display_order FROM property_units
+         WHERE property_id = $1 ORDER BY display_order ASC, id ASC`,
+        [req.params.id]
+      );
+    }
+
     property.units = unitsResult.rows.map(u => ({ id: u.id, unit_label: u.unit_label, rent: u.rent }));
-    if (property.number_of_units == null) property.number_of_units = 1;
-    else property.number_of_units = Math.max(1, parseInt(property.number_of_units, 10) || 1);
     res.json(property);
   } catch (error) {
     console.error('Error fetching property:', error);

@@ -2208,17 +2208,21 @@ body { font-family: 'Inter', sans-serif; }
             const unitId = unit?.id || null;
             const propId = currentProperty?.id;
 
+            const rentLabel = unitRent > 0
+                ? '$' + unitRent.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})
+                : '<span class="text-slate-400 font-normal">Set rent</span>';
             const rentCell = unitId
                 ? `<td class="px-6 py-4 text-right">
                      <button onclick="startEditUnitRent(this, ${unitId}, ${propId})"
                        class="text-sm font-medium text-slate-900 tabular-nums hover:text-blue-600 transition-colors cursor-pointer" title="Click to edit rent">
-                       ${unitRent > 0 ? '$' + unitRent.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}) : '<span class="text-slate-400 font-normal">Set rent</span>'}
+                       ${rentLabel}
                      </button>
                    </td>`
                 : `<td class="px-6 py-4 text-right">
-                     <span class="text-sm font-medium text-slate-900 tabular-nums">
-                       ${unitRent > 0 ? '$' + unitRent.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}) : '–'}
-                     </span>
+                     <button onclick="startEditPropertyRentInline(this)"
+                       class="text-sm font-medium text-slate-900 tabular-nums hover:text-blue-600 transition-colors cursor-pointer" title="Click to edit rent">
+                       ${rentLabel}
+                     </button>
                    </td>`;
 
             const tenantCell = tenant
@@ -2276,6 +2280,39 @@ body { font-family: 'Inter', sans-serif; }
                     const u = currentProperty.units.find(u => u.id === unitId);
                     if (u) u.rent = result.rent;
                     renderUnitsTable();
+                } catch(e) {
+                    alert('Failed to save rent: ' + (e.message || e));
+                    input.replaceWith(btn);
+                }
+            }
+
+            input.addEventListener('blur', save);
+            input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') input.replaceWith(btn); });
+        }
+
+        function startEditPropertyRentInline(btn) {
+            const currentVal = parseFloat(currentProperty?.rent || 0) || '';
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.step = '0.01';
+            input.value = currentVal;
+            input.className = 'w-24 rounded-lg border border-blue-300 px-2 py-1 text-sm text-right outline-none focus:ring-2 focus:ring-blue-200';
+            btn.replaceWith(input);
+            input.focus();
+            input.select();
+
+            async function save() {
+                const rent = parseFloat(input.value);
+                if (isNaN(rent) || rent < 0) { input.replaceWith(btn); return; }
+                try {
+                    await LeasePilot.API.request('/properties/' + currentProperty.id + '/rent', {
+                        method: 'PATCH',
+                        body: JSON.stringify({ rent }),
+                    });
+                    currentProperty.rent = rent;
+                    renderUnitsTable();
+                    renderRentDisplay();
                 } catch(e) {
                     alert('Failed to save rent: ' + (e.message || e));
                     input.replaceWith(btn);
