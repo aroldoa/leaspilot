@@ -357,7 +357,13 @@ body { font-family: 'Inter', sans-serif; }
                 <!-- Payments Tab Content -->
                 <div id="paymentsTab" class="tab-content hidden">
                     <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                        <h2 class="text-lg font-medium text-slate-900 mb-4">Payment History</h2>
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-medium text-slate-900">Payment History</h2>
+                            <button onclick="openRecordPaymentModal()" class="flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
+                                <i data-lucide="plus" class="h-4 w-4"></i>
+                                Record Payment
+                            </button>
+                        </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
@@ -442,6 +448,53 @@ body { font-family: 'Inter', sans-serif; }
                         <button type="button" onclick="closeSmsModal()" class="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
                         <button type="button" id="smsModalSend" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Send</button>
                     </div>
+                </div>
+            </div>
+
+            <!-- Record Payment modal -->
+            <div id="recordPaymentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" onclick="if (event.target === this) closeRecordPaymentModal()">
+                <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+                    <div class="flex items-center justify-between mb-5">
+                        <h2 class="text-xl font-semibold text-slate-900">Record Payment</h2>
+                        <button type="button" onclick="closeRecordPaymentModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+                    </div>
+                    <form id="recordPaymentForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                                <input type="number" id="paymentAmount" min="0.01" step="0.01" required class="w-full pl-7 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                            <input type="date" id="paymentDate" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                            <input type="text" id="paymentDescription" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none" placeholder="Rent payment">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                            <select id="paymentCategory" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                                <option value="rent">Rent</option>
+                                <option value="deposit">Deposit</option>
+                                <option value="late_fee">Late Fee</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                            <select id="paymentStatus" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 outline-none">
+                                <option value="cleared">Cleared</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-3 pt-2">
+                            <button type="button" onclick="closeRecordPaymentModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">Cancel</button>
+                            <button type="submit" id="recordPaymentSubmit" class="flex-1 py-2.5 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800">Save Payment</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
@@ -1049,6 +1102,62 @@ body { font-family: 'Inter', sans-serif; }
         lucide.createIcons({
             attrs: {
                 'stroke-width': 1.5
+            }
+        });
+
+        // ── Record Payment ─────────────────────────────────────────────────────
+        function openRecordPaymentModal() {
+            const today = new Date().toISOString().slice(0, 10);
+            document.getElementById('paymentAmount').value = '';
+            document.getElementById('paymentDate').value = today;
+            document.getElementById('paymentDescription').value = '';
+            document.getElementById('paymentCategory').value = 'rent';
+            document.getElementById('paymentStatus').value = 'cleared';
+            const modal = document.getElementById('recordPaymentModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            lucide.createIcons();
+            document.getElementById('paymentAmount').focus();
+        }
+
+        function closeRecordPaymentModal() {
+            const modal = document.getElementById('recordPaymentModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        document.getElementById('recordPaymentForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!currentTenant || !currentTenant.property_id) return;
+            const btn = document.getElementById('recordPaymentSubmit');
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+            try {
+                const amount = parseFloat(document.getElementById('paymentAmount').value);
+                const date = document.getElementById('paymentDate').value;
+                const description = document.getElementById('paymentDescription').value.trim() || 'Rent payment';
+                const category = document.getElementById('paymentCategory').value;
+                const status = document.getElementById('paymentStatus').value;
+                await LeasePilot.API.request('/transactions', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        type: 'income',
+                        description,
+                        amount,
+                        category,
+                        property_id: currentTenant.property_id,
+                        transaction_date: date,
+                        status
+                    })
+                });
+                LeasePilot.Toast.show('Payment recorded.', 'success');
+                closeRecordPaymentModal();
+                await loadTenantTransactions();
+            } catch (err) {
+                LeasePilot.Toast.show(err.message || 'Failed to record payment.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Payment';
             }
         });
 
