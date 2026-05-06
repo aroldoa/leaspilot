@@ -467,7 +467,18 @@ export async function initializeDatabase(pool) {
       )
     `);
     await pool.query(`ALTER TABLE property_units ADD COLUMN IF NOT EXISTS rent DECIMAL(10,2) DEFAULT 0`);
-    await pool.query(`ALTER TABLE property_units ADD CONSTRAINT IF NOT EXISTS property_units_property_unit_unique UNIQUE (property_id, unit_label)`).catch(() => {});
+    // Deduplicate before creating the unique index (safe to run multiple times)
+    await pool.query(`
+      DELETE FROM property_units a
+      USING property_units b
+      WHERE a.id < b.id
+        AND a.property_id = b.property_id
+        AND a.unit_label = b.unit_label
+    `).catch(() => {});
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_property_units_prop_unit
+      ON property_units(property_id, unit_label)
+    `).catch(() => {});
     await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS loan_number VARCHAR(100)`);
     await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS monthly_tax DECIMAL(10,2) DEFAULT 0`);
     await pool.query(`ALTER TABLE property_mortgages ADD COLUMN IF NOT EXISTS monthly_insurance DECIMAL(10,2) DEFAULT 0`);
