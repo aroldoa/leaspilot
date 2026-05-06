@@ -2203,26 +2203,34 @@ body { font-family: 'Inter', sans-serif; }
             const initials = tenant ? `${tenant.first_name?.[0] || ''}${tenant.last_name?.[0] || ''}`.toUpperCase() : '';
             const leaseEnd = tenant?.lease_end ? new Date(tenant.lease_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '–';
 
-            // Per-unit rent: use unit.rent if set (>0), else property rent
-            const unitRent = unit && parseFloat(unit.rent) > 0 ? parseFloat(unit.rent) : parseFloat(currentProperty?.rent || 0);
-            const unitId = unit?.id || null;
+            // Per-unit rent: use unit-specific rent if set, else property-level rent as default
+            const unitRent = unit && parseFloat(unit.rent) > 0 ? parseFloat(unit.rent) : 0;
+            const unitId = unit ? unit.id : null;
             const propId = currentProperty?.id;
 
-            const rentLabel = unitRent > 0
-                ? '$' + unitRent.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})
-                : '<span class="text-slate-400 font-normal">Set rent</span>';
+            // Always show an editable input — no click-to-reveal needed
             const rentCell = unitId
                 ? `<td class="px-6 py-4 text-right">
-                     <button onclick="startEditUnitRent(this, ${unitId}, ${propId})"
-                       class="text-sm font-medium text-slate-900 tabular-nums hover:text-blue-600 transition-colors cursor-pointer" title="Click to edit rent">
-                       ${rentLabel}
-                     </button>
+                     <div class="flex items-center justify-end gap-1">
+                       <span class="text-xs text-slate-400">$</span>
+                       <input type="number" min="0" step="1"
+                         value="${unitRent > 0 ? unitRent : ''}"
+                         placeholder="0"
+                         data-unit-id="${unitId}" data-prop-id="${propId}"
+                         onchange="saveUnitRentInput(this)"
+                         class="w-24 rounded-lg border border-slate-200 px-2 py-1 text-sm text-right outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 tabular-nums">
+                     </div>
                    </td>`
                 : `<td class="px-6 py-4 text-right">
-                     <button onclick="startEditPropertyRentInline(this)"
-                       class="text-sm font-medium text-slate-900 tabular-nums hover:text-blue-600 transition-colors cursor-pointer" title="Click to edit rent">
-                       ${rentLabel}
-                     </button>
+                     <div class="flex items-center justify-end gap-1">
+                       <span class="text-xs text-slate-400">$</span>
+                       <input type="number" min="0" step="1"
+                         value="${parseFloat(currentProperty?.rent || 0) > 0 ? parseFloat(currentProperty?.rent || 0) : ''}"
+                         placeholder="0"
+                         data-prop-id="${propId}"
+                         onchange="savePropertyRentInput(this)"
+                         class="w-24 rounded-lg border border-slate-200 px-2 py-1 text-sm text-right outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 tabular-nums">
+                     </div>
                    </td>`;
 
             const tenantCell = tenant
@@ -2255,72 +2263,46 @@ body { font-family: 'Inter', sans-serif; }
             tbody.appendChild(row);
         }
 
-        function startEditUnitRent(btn, unitId, propId) {
-            const currentText = btn.textContent.trim();
-            const currentVal = currentText.replace(/[^0-9.]/g, '') || '';
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.min = '0';
-            input.step = '0.01';
-            input.value = currentVal;
-            input.className = 'w-24 rounded-lg border border-blue-300 px-2 py-1 text-sm text-right outline-none focus:ring-2 focus:ring-blue-200';
-            btn.replaceWith(input);
-            input.focus();
-            input.select();
-
-            async function save() {
-                const rent = parseFloat(input.value);
-                if (isNaN(rent) || rent < 0) { input.replaceWith(btn); return; }
-                try {
-                    const result = await LeasePilot.API.request('/properties/' + propId + '/units/' + unitId, {
-                        method: 'PATCH',
-                        body: JSON.stringify({ rent }),
-                    });
-                    // Update unit rent in currentProperty
-                    const u = currentProperty.units.find(u => u.id === unitId);
-                    if (u) u.rent = result.rent;
-                    renderUnitsTable();
-                } catch(e) {
-                    alert('Failed to save rent: ' + (e.message || e));
-                    input.replaceWith(btn);
-                }
+        async function saveUnitRentInput(input) {
+            const unitId = parseInt(input.dataset.unitId, 10);
+            const propId = parseInt(input.dataset.propId, 10);
+            const rent = parseFloat(input.value);
+            if (isNaN(rent) || rent < 0) return;
+            input.disabled = true;
+            input.classList.add('opacity-50');
+            try {
+                const result = await LeasePilot.API.request('/properties/' + propId + '/units/' + unitId, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ rent }),
+                });
+                const u = currentProperty.units.find(u => u.id === unitId);
+                if (u) u.rent = parseFloat(result.rent);
+                input.value = result.rent > 0 ? result.rent : '';
+            } catch(e) {
+                alert('Failed to save rent: ' + (e.message || e));
             }
-
-            input.addEventListener('blur', save);
-            input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') input.replaceWith(btn); });
+            input.disabled = false;
+            input.classList.remove('opacity-50');
         }
 
-        function startEditPropertyRentInline(btn) {
-            const currentVal = parseFloat(currentProperty?.rent || 0) || '';
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.min = '0';
-            input.step = '0.01';
-            input.value = currentVal;
-            input.className = 'w-24 rounded-lg border border-blue-300 px-2 py-1 text-sm text-right outline-none focus:ring-2 focus:ring-blue-200';
-            btn.replaceWith(input);
-            input.focus();
-            input.select();
-
-            async function save() {
-                const rent = parseFloat(input.value);
-                if (isNaN(rent) || rent < 0) { input.replaceWith(btn); return; }
-                try {
-                    await LeasePilot.API.request('/properties/' + currentProperty.id + '/rent', {
-                        method: 'PATCH',
-                        body: JSON.stringify({ rent }),
-                    });
-                    currentProperty.rent = rent;
-                    renderUnitsTable();
-                    renderRentDisplay();
-                } catch(e) {
-                    alert('Failed to save rent: ' + (e.message || e));
-                    input.replaceWith(btn);
-                }
+        async function savePropertyRentInput(input) {
+            const propId = parseInt(input.dataset.propId, 10);
+            const rent = parseFloat(input.value);
+            if (isNaN(rent) || rent < 0) return;
+            input.disabled = true;
+            input.classList.add('opacity-50');
+            try {
+                await LeasePilot.API.request('/properties/' + propId + '/rent', {
+                    method: 'PATCH',
+                    body: JSON.stringify({ rent }),
+                });
+                currentProperty.rent = rent;
+                renderRentDisplay();
+            } catch(e) {
+                alert('Failed to save rent: ' + (e.message || e));
             }
-
-            input.addEventListener('blur', save);
-            input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') input.replaceWith(btn); });
+            input.disabled = false;
+            input.classList.remove('opacity-50');
         }
 
         function filterUnitsSearch() {
