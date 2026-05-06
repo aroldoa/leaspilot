@@ -1582,6 +1582,7 @@ body { font-family: 'Inter', sans-serif; }
                 });
                 propertyTransactions.unshift(txn);
                 renderFinancialsTable();
+                updateStats();
                 closeAddTransactionModal();
                 if (typeof LeasePilot !== 'undefined' && LeasePilot.Toast) {
                     LeasePilot.Toast.show('Transaction saved');
@@ -2043,8 +2044,10 @@ body { font-family: 'Inter', sans-serif; }
 
             // Monthly Profit / Loss
             const now = new Date();
+            const nowMonth = now.getUTCMonth();
+            const nowYear = now.getUTCFullYear();
             const monthlyIncome = propertyTransactions
-                .filter(t => t.type === 'income' && new Date(t.transaction_date).getMonth() === now.getMonth() && new Date(t.transaction_date).getFullYear() === now.getFullYear())
+                .filter(t => { const d = new Date(t.transaction_date); return t.type === 'income' && d.getUTCMonth() === nowMonth && d.getUTCFullYear() === nowYear; })
                 .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
             const m = currentMortgage;
             const monthlyExpenses = m
@@ -2414,8 +2417,9 @@ body { font-family: 'Inter', sans-serif; }
             // Calculate totals
             let totalRevenue = 0;
             let totalExpenses = 0;
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
+            const _now = new Date();
+            const currentMonth = _now.getUTCMonth();
+            const currentYear = _now.getUTCFullYear();
             let monthlyIncome = 0;
 
             propertyTransactions.forEach(t => {
@@ -2423,7 +2427,7 @@ body { font-family: 'Inter', sans-serif; }
                 if (t.type === 'income') {
                     totalRevenue += amount;
                     const transDate = new Date(t.transaction_date);
-                    if (transDate.getMonth() === currentMonth && transDate.getFullYear() === currentYear) {
+                    if (transDate.getUTCMonth() === currentMonth && transDate.getUTCFullYear() === currentYear) {
                         monthlyIncome += amount;
                     }
                 } else if (t.type === 'expense') {
