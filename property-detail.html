@@ -2070,12 +2070,29 @@ body { font-family: 'Inter', sans-serif; }
             renderRentDisplay();
         }
 
+        function getTotalRent() {
+            const sfp = isSingleFamilyProperty(currentProperty);
+            if (!sfp && currentProperty?.units?.length > 0) {
+                const unitTotal = currentProperty.units.reduce((sum, u) => sum + parseFloat(u.rent || 0), 0);
+                if (unitTotal > 0) return unitTotal;
+            }
+            return parseFloat(currentProperty?.rent || 0);
+        }
+
         function renderRentDisplay() {
             const el = document.getElementById('statRentDisplay');
             if (!el) return;
-            const rent = parseFloat(currentProperty?.rent || 0);
+            const rent = getTotalRent();
             el.textContent = rent > 0 ? '$' + rent.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + '/mo' : 'Set rent';
             el.className = 'font-medium ' + (rent > 0 ? 'text-slate-900' : 'text-slate-400');
+
+            // Hide the property-level edit button for multi-family — rent is set per unit
+            const editBtn = document.getElementById('editRentBtn');
+            if (editBtn) {
+                const sfp = isSingleFamilyProperty(currentProperty);
+                const hasUnitRents = !sfp && currentProperty?.units?.length > 0;
+                editBtn.style.display = hasUnitRents ? 'none' : '';
+            }
             lucide.createIcons();
         }
 
@@ -2278,6 +2295,7 @@ body { font-family: 'Inter', sans-serif; }
                 const u = currentProperty.units.find(u => u.id === unitId);
                 if (u) u.rent = parseFloat(result.rent);
                 input.value = result.rent > 0 ? result.rent : '';
+                renderRentDisplay(); // update total rent in the stats card
             } catch(e) {
                 alert('Failed to save rent: ' + (e.message || e));
             }
