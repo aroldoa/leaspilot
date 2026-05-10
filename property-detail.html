@@ -348,6 +348,7 @@ body { font-family: 'Inter', sans-serif; }
                                         <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
                                         <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">Amount</th>
                                         <th class="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-4"></th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-50" id="financialsTableBody">
@@ -901,12 +902,13 @@ body { font-family: 'Inter', sans-serif; }
     <div id="addTransactionModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" onclick="if(event.target===this)closeAddTransactionModal()">
       <div class="bg-white rounded-3xl shadow-xl w-full max-w-md p-6" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-5">
-          <h3 class="text-lg font-semibold text-slate-900">Add Transaction</h3>
+          <h3 id="txnModalTitle" class="text-lg font-semibold text-slate-900">Add Transaction</h3>
           <button onclick="closeAddTransactionModal()" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
             <i data-lucide="x" class="h-5 w-5"></i>
           </button>
         </div>
         <form id="addTransactionForm" onsubmit="submitTransaction(event)" class="space-y-4">
+          <input type="hidden" id="txnId" value="">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Type</label>
@@ -954,6 +956,7 @@ body { font-family: 'Inter', sans-serif; }
             </select>
           </div>
           <div class="flex gap-3 pt-2">
+            <button type="button" id="txnDeleteBtn" onclick="deleteTransactionFromModal()" class="hidden rounded-full border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">Delete</button>
             <button type="button" onclick="closeAddTransactionModal()" class="flex-1 rounded-full border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
             <button type="submit" id="txnSubmitBtn" class="flex-1 rounded-full bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors">Save Transaction</button>
           </div>
@@ -1548,8 +1551,28 @@ body { font-family: 'Inter', sans-serif; }
 
         // ── Add Transaction modal ─────────────────────────────────────────────
         function openAddTransactionModal() {
-            // Default date to today
+            document.getElementById('addTransactionForm').reset();
+            document.getElementById('txnId').value = '';
             document.getElementById('txnDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('txnModalTitle').textContent = 'Add Transaction';
+            document.getElementById('txnSubmitBtn').textContent = 'Save Transaction';
+            document.getElementById('txnDeleteBtn').classList.add('hidden');
+            document.getElementById('addTransactionModal').classList.remove('hidden');
+            document.getElementById('addTransactionModal').classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function openEditTransactionModal(txn) {
+            document.getElementById('txnId').value = txn.id;
+            document.getElementById('txnType').value = txn.type || 'income';
+            document.getElementById('txnDate').value = (txn.transaction_date || '').slice(0, 10);
+            document.getElementById('txnDescription').value = txn.description || '';
+            document.getElementById('txnCategory').value = txn.category || 'rent';
+            document.getElementById('txnAmount').value = parseFloat(txn.amount || 0);
+            document.getElementById('txnStatus').value = txn.status || 'cleared';
+            document.getElementById('txnModalTitle').textContent = 'Edit Transaction';
+            document.getElementById('txnSubmitBtn').textContent = 'Update Transaction';
+            document.getElementById('txnDeleteBtn').classList.remove('hidden');
             document.getElementById('addTransactionModal').classList.remove('hidden');
             document.getElementById('addTransactionModal').classList.add('flex');
             lucide.createIcons();
@@ -1565,32 +1588,62 @@ body { font-family: 'Inter', sans-serif; }
             e.preventDefault();
             const propId = getPropertyId();
             if (!propId) return;
+            const txnId = document.getElementById('txnId').value;
+            const isEdit = !!txnId;
             const btn = document.getElementById('txnSubmitBtn');
             btn.disabled = true; btn.textContent = 'Saving…';
             try {
-                const txn = await LeasePilot.API.request('/transactions', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        property_id:      parseInt(propId),
-                        type:             document.getElementById('txnType').value,
-                        description:      document.getElementById('txnDescription').value,
-                        category:         document.getElementById('txnCategory').value,
-                        amount:           parseFloat(document.getElementById('txnAmount').value),
-                        transaction_date: document.getElementById('txnDate').value,
-                        status:           document.getElementById('txnStatus').value,
-                    }),
-                });
-                propertyTransactions.unshift(txn);
+                const payload = {
+                    property_id:      parseInt(propId),
+                    type:             document.getElementById('txnType').value,
+                    description:      document.getElementById('txnDescription').value,
+                    category:         document.getElementById('txnCategory').value,
+                    amount:           parseFloat(document.getElementById('txnAmount').value),
+                    transaction_date: document.getElementById('txnDate').value,
+                    status:           document.getElementById('txnStatus').value,
+                };
+                const txn = await LeasePilot.API.request(
+                    isEdit ? '/transactions/' + txnId : '/transactions',
+                    { method: isEdit ? 'PUT' : 'POST', body: JSON.stringify(payload) }
+                );
+                if (isEdit) {
+                    const idx = propertyTransactions.findIndex(t => t.id == txnId);
+                    if (idx !== -1) propertyTransactions[idx] = txn;
+                } else {
+                    propertyTransactions.unshift(txn);
+                }
                 renderFinancialsTable();
                 updateStats();
                 closeAddTransactionModal();
                 if (typeof LeasePilot !== 'undefined' && LeasePilot.Toast) {
-                    LeasePilot.Toast.show('Transaction saved');
+                    LeasePilot.Toast.show(isEdit ? 'Transaction updated' : 'Transaction saved');
                 }
             } catch (err) {
                 alert('Failed to save transaction: ' + (err.message || err));
             }
-            btn.disabled = false; btn.textContent = 'Save Transaction';
+            btn.disabled = false;
+            btn.textContent = isEdit ? 'Update Transaction' : 'Save Transaction';
+        }
+
+        async function deleteTransactionFromModal() {
+            const txnId = document.getElementById('txnId').value;
+            if (!txnId) return;
+            if (!confirm('Delete this transaction? This cannot be undone.')) return;
+            const btn = document.getElementById('txnDeleteBtn');
+            btn.disabled = true; btn.textContent = 'Deleting…';
+            try {
+                await LeasePilot.API.request('/transactions/' + txnId, { method: 'DELETE' });
+                propertyTransactions = propertyTransactions.filter(t => t.id != txnId);
+                renderFinancialsTable();
+                updateStats();
+                closeAddTransactionModal();
+                if (typeof LeasePilot !== 'undefined' && LeasePilot.Toast) {
+                    LeasePilot.Toast.show('Transaction deleted');
+                }
+            } catch (err) {
+                alert('Failed to delete transaction: ' + (err.message || err));
+            }
+            btn.disabled = false; btn.textContent = 'Delete';
         }
 
         function esc(s) { return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -2514,8 +2567,14 @@ body { font-family: 'Inter', sans-serif; }
                             ${status.label}
                         </span>
                     </td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="edit-txn-btn opacity-0 group-hover:opacity-100 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all" title="Edit">
+                            <i data-lucide="pencil" class="h-3.5 w-3.5"></i>
+                        </button>
+                    </td>
                 `;
                 tbody.appendChild(row);
+                row.querySelector('.edit-txn-btn').addEventListener('click', () => openEditTransactionModal(transaction));
             });
 
             lucide.createIcons();
