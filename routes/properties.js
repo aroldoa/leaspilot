@@ -39,6 +39,60 @@ const propertyDocUpload = multer({
 
 const router = express.Router();
 
+// ── Plan limits ───────────────────────────────────────────────────────────────
+// Free plan: max 1 property. Paid plans: max units across all properties.
+const PLAN_UNIT_LIMITS  = { starter: 5, growth: 25, portfolio: 100 };
+const OWNER_EMAIL = 'aroldo@investsupreme.com';
+
+async function checkUnitLimit(pool, userId, incomingUnits, excludePropertyId = null) {
+  const userResult = await pool.query(
+    'SELECT email, plan FROM users WHERE id = $1',
+    [userId]
+  );
+  const user = userResult.rows[0];
+  if (!user) return { allowed: false, error: 'User not found' };
+
+  // Owner has no limit
+  if (user.email.toLowerCase() === OWNER_EMAIL.toLowerCase()) return { allowed: true };
+
+  const plan = (user.plan || 'free').toLowerCase();
+
+  // Free plan: limited to 1 property
+  if (plan === 'free' || plan === 'inactive') {
+    const params = [userId];
+    let sql = `SELECT COUNT(*)::int AS total FROM properties WHERE user_id = $1`;
+    if (excludePropertyId) { sql += ` AND id != $2`; params.push(excludePropertyId); }
+    const { rows } = await pool.query(sql, params);
+    const propertyCount = rows[0].total;
+    if (propertyCount >= 1) {
+      return {
+        allowed: false,
+        error: 'The Free plan is limited to 1 property. Please upgrade to a paid plan in Settings → Billing to add more properties.',
+      };
+    }
+    return { allowed: true };
+  }
+
+  // Paid plans: limited by total units
+  const limit = PLAN_UNIT_LIMITS[plan];
+  if (!limit) return { allowed: true }; // unknown plan — allow
+
+  const params = [userId];
+  let sql = `SELECT COALESCE(SUM(number_of_units), 0)::int AS total FROM properties WHERE user_id = $1`;
+  if (excludePropertyId) { sql += ` AND id != $2`; params.push(excludePropertyId); }
+  const { rows } = await pool.query(sql, params);
+  const current = rows[0].total;
+
+  if (current + incomingUnits > limit) {
+    const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
+    return {
+      allowed: false,
+      error: `Your ${planName} plan allows up to ${limit} units total. You currently have ${current} and are trying to add ${incomingUnits}. Please upgrade your plan in Settings → Billing.`,
+    };
+  }
+  return { allowed: true };
+}
+
 // Get all properties for user (owned + collaborated)
 router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
@@ -114,6 +168,11 @@ router.post('/', authenticateToken, requireRole('Portfolio Manager'), async (req
 
     const pool = req.app.locals.pool;
     const numUnits = number_of_units != null ? parseInt(number_of_units, 10) : 1;
+    const safeNew = isNaN(numUnits) ? 1 : Math.max(1, numUnits);
+
+    const limitCheck = await checkUnitLimit(pool, req.userId, safeNew);
+    if (!limitCheck.allowed) return res.status(403).json({ error: limitCheck.error });
+
     const result = await pool.query(
       `INSERT INTO properties 
        (user_id, name, type, address, city, state, zip, bedrooms, bathrooms, sqft, rent, image_url, status, number_of_units)
@@ -168,6 +227,9 @@ router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
     const numUnits = (rawNumUnits != null && rawNumUnits !== '') ? parseInt(rawNumUnits, 10) : 1;
     const safeNumUnits = (typeof numUnits === 'number' && !isNaN(numUnits) && numUnits >= 1) ? numUnits : 1;
     const units = body.units;
+
+    const limitCheck = await checkUnitLimit(pool, req.userId, safeNumUnits, req.params.id);
+    if (!limitCheck.allowed) return res.status(403).json({ error: limitCheck.error });
 
     const result = await pool.query(
       `UPDATE properties 

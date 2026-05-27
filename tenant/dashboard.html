@@ -214,15 +214,9 @@
         document.getElementById('leaseDates').textContent = start && end ? start + ' – ' + end : start || end || '—';
       } catch (e) {}
 
-      // Pay rent
-      document.getElementById('payRentBtn').onclick = async () => {
-        try {
-          const r = await API.post('/tenant/pay', {});
-          if (LeasePilot.Toast) LeasePilot.Toast.show(r.message || 'Payment not available.', 'info');
-          else alert(r.message || 'Payment not available.');
-        } catch (err) {
-          if (LeasePilot.Toast) LeasePilot.Toast.show(err.message || 'Unable to process.', 'error');
-        }
+      // Pay rent — go to payments page which handles the full Stripe Checkout flow
+      document.getElementById('payRentBtn').onclick = () => {
+        window.location.href = 'payments.html';
       };
 
       // Maintenance list (recent, with status badges; shows Assigned + contractor when assigned)

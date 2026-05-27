@@ -417,6 +417,12 @@ export async function initializeDatabase(pool) {
     // Unit field on rental applications (added for multi-family support)
     await pool.query(`ALTER TABLE rental_applications ADD COLUMN IF NOT EXISTS unit VARCHAR(100)`);
 
+    // Platform billing: Stripe Subscription for landlords paying LeasePilot monthly dues
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255)`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_id VARCHAR(255)`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(50) DEFAULT 'inactive'`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT 'free'`);
+
     // Stripe Connect: per-manager connected account
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_account_id VARCHAR(255)`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_charges_enabled BOOLEAN DEFAULT false`);

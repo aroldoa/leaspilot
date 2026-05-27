@@ -211,26 +211,109 @@
                 <!-- Billing -->
                 <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
                     <h2 class="text-lg font-semibold text-slate-900 mb-6">Billing</h2>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between p-4 rounded-xl border border-slate-200">
-                            <div>
-                                <p class="text-sm font-medium text-slate-900">Current Plan</p>
-                                <p class="text-xs text-slate-500">Free Plan</p>
+
+                    <!-- Active subscription -->
+                    <div id="billingActive" class="hidden space-y-4">
+                        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="check-circle-2" class="h-5 w-5 text-emerald-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-emerald-900">Pro Plan — Active</p>
+                                    <p class="text-xs text-emerald-700 mt-0.5">Your subscription is active. Manage billing below.</p>
+                                </div>
                             </div>
-                            <button onclick="LeasePilot.Toast && LeasePilot.Toast.show('Plan upgrades coming soon.', 'info')" class="rounded-xl bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800">
-                                Upgrade
-                            </button>
-                        </div>
-                        <div class="flex items-center justify-between p-4 rounded-xl border border-slate-200">
-                            <div>
-                                <p class="text-sm font-medium text-slate-900">Payment Method</p>
-                                <p class="text-xs text-slate-500">No payment method on file</p>
-                            </div>
-                            <button onclick="LeasePilot.Toast && LeasePilot.Toast.show('Payment integration coming soon.', 'info')" class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
-                                Add Card
+                            <button id="billingPortalBtn" class="flex-shrink-0 rounded-full border border-emerald-300 text-emerald-700 px-4 py-2 text-xs font-medium hover:bg-emerald-100 transition-colors">
+                                Manage billing
                             </button>
                         </div>
                     </div>
+
+                    <!-- Past due -->
+                    <div id="billingPastDue" class="hidden space-y-4">
+                        <div class="rounded-2xl border border-red-200 bg-red-50 p-5 flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="alert-triangle" class="h-5 w-5 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-red-900">Payment Failed</p>
+                                    <p class="text-xs text-red-700 mt-0.5">Please update your payment method to keep your account active.</p>
+                                </div>
+                            </div>
+                            <button id="billingPortalPastDueBtn" class="flex-shrink-0 rounded-full bg-red-600 text-white px-4 py-2 text-xs font-medium hover:bg-red-700 transition-colors">
+                                Update card
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Free / no subscription — show plan picker -->
+                    <div id="billingFree" class="hidden space-y-4">
+                        <!-- Current free tier -->
+                        <div class="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50">
+                            <div>
+                                <p class="text-sm font-medium text-slate-900">Current Plan: Free</p>
+                                <p class="text-xs text-slate-500 mt-0.5">1 property. Upgrade to add more.</p>
+                            </div>
+                        </div>
+                        <!-- Billing interval toggle -->
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm font-medium text-slate-700">Upgrade your plan</p>
+                            <div class="flex items-center gap-1 bg-slate-100 rounded-full p-1">
+                                <button id="toggleMonthly" class="interval-toggle rounded-full px-3 py-1 text-xs font-medium bg-white text-slate-900 shadow-sm transition-all">Monthly</button>
+                                <button id="toggleAnnual" class="interval-toggle rounded-full px-3 py-1 text-xs font-medium text-slate-500 transition-all">Annual <span class="text-emerald-600 font-semibold">−20%</span></button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <!-- Starter -->
+                            <div class="rounded-2xl border border-slate-200 p-5 flex flex-col gap-3">
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900">Starter</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Up to 5 units</p>
+                                    <p class="text-lg font-bold text-slate-900 mt-2">
+                                        <span class="price-monthly">$29<span class="text-xs font-normal text-slate-500">/mo</span></span>
+                                        <span class="price-annual hidden">$276<span class="text-xs font-normal text-slate-500">/yr</span></span>
+                                    </p>
+                                </div>
+                                <button data-plan="starter" class="plan-upgrade-btn mt-auto rounded-xl bg-slate-900 text-white px-4 py-2 text-xs font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5">
+                                    <i data-lucide="zap" class="h-3.5 w-3.5"></i> Choose Starter
+                                </button>
+                            </div>
+                            <!-- Growth -->
+                            <div class="rounded-2xl border-2 border-slate-900 p-5 flex flex-col gap-3 relative">
+                                <span class="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-semibold px-3 py-0.5 rounded-full">Popular</span>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900">Growth</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Up to 25 units</p>
+                                    <p class="text-lg font-bold text-slate-900 mt-2">
+                                        <span class="price-monthly">$79<span class="text-xs font-normal text-slate-500">/mo</span></span>
+                                        <span class="price-annual hidden">$756<span class="text-xs font-normal text-slate-500">/yr</span></span>
+                                    </p>
+                                </div>
+                                <button data-plan="growth" class="plan-upgrade-btn mt-auto rounded-xl bg-slate-900 text-white px-4 py-2 text-xs font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5">
+                                    <i data-lucide="zap" class="h-3.5 w-3.5"></i> Choose Growth
+                                </button>
+                            </div>
+                            <!-- Portfolio -->
+                            <div class="rounded-2xl border border-slate-200 p-5 flex flex-col gap-3">
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900">Portfolio</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Up to 100 units</p>
+                                    <p class="text-lg font-bold text-slate-900 mt-2">
+                                        <span class="price-monthly">$199<span class="text-xs font-normal text-slate-500">/mo</span></span>
+                                        <span class="price-annual hidden">$1,908<span class="text-xs font-normal text-slate-500">/yr</span></span>
+                                    </p>
+                                </div>
+                                <button data-plan="portfolio" class="plan-upgrade-btn mt-auto rounded-xl bg-slate-900 text-white px-4 py-2 text-xs font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5">
+                                    <i data-lucide="zap" class="h-3.5 w-3.5"></i> Choose Portfolio
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading -->
+                    <div id="billingLoading" class="text-sm text-slate-400">Loading billing info…</div>
                 </div>
 
                 <!-- Payment Processing (Stripe Connect) -->
@@ -716,6 +799,89 @@
                     this.disabled = false;
                 }
             });
+
+            // ── Billing (platform subscription) ──────────────────────────────
+            const PLAN_LABELS = { starter: 'Starter', growth: 'Growth', portfolio: 'Portfolio', pro: 'Pro' };
+
+            async function loadBillingStatus() {
+                try {
+                    const b = await apiRequest('/api/billing/status');
+                    document.getElementById('billingLoading').classList.add('hidden');
+                    if (b.subscription_status === 'active') {
+                        const label = PLAN_LABELS[b.plan] || b.plan || 'Pro';
+                        document.querySelector('#billingActive .text-sm.font-semibold').textContent = `${label} Plan — Active`;
+                        document.getElementById('billingActive').classList.remove('hidden');
+                    } else if (b.subscription_status === 'past_due') {
+                        document.getElementById('billingPastDue').classList.remove('hidden');
+                    } else {
+                        document.getElementById('billingFree').classList.remove('hidden');
+                    }
+                    lucide.createIcons();
+                } catch (e) {
+                    document.getElementById('billingLoading').textContent = 'Unable to load billing info.';
+                }
+            }
+
+            async function openPortal() {
+                try {
+                    const d = await apiRequest('/api/billing/portal', { method: 'POST' });
+                    window.location.href = d.portalUrl;
+                } catch (e) {
+                    if (LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show(e.message || 'Unable to open billing portal.', 'error');
+                }
+            }
+
+            let billingInterval = 'monthly';
+
+            document.getElementById('toggleMonthly')?.addEventListener('click', function () {
+                billingInterval = 'monthly';
+                this.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+                this.classList.remove('text-slate-500');
+                const annual = document.getElementById('toggleAnnual');
+                annual.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+                annual.classList.add('text-slate-500');
+                document.querySelectorAll('.price-monthly').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.price-annual').forEach(el => el.classList.add('hidden'));
+            });
+
+            document.getElementById('toggleAnnual')?.addEventListener('click', function () {
+                billingInterval = 'annual';
+                this.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+                this.classList.remove('text-slate-500');
+                const monthly = document.getElementById('toggleMonthly');
+                monthly.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+                monthly.classList.add('text-slate-500');
+                document.querySelectorAll('.price-annual').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.price-monthly').forEach(el => el.classList.add('hidden'));
+            });
+
+            document.querySelectorAll('.plan-upgrade-btn').forEach(btn => {
+                btn.addEventListener('click', async function () {
+                    const plan = this.dataset.plan;
+                    this.disabled = true;
+                    this.innerHTML = '<div class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div> Redirecting…';
+                    try {
+                        const d = await apiRequest('/api/billing/subscribe', { method: 'POST', body: JSON.stringify({ plan, interval: billingInterval }) });
+                        window.location.href = d.checkoutUrl;
+                    } catch (e) {
+                        if (LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show(e.message || 'Unable to start checkout.', 'error');
+                        this.disabled = false;
+                        this.innerHTML = `<i data-lucide="zap" class="h-3.5 w-3.5"></i> Choose ${PLAN_LABELS[plan]}`;
+                        lucide.createIcons();
+                    }
+                });
+            });
+
+            document.getElementById('billingPortalBtn')?.addEventListener('click', openPortal);
+            document.getElementById('billingPortalPastDueBtn')?.addEventListener('click', openPortal);
+
+            // Handle return from billing Checkout
+            if (urlParams.get('billing') === 'success') {
+                if (LeasePilot && LeasePilot.Toast) LeasePilot.Toast.show('Subscription activated! Welcome to Pro.', 'success');
+                history.replaceState({}, '', 'settings.html');
+            }
+
+            loadBillingStatus();
         })();
 
         window.saveProfile = async function() {

@@ -10,6 +10,8 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 
+// Webhook must be before any JSON body-parsing middleware on the router
+
 const router = express.Router();
 
 function getStripe() {
@@ -152,6 +154,48 @@ router.post('/sync', authenticateToken, async (req, res) => {
     console.error('Stripe sync error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// ── Connect webhook — auto-sync account.updated ───────────────────────────────
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const pool = req.app.locals.pool;
+  const sig = req.headers['stripe-signature'];
+  const webhookSecret = process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (isProduction && !webhookSecret) {
+    return res.status(500).json({ error: 'Connect webhook not configured' });
+  }
+
+  let event;
+  try {
+    if (webhookSecret) {
+      const stripe = await getStripe();
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } else {
+      event = JSON.parse(req.body.toString());
+    }
+  } catch (err) {
+    console.error('Connect webhook error:', err.message);
+    return res.status(400).json({ error: 'Webhook signature failed' });
+  }
+
+  if (event.type === 'account.updated') {
+    const account = event.data.object;
+    try {
+      await pool.query(
+        `UPDATE users
+         SET stripe_charges_enabled = $1, stripe_payouts_enabled = $2, stripe_account_email = $3
+         WHERE stripe_account_id = $4`,
+        [account.charges_enabled, account.payouts_enabled, account.email || null, account.id]
+      );
+    } catch (err) {
+      console.error('Connect webhook DB error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+  }
+
+  res.json({ received: true });
 });
 
 // ── Disconnect ────────────────────────────────────────────────────────────────

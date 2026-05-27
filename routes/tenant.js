@@ -37,7 +37,55 @@ const maintenanceUpload = multer({
 
 const router = express.Router();
 
-// All tenant routes: authenticate then require tenant record
+// ── Stripe webhook for rent payments (raw body — before auth middleware) ──────
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const pool = req.app.locals.pool;
+  const sig = req.headers['stripe-signature'];
+  const webhookSecret = process.env.STRIPE_RENT_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (isProduction && !webhookSecret) {
+    return res.status(500).json({ error: 'Webhook not configured' });
+  }
+
+  let event;
+  try {
+    if (webhookSecret) {
+      const Stripe = (await import('stripe')).default;
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } else {
+      event = JSON.parse(req.body.toString());
+    }
+  } catch (err) {
+    console.error('Rent webhook signature error:', err.message);
+    return res.status(400).json({ error: 'Webhook signature verification failed' });
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    if (session.metadata?.type === 'rent') {
+      const paymentId = parseInt(session.metadata.payment_id, 10);
+      if (paymentId) {
+        try {
+          await pool.query(
+            `UPDATE rent_payments
+             SET status = 'paid', stripe_payment_intent = $1, updated_at = NOW()
+             WHERE id = $2 AND status != 'paid'`,
+            [session.payment_intent, paymentId]
+          );
+        } catch (err) {
+          console.error('Rent webhook DB error:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+      }
+    }
+  }
+
+  res.json({ received: true });
+});
+
+// All other tenant routes: authenticate then require tenant record
 router.use(authenticateToken, (req, res, next) => {
   requireTenant(req, res, next).catch(next);
 });
@@ -111,17 +159,16 @@ router.get('/payments', authenticateToken, requireTenant, async (req, res) => {
   }
 });
 
-// POST /api/tenant/pay - create Stripe PaymentIntent for ACH rent payment
+// POST /api/tenant/pay - create Stripe Checkout Session for rent payment
 router.post('/pay', authenticateToken, requireTenant, async (req, res) => {
   const pool = req.app.locals.pool;
   const stripeKey = process.env.STRIPE_SECRET_KEY;
 
   try {
-    // Get tenant + property + manager Stripe account
     const tenantResult = await pool.query(
       `SELECT t.id, t.first_name, t.last_name, t.email, t.property_id, t.unit,
               p.rent, p.name AS property_name,
-              u.stripe_account_id, u.stripe_charges_enabled, u.email AS manager_email
+              u.stripe_account_id, u.stripe_charges_enabled
        FROM tenants t
        JOIN properties p ON p.id = t.property_id
        JOIN users u ON u.id = p.user_id
@@ -138,24 +185,24 @@ router.post('/pay', authenticateToken, requireTenant, async (req, res) => {
     const payAmount = amount ? parseFloat(amount) : parseFloat(tenant.rent || 0);
 
     if (!payAmount || payAmount <= 0) {
-      return res.status(400).json({ error: 'Invalid payment amount' });
+      return res.status(400).json({ error: 'No rent amount set. Please contact your property manager.' });
     }
 
-    // No Stripe → record payment manually (dev mode)
+    const periodLabel = period_month || new Date().toISOString().slice(0, 7);
+    const desc = description || `Rent – ${tenant.property_name}${tenant.unit ? ' Unit ' + tenant.unit : ''}`;
+
+    // No Stripe → record pending manual payment
     if (!stripeKey || !tenant.stripe_account_id || !tenant.stripe_charges_enabled) {
-      const payment = await pool.query(
+      await pool.query(
         `INSERT INTO rent_payments (tenant_id, property_id, amount, payment_method, status, description, period_month)
-         VALUES ($1, $2, $3, 'manual', 'pending', $4, $5) RETURNING *`,
-        [req.tenantId, tenant.property_id, payAmount,
-         description || `Rent – ${tenant.property_name}`,
-         period_month || new Date().toISOString().slice(0, 7)]
+         VALUES ($1, $2, $3, 'manual', 'pending', $4, $5)`,
+        [req.tenantId, tenant.property_id, payAmount, desc, periodLabel]
       );
       return res.json({
         noPayment: true,
         message: !tenant.stripe_account_id
           ? 'Your property manager has not connected online payments yet. Please pay by check or contact them directly.'
           : 'Payment recorded.',
-        payment: payment.rows[0],
       });
     }
 
@@ -163,43 +210,50 @@ router.post('/pay', authenticateToken, requireTenant, async (req, res) => {
     const stripe = new Stripe(stripeKey);
 
     const amountCents = Math.round(payAmount * 100);
-    const platformFee = Math.round(amountCents * 0.01); // 1% platform fee on rent
+    const platformFee = Math.round(amountCents * 0.01);
 
-    // Create PaymentIntent with ACH (us_bank_account) as preferred method
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amountCents,
-      currency: 'usd',
-      payment_method_types: ['us_bank_account', 'card'],
-      payment_method_options: {
-        us_bank_account: {
-          financial_connections: { permissions: ['payment_method'] },
-        },
-      },
-      application_fee_amount: platformFee,
-      transfer_data: { destination: tenant.stripe_account_id },
-      receipt_email: tenant.email,
-      description: description || `Rent – ${tenant.property_name}${tenant.unit ? ' Unit ' + tenant.unit : ''}`,
-      metadata: {
-        tenant_id: String(req.tenantId),
-        property_id: String(tenant.property_id),
-        period_month: period_month || new Date().toISOString().slice(0, 7),
-      },
-    });
-
-    // Record pending payment
+    // Insert pending record first so we have an ID for the webhook
     const payment = await pool.query(
-      `INSERT INTO rent_payments (tenant_id, property_id, amount, payment_method, stripe_payment_intent, status, description, period_month)
-       VALUES ($1, $2, $3, 'ach', $4, 'pending', $5, $6) RETURNING *`,
-      [req.tenantId, tenant.property_id, payAmount, paymentIntent.id,
-       description || `Rent – ${tenant.property_name}`,
-       period_month || new Date().toISOString().slice(0, 7)]
+      `INSERT INTO rent_payments (tenant_id, property_id, amount, payment_method, status, description, period_month)
+       VALUES ($1, $2, $3, 'card', 'pending', $4, $5) RETURNING id`,
+      [req.tenantId, tenant.property_id, payAmount, desc, periodLabel]
     );
 
-    res.json({
-      clientSecret: paymentIntent.client_secret,
-      paymentId: payment.rows[0].id,
-      amount: payAmount,
+    const proto = req.headers['x-forwarded-proto'] || req.protocol;
+    const baseUrl = `${proto}://${req.get('host')}`;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: { name: desc },
+          unit_amount: amountCents,
+        },
+        quantity: 1,
+      }],
+      customer_email: tenant.email,
+      payment_intent_data: {
+        application_fee_amount: platformFee,
+        transfer_data: { destination: tenant.stripe_account_id },
+        description: desc,
+        metadata: {
+          type: 'rent',
+          payment_id: String(payment.rows[0].id),
+          tenant_id: String(req.tenantId),
+        },
+      },
+      metadata: {
+        type: 'rent',
+        payment_id: String(payment.rows[0].id),
+        tenant_id: String(req.tenantId),
+      },
+      success_url: `${baseUrl}/tenant/payments.html?success=1`,
+      cancel_url: `${baseUrl}/tenant/payments.html?cancelled=1`,
     });
+
+    res.json({ checkoutUrl: session.url });
   } catch (err) {
     console.error('Tenant pay error:', err);
     res.status(500).json({ error: 'Internal server error' });

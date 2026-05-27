@@ -25,24 +25,53 @@
           <a href="documents.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Documents</a>
           <a href="messages.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 inline-flex items-center gap-1.5">Messages <span id="tenantNavMessagesBadge" class="hidden inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-semibold">0</span></a>
           <a href="profile.html" class="rounded-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Profile</a>
-          <a href="messages.html" class="relative rounded-full p-2.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700" title="Notifications"><i data-lucide="bell" class="h-5 w-5"></i><span id="tenantNotificationsBadge" class="hidden absolute top-0 right-0 min-w-[1.25rem] h-5 px-1 rounded-full bg-red-500 text-white text-xs font-semibold inline-flex items-center justify-center">0</span></a>
           <button onclick="LeasePilot.logout()" class="rounded-full p-2 text-slate-400 hover:text-slate-600" title="Sign out"><i data-lucide="log-out" class="h-4 w-4"></i></button>
         </nav>
       </div>
     </header>
-    <main class="max-w-5xl mx-auto px-4 py-8">
-      <h1 class="text-2xl font-semibold text-slate-900 mb-6">Payments</h1>
-      <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm mb-6">
-        <h2 class="text-lg font-medium text-slate-900 mb-2">Current balance</h2>
-        <p id="balance" class="text-2xl font-semibold text-slate-900">$0</p>
-        <button id="payBtn" class="mt-4 rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-slate-800">Pay rent</button>
+
+    <main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+      <h1 class="text-2xl font-semibold text-slate-900">Payments</h1>
+
+      <!-- Success banner -->
+      <div id="bannerSuccess" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
+        <i data-lucide="check-circle-2" class="h-5 w-5 text-emerald-500 flex-shrink-0"></i>
+        <p class="text-sm font-medium text-emerald-800">Payment submitted successfully! It may take a moment to reflect in your history.</p>
       </div>
+
+      <!-- Cancelled banner -->
+      <div id="bannerCancelled" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+        <i data-lucide="alert-circle" class="h-5 w-5 text-amber-500 flex-shrink-0"></i>
+        <p class="text-sm font-medium text-amber-800">Payment was cancelled. No charges were made.</p>
+      </div>
+
+      <!-- Pay rent card -->
+      <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+        <div class="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <p class="text-sm text-slate-500 mb-1">Rent due</p>
+            <p id="rentAmount" class="text-3xl font-semibold text-slate-900">—</p>
+            <p id="rentPeriod" class="text-xs text-slate-400 mt-1"></p>
+          </div>
+          <button id="payBtn"
+            class="inline-flex items-center gap-2 rounded-xl bg-slate-900 text-white px-5 py-2.5 text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <i data-lucide="credit-card" class="h-4 w-4"></i>
+            Pay rent
+          </button>
+        </div>
+
+        <!-- No-payment manager notice (shown when Stripe not connected) -->
+        <div id="noPaymentNotice" class="hidden mt-4 rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-600"></div>
+      </div>
+
+      <!-- Payment history -->
       <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
         <h2 class="text-lg font-medium text-slate-900 mb-4">Payment history</h2>
-        <div id="paymentHistory" class="text-sm text-slate-500">No payment history yet.</div>
+        <div id="paymentHistory" class="text-sm text-slate-400">Loading…</div>
       </div>
     </main>
   </div>
+
   <script>
     (async () => {
       let wait = 0;
@@ -50,40 +79,94 @@
       if (typeof LeasePilot === 'undefined') return;
       await LeasePilot.checkAuth();
       lucide.createIcons();
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('success') === '1') {
+        document.getElementById('bannerSuccess').classList.remove('hidden');
+        // Clean URL
+        history.replaceState({}, '', '/tenant/payments.html');
+      }
+      if (params.get('cancelled') === '1') {
+        document.getElementById('bannerCancelled').classList.remove('hidden');
+        history.replaceState({}, '', '/tenant/payments.html');
+      }
+
+      // Load rent amount from lease
+      let rentAmount = 0;
       try {
-        const b = await LeasePilot.API.get('/tenant/balance');
-        document.getElementById('balance').textContent = '$' + (b.balance || 0).toFixed(2);
+        const lease = await LeasePilot.API.get('/tenant/lease');
+        rentAmount = lease.property_rent ? parseFloat(lease.property_rent) : 0;
+        const fmt = rentAmount > 0
+          ? '$' + rentAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          : '—';
+        document.getElementById('rentAmount').textContent = fmt;
+        const now = new Date();
+        document.getElementById('rentPeriod').textContent =
+          now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
       } catch (e) {}
-      document.getElementById('payBtn').onclick = async () => {
+
+      // Pay button
+      const payBtn = document.getElementById('payBtn');
+      payBtn.addEventListener('click', async () => {
+        payBtn.disabled = true;
+        payBtn.innerHTML = '<div class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div><span>Processing…</span>';
         try {
           const r = await LeasePilot.API.post('/tenant/pay', {});
-          if (LeasePilot.Toast) LeasePilot.Toast.show(r.message || 'Payment not available.', 'info');
-          else alert(r.message || 'Payment not available.');
+          if (r.checkoutUrl) {
+            window.location.href = r.checkoutUrl;
+            return;
+          }
+          // No Stripe — show manager message
+          const notice = document.getElementById('noPaymentNotice');
+          notice.textContent = r.message || 'Payment not available. Please contact your property manager.';
+          notice.classList.remove('hidden');
+          payBtn.disabled = false;
+          payBtn.innerHTML = '<i data-lucide="credit-card" class="h-4 w-4"></i><span>Pay rent</span>';
+          lucide.createIcons();
+          loadHistory();
         } catch (err) {
-          if (LeasePilot.Toast) LeasePilot.Toast.show(err.message || 'Unable to process.', 'error');
+          if (LeasePilot.Toast) LeasePilot.Toast.show(err.message || 'Unable to process payment.', 'error');
+          payBtn.disabled = false;
+          payBtn.innerHTML = '<i data-lucide="credit-card" class="h-4 w-4"></i><span>Pay rent</span>';
+          lucide.createIcons();
         }
-      };
-      try {
-        const list = await LeasePilot.API.get('/tenant/payments');
+      });
+
+      loadHistory();
+
+      async function loadHistory() {
         const el = document.getElementById('paymentHistory');
-        if (!list || !list.length) {
-          el.innerHTML = '<p class="text-slate-400 text-sm">No payment history yet.</p>';
-        } else {
-          el.innerHTML = list.map(function(p) {
-            var amt = p.amount != null ? '$' + Math.abs(parseFloat(p.amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
-            var date = p.transaction_date ? new Date(p.transaction_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-            var desc = p.description || 'Payment';
-            var status = (p.status || 'cleared').toLowerCase();
-            var statusHtml = status === 'pending'
-              ? '<span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Pending</span>'
-              : '<span class="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">Cleared</span>';
+        try {
+          const list = await LeasePilot.API.get('/tenant/payments');
+          if (!list || !list.length) {
+            el.innerHTML = '<p class="text-slate-400 text-sm">No payment history yet.</p>';
+            return;
+          }
+          el.innerHTML = list.map(function (p) {
+            const amt = p.amount != null
+              ? '$' + Math.abs(parseFloat(p.amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              : '—';
+            const date = p.created_at
+              ? new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : '—';
+            const desc = p.description || (p.period_month ? 'Rent – ' + p.period_month : 'Payment');
+            const status = (p.status || '').toLowerCase();
+            const statusHtml = status === 'paid'
+              ? '<span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">Paid</span>'
+              : status === 'pending'
+              ? '<span class="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">Pending</span>'
+              : '<span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">' + status + '</span>';
             return '<div class="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">'
-              + '<div><p class="text-sm font-medium text-slate-900">' + desc + '</p><p class="text-xs text-slate-400">' + date + '</p></div>'
-              + '<div class="flex items-center gap-3">' + statusHtml + '<span class="text-sm font-medium text-slate-900">' + amt + '</span></div>'
+              + '<div><p class="text-sm font-medium text-slate-900">' + desc + '</p>'
+              + '<p class="text-xs text-slate-400 mt-0.5">' + date + '</p></div>'
+              + '<div class="flex items-center gap-3">' + statusHtml
+              + '<span class="text-sm font-semibold text-slate-900">' + amt + '</span></div>'
               + '</div>';
           }).join('');
+        } catch (e) {
+          el.innerHTML = '<p class="text-slate-400 text-sm">Unable to load payment history.</p>';
         }
-      } catch (e) { document.getElementById('paymentHistory').innerHTML = '<p class="text-slate-400 text-sm">Unable to load payment history.</p>'; }
+      }
     })();
   </script>
 </body>
