@@ -319,6 +319,14 @@
         </select>
       </div>
 
+      <!-- Unit selector (multi-family only) -->
+      <div id="shareUnitRow" class="mb-4 hidden">
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">Select Unit</label>
+        <select id="shareUnitSelect" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-slate-400">
+          <option value="">Select a unit…</option>
+        </select>
+      </div>
+
       <!-- Fee + active -->
       <div class="flex gap-3 mb-4">
         <div class="flex-1">
@@ -358,6 +366,7 @@
     let selectedId = null;
     let currentListing = null;
     let currentPropertyId = null;
+    let currentUnit = null;
     let properties = [];
 
     // ── Auth + init ──────────────────────────────────────────────────────────
@@ -710,13 +719,42 @@
 
       document.getElementById('sharePropertySelect').addEventListener('change', async function () {
         currentPropertyId = this.value;
+        currentUnit = null;
+        const unitRow = document.getElementById('shareUnitRow');
+        const unitSel = document.getElementById('shareUnitSelect');
+        unitRow.classList.add('hidden');
+        unitSel.innerHTML = '<option value="">Select a unit…</option>';
+
         if (!currentPropertyId) { updateLinkDisplay(null); return; }
         try {
-          currentListing = await LeasePilot.API.request(`/applications/listing/${currentPropertyId}`);
-          document.getElementById('shareFeeInput').value = currentListing.application_fee || 50;
-          document.getElementById('shareActiveToggle').checked = currentListing.is_active !== false;
-          updateLinkDisplay(currentListing.token);
+          const [listing, property] = await Promise.all([
+            LeasePilot.API.request(`/applications/listing/${currentPropertyId}`),
+            LeasePilot.API.request(`/properties/${currentPropertyId}`),
+          ]);
+          currentListing = listing;
+          document.getElementById('shareFeeInput').value = listing.application_fee || 50;
+          document.getElementById('shareActiveToggle').checked = listing.is_active !== false;
+
+          // Show unit picker for multi-family properties
+          const isSingleFamily = /(single|house|sfr)/i.test(property.type || '');
+          const units = property.units || [];
+          if (!isSingleFamily && units.length > 1) {
+            units.forEach(u => {
+              const opt = document.createElement('option');
+              opt.value = u.unit_label;
+              opt.textContent = u.unit_label;
+              unitSel.appendChild(opt);
+            });
+            unitRow.classList.remove('hidden');
+          }
+
+          updateLinkDisplay(listing.token);
         } catch (e) { updateLinkDisplay(null); }
+      });
+
+      document.getElementById('shareUnitSelect').addEventListener('change', function () {
+        currentUnit = this.value || null;
+        updateLinkDisplay(currentListing ? currentListing.token : null);
       });
 
       document.getElementById('copyLinkBtn').addEventListener('click', () => {
@@ -761,7 +799,15 @@
         el.textContent = 'Select a property to generate a link';
         return;
       }
-      el.textContent = `${window.location.origin}/apply.html?token=${token}`;
+      const unitRow = document.getElementById('shareUnitRow');
+      const unitSel = document.getElementById('shareUnitSelect');
+      if (!unitRow.classList.contains('hidden') && !unitSel.value) {
+        el.textContent = 'Select a unit to generate a link';
+        return;
+      }
+      let url = `${window.location.origin}/apply.html?token=${token}`;
+      if (currentUnit) url += `&unit=${encodeURIComponent(currentUnit)}`;
+      el.textContent = url;
     }
   </script>
 </body>

@@ -1,7 +1,9 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
+import { Resend } from 'resend';
 
 const router = express.Router();
 
@@ -67,6 +69,40 @@ const demoLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+const resetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many reset requests. Try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+async function sendResetEmail(toEmail, resetUrl) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM || 'LeasePilot <no-reply@leasepilot.ai>';
+
+  if (!apiKey) {
+    console.log(`\n🔑 [DEV] Password reset link for ${toEmail}:\n   ${resetUrl}\n`);
+    return;
+  }
+
+  const resend = new Resend(apiKey);
+  await resend.emails.send({
+    from,
+    to: toEmail,
+    subject: 'Reset your LeasePilot password',
+    text: `You requested a password reset.\n\nClick the link below to set a new password (expires in 1 hour):\n\n${resetUrl}\n\nIf you did not request this, you can safely ignore this email.`,
+    html: `
+      <div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+        <img src="https://ik.imagekit.io/primo/Primo%20Motif/leasepilot-logo.svg" alt="LeasePilot" style="height:36px;margin-bottom:24px">
+        <h2 style="font-size:20px;font-weight:600;color:#0f172a;margin:0 0 8px">Reset your password</h2>
+        <p style="font-size:14px;color:#64748b;margin:0 0 24px">Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
+        <a href="${resetUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:500">Reset password</a>
+        <p style="font-size:12px;color:#94a3b8;margin:24px 0 0">If you didn't request this, you can safely ignore this email.</p>
+      </div>`,
+  });
+}
 
 // Register
 router.post('/register', registerLimiter, async (req, res) => {
@@ -217,6 +253,87 @@ router.get('/verify', async (req, res) => {
     res.json({ user: result.rows[0] });
   } catch (error) {
     res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// Forgot password — generate a reset token and email it
+router.post('/forgot-password', resetLimiter, async (req, res) => {
+  const rawEmail = (req.body.email || '').toString().trim().toLowerCase();
+  if (!rawEmail || !EMAIL_REGEX.test(rawEmail)) {
+    return res.status(400).json({ error: 'Valid email is required' });
+  }
+
+  // Always return 200 to avoid user enumeration
+  res.json({ ok: true });
+
+  try {
+    const pool = req.app.locals.pool;
+    const result = await pool.query(
+      'SELECT id, email FROM users WHERE LOWER(email) = $1',
+      [rawEmail]
+    );
+    if (result.rows.length === 0) return; // no such user — silently do nothing
+
+    const user = result.rows[0];
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    // Invalidate any existing tokens for this user
+    await pool.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [user.id]);
+    await pool.query(
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
+      [user.id, token, expiresAt]
+    );
+
+    const proto = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.get('host');
+    const resetUrl = `${proto}://${host}/reset-password.html?token=${token}`;
+    await sendResetEmail(user.email, resetUrl);
+  } catch (err) {
+    console.error('Forgot-password error:', err);
+  }
+});
+
+// Reset password — validate token and set new password
+router.post('/reset-password', resetLimiter, async (req, res) => {
+  const { token, password } = req.body || {};
+  if (!token || typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
+    return res.status(400).json({ error: 'Invalid or missing token' });
+  }
+  if (!password || String(password).length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+  }
+
+  try {
+    const pool = req.app.locals.pool;
+    const result = await pool.query(
+      `SELECT prt.user_id, prt.expires_at
+       FROM password_reset_tokens prt
+       WHERE prt.token = $1`,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'Reset link is invalid or has already been used' });
+    }
+
+    const row = result.rows[0];
+    if (new Date(row.expires_at) < new Date()) {
+      await pool.query('DELETE FROM password_reset_tokens WHERE token = $1', [token]);
+      return res.status(400).json({ error: 'Reset link has expired. Please request a new one.' });
+    }
+
+    const passwordHash = await bcrypt.hash(String(password), 12);
+    await pool.query(
+      'UPDATE users SET password_hash = $1 WHERE id = $2',
+      [passwordHash, row.user_id]
+    );
+    await pool.query('DELETE FROM password_reset_tokens WHERE token = $1', [token]);
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Reset-password error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

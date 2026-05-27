@@ -94,6 +94,12 @@
               <span id="propRent" class="text-sm text-slate-600 flex items-center gap-1">
                 <i data-lucide="dollar-sign" class="h-4 w-4 text-slate-400"></i>
               </span>
+              <span class="hidden">
+                <span class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                  <i data-lucide="door-open" class="h-3.5 w-3.5 text-slate-500"></i>
+                  Unit <span id="propUnit"></span>
+                </span>
+              </span>
             </div>
           </div>
           <div class="text-right">
@@ -250,6 +256,7 @@
     const token = params.get('token');
     const success = params.get('success');
     const cancelled = params.get('cancelled');
+    const unitParam = params.get('unit');
 
     function show(id) {
       ['stateLoading','stateError','stateSuccess','stateCancelled','stateForm'].forEach(s => {
@@ -304,6 +311,12 @@
       if (l.rent) rent.innerHTML = `<i data-lucide="dollar-sign" class="h-4 w-4 text-slate-400"></i> ${fmt(l.rent)}/mo`;
       else rent.classList.add('hidden');
 
+      const unitBadge = document.getElementById('propUnit');
+      if (unitParam) {
+        unitBadge.textContent = unitParam;
+        unitBadge.parentElement.classList.remove('hidden');
+      }
+
       const fee = fmt(l.application_fee);
       document.getElementById('propFee').textContent = fee;
       document.getElementById('feeInButton').textContent = fee;
@@ -325,6 +338,7 @@
       data.has_pets = data.has_pets === 'true';
       data.num_occupants = parseInt(data.num_occupants) || 1;
       if (data.monthly_income) data.monthly_income = parseFloat(data.monthly_income);
+      if (unitParam) data.unit = unitParam;
 
       try {
         const r = await fetch(`${API_BASE}/apply/${token}`, {

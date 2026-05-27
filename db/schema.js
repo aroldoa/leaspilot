@@ -414,6 +414,9 @@ export async function initializeDatabase(pool) {
       )
     `);
 
+    // Unit field on rental applications (added for multi-family support)
+    await pool.query(`ALTER TABLE rental_applications ADD COLUMN IF NOT EXISTS unit VARCHAR(100)`);
+
     // Stripe Connect: per-manager connected account
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_account_id VARCHAR(255)`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_charges_enabled BOOLEAN DEFAULT false`);
@@ -539,6 +542,17 @@ export async function initializeDatabase(pool) {
         is_pinned BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Password reset tokens (tenant self-service password reset)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id         SERIAL PRIMARY KEY,
+        user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token      VARCHAR(64) UNIQUE NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 

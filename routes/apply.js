@@ -47,6 +47,7 @@ const ApplicationSchema = z.object({
   has_pets:               z.union([z.boolean(), z.enum(['true','false'])]).transform(v => v === true || v === 'true').default(false),
   pet_description:        z.string().max(500).trim().optional().nullable(),
   additional_notes:       z.string().max(2000).trim().optional().nullable(),
+  unit:                   z.string().max(100).trim().optional().nullable(),
 });
 
 // ── Stripe webhook (raw body — must stay before JSON middleware) ───────────────
@@ -169,15 +170,15 @@ router.post('/:token', applySubmitLimit, async (req, res) => {
     // Insert application (pending payment)
     const appResult = await pool.query(`
       INSERT INTO rental_applications (
-        listing_id, property_id, first_name, last_name, email, phone, date_of_birth,
+        listing_id, property_id, unit, first_name, last_name, email, phone, date_of_birth,
         employer, job_title, monthly_income, employment_status,
         current_address, current_landlord, current_landlord_phone,
         move_in_date, reason_for_moving, num_occupants, has_pets, pet_description,
         additional_notes, application_fee, payment_status, status
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,'pending','submitted')
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,'pending','submitted')
       RETURNING id
     `, [
-      listing.id, listing.property_id,
+      listing.id, listing.property_id, data.unit ?? null,
       data.first_name, data.last_name, data.email,
       data.phone ?? null, data.date_of_birth ?? null,
       data.employer ?? null, data.job_title ?? null,
