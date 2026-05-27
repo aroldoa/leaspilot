@@ -166,7 +166,7 @@ Potential features for future versions:
 
 ## Support
 
-For issues or questions, please contact support@leasepilot.ai
+For issues or questions, please contact support@leasepilotai.com
 
 ---
 

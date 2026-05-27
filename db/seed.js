@@ -18,7 +18,7 @@ async function seedDatabase() {
 
     // Get or create a demo user
     let userId;
-    const demoEmail = 'demo@leasepilot.ai';
+    const demoEmail = 'demo@leasepilotai.com';
     
     const userCheck = await pool.query('SELECT id FROM users WHERE email = $1', [demoEmail]);
     

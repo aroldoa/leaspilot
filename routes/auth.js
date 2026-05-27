@@ -80,7 +80,7 @@ const resetLimiter = rateLimit({
 
 async function sendResetEmail(toEmail, resetUrl) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM || 'LeasePilot <no-reply@leasepilot.ai>';
+  const from = process.env.RESEND_FROM || 'LeasePilot <no-reply@leasepilotai.com>';
 
   if (!apiKey) {
     console.log(`\n🔑 [DEV] Password reset link for ${toEmail}:\n   ${resetUrl}\n`);
@@ -196,7 +196,7 @@ router.post('/demo', demoLimiter, async (req, res) => {
   }
   try {
     const pool = req.app.locals.pool;
-    const demoEmail = 'demo@leasepilot.ai';
+    const demoEmail = 'demo@leasepilotai.com';
 
     let result = await pool.query(
       'SELECT id, email, name, role FROM users WHERE email = $1',

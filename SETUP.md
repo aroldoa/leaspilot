@@ -36,7 +36,7 @@
 
 ## Database Seeding & Data Recovery
 
-- **Demo data:** Run `npm run seed` to ensure the demo user (`demo@leasepilot.ai` / password `demo123`) has sample properties, tenants, and transactions.
+- **Demo data:** Run `npm run seed` to ensure the demo user (`demo@leasepilotai.com` / password `demo123`) has sample properties, tenants, and transactions.
 - **Safe by default:** If the demo user already has any data, the seed script **does not delete it**. You’ll see a message and exit. This prevents accidental data loss.
 - **Restore demo after data loss:** If the demo account has no data (e.g. after a wipe or new DB), run `npm run seed` again to repopulate sample data.
 - **Force reset demo:** To wipe and re-seed the demo user only, run: `SEED_FORCE=1 npm run seed`.
