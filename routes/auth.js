@@ -88,7 +88,7 @@ async function sendResetEmail(toEmail, resetUrl) {
   }
 
   const resend = new Resend(apiKey);
-  await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from,
     to: toEmail,
     subject: 'Reset your LeasePilot password',
@@ -102,6 +102,11 @@ async function sendResetEmail(toEmail, resetUrl) {
         <p style="font-size:12px;color:#94a3b8;margin:24px 0 0">If you didn't request this, you can safely ignore this email.</p>
       </div>`,
   });
+
+  if (error) {
+    throw new Error(`Resend error: ${error.message}`);
+  }
+  console.log(`✅ Reset email sent to ${toEmail} (id: ${data?.id})`);
 }
 
 // Register
