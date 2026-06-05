@@ -40,8 +40,8 @@ const propertyDocUpload = multer({
 const router = express.Router();
 
 // ── Plan limits ───────────────────────────────────────────────────────────────
-// Free plan: max 1 property. Paid plans: max units across all properties.
-const PLAN_UNIT_LIMITS  = { starter: 5, growth: 25, portfolio: 100 };
+// All plans: max total units across all properties.
+const PLAN_UNIT_LIMITS  = { free: 1, starter: 5, growth: 25, portfolio: 100 };
 const OWNER_EMAIL = 'aroldo@investsupreme.com';
 
 async function checkUnitLimit(pool, userId, incomingUnits, excludePropertyId = null) {
@@ -69,24 +69,10 @@ async function checkUnitLimit(pool, userId, incomingUnits, excludePropertyId = n
 
   const plan = (rawPlan || 'free').toLowerCase();
 
-  // Free plan: limited to 1 property
-  if (plan === 'free' || plan === 'inactive') {
-    const params = [owner_id];
-    let sql = `SELECT COUNT(*)::int AS total FROM properties WHERE user_id = $1`;
-    if (excludePropertyId) { sql += ` AND id != $2`; params.push(excludePropertyId); }
-    const { rows } = await pool.query(sql, params);
-    const propertyCount = rows[0].total;
-    if (propertyCount >= 1) {
-      return {
-        allowed: false,
-        error: 'The Free plan is limited to 1 property. Please upgrade to a paid plan in Settings → Billing to add more properties.',
-      };
-    }
-    return { allowed: true };
-  }
-
-  // Paid plans: limited by total units — unknown plan uses starter limit as a safe fallback
-  const limit = PLAN_UNIT_LIMITS[plan] ?? PLAN_UNIT_LIMITS['starter'];
+  // All plans use the same unit-count logic.
+  // Unknown / inactive plans fall back to the free limit (most restrictive).
+  const resolvedPlan = (plan === 'inactive') ? 'free' : plan;
+  const limit = PLAN_UNIT_LIMITS[resolvedPlan] ?? PLAN_UNIT_LIMITS['free'];
 
   const params = [owner_id];
   let sql = `SELECT COALESCE(SUM(number_of_units), 0)::int AS total FROM properties WHERE user_id = $1`;
@@ -95,10 +81,15 @@ async function checkUnitLimit(pool, userId, incomingUnits, excludePropertyId = n
   const current = rows[0].total;
 
   if (current + incomingUnits > limit) {
-    const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
+    const planName = resolvedPlan === 'free'
+      ? 'Free'
+      : resolvedPlan.charAt(0).toUpperCase() + resolvedPlan.slice(1);
+    const upgradeHint = resolvedPlan === 'free'
+      ? ' Upgrade to a paid plan in Settings → Billing.'
+      : ' Upgrade your plan in Settings → Billing.';
     return {
       allowed: false,
-      error: `Your ${planName} plan allows up to ${limit} units total. You currently have ${current} and are trying to add ${incomingUnits}. Please upgrade your plan in Settings → Billing.`,
+      error: `Your ${planName} plan allows up to ${limit} unit${limit === 1 ? '' : 's'} total. You currently have ${current} and are trying to add ${incomingUnits}.${upgradeHint}`,
     };
   }
   return { allowed: true };
