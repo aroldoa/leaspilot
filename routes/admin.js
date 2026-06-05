@@ -85,12 +85,13 @@ router.get('/billing', authenticateToken, requireSuperAdmin, async (req, res) =>
   try {
     const result = await pool.query(`
       SELECT u.id, u.email, u.name, u.created_at AS joined_at,
-             COALESCE(s.plan, 'free')             AS plan,
-             COALESCE(s.status, 'active')         AS status,
-             COALESCE(s.billing_cycle, 'monthly') AS billing_cycle,
-             COALESCE(s.amount, 0)                AS amount,
-             COALESCE(s.discount_percent, 0)      AS discount_percent,
-             COALESCE(s.credit_balance, 0)        AS credit_balance,
+             COALESCE(u.plan, s.plan, 'free')              AS plan,
+             COALESCE(u.subscription_status, s.status, 'inactive') AS status,
+             COALESCE(s.billing_cycle, 'monthly')           AS billing_cycle,
+             COALESCE(s.amount, 0)                          AS amount,
+             COALESCE(s.discount_percent, 0)                AS discount_percent,
+             COALESCE(s.credit_balance, 0)                  AS credit_balance,
+             u.stripe_customer_id, u.subscription_id,
              s.next_billing_date, s.trial_ends_at, s.notes, s.id AS sub_id
       FROM users u
       LEFT JOIN subscriptions s ON s.user_id = u.id

@@ -75,7 +75,7 @@ router.post('/:id/invite', authenticateToken, requireRole('Portfolio Manager'), 
       }
       return res.status(400).json({ error: 'A non-tenant account already exists with this email' });
     }
-    const passwordHash = await bcrypt.hash(String(password), 10);
+    const passwordHash = await bcrypt.hash(String(password), 12);
     const name = [tenant.first_name, tenant.last_name].filter(Boolean).join(' ') || emailStr;
     const insertUser = await pool.query(
       `INSERT INTO users (email, password_hash, name, role) VALUES ($1, $2, $3, 'Tenant')
@@ -105,8 +105,8 @@ router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
       `SELECT t.*, p.name as property_name, p.address as property_address
        FROM tenants t
        LEFT JOIN properties p ON t.property_id = p.id
-       WHERE t.id = $1 AND t.user_id = $2`,
-      [req.params.id, req.userId]
+       WHERE t.id = $1 AND t.user_id = ANY($2::int[])`,
+      [req.params.id, await getOwnerIds(pool, req.userId)]
     );
 
     if (result.rows.length === 0) {
@@ -143,6 +143,19 @@ router.post('/', authenticateToken, requireRole('Portfolio Manager'), async (req
     }
 
     const pool = req.app.locals.pool;
+
+    // Verify property belongs to this manager (or their owner)
+    if (property_id) {
+      const ownerIds = await getOwnerIds(pool, req.userId);
+      const propCheck = await pool.query(
+        'SELECT id FROM properties WHERE id = $1 AND user_id = ANY($2::int[])',
+        [property_id, ownerIds]
+      );
+      if (propCheck.rows.length === 0) {
+        return res.status(403).json({ error: 'Property not found or access denied' });
+      }
+    }
+
     const result = await pool.query(
       `INSERT INTO tenants 
        (user_id, first_name, last_name, email, phone, property_id, unit, status, lease_start, lease_end)
@@ -176,9 +189,24 @@ router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
     const lease_end = (body.lease_end ?? '').toString().trim() || null;
 
     const pool = req.app.locals.pool;
+    const ownerIds = await getOwnerIds(pool, req.userId);
+
+    // Verify the property belongs to this manager if being changed
+    if (property_id) {
+      const propCheck = await pool.query(
+        'SELECT id FROM properties WHERE id = $1 AND user_id = ANY($2::int[])',
+        [property_id, ownerIds]
+      );
+      if (propCheck.rows.length === 0) {
+        return res.status(403).json({ error: 'Property not found or access denied' });
+      }
+    }
 
     // Fetch old property_id so we can sync it if the tenant moved properties
-    const old = await pool.query('SELECT property_id FROM tenants WHERE id = $1 AND user_id = $2', [req.params.id, req.userId]);
+    const old = await pool.query(
+      'SELECT property_id FROM tenants WHERE id = $1 AND user_id = ANY($2::int[])',
+      [req.params.id, ownerIds]
+    );
     const oldPropertyId = old.rows[0]?.property_id ?? null;
 
     const result = await pool.query(
@@ -186,9 +214,9 @@ router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
        SET first_name = $1, last_name = $2, email = $3, phone = $4,
            property_id = $5, unit = $6, status = $7, lease_start = $8,
            lease_end = $9, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $10 AND user_id = $11
+       WHERE id = $10 AND user_id = ANY($11::int[])
        RETURNING *`,
-      [first_name, last_name, email, phone, property_id, unit, status, lease_start, lease_end, req.params.id, req.userId]
+      [first_name, last_name, email, phone, property_id, unit, status, lease_start, lease_end, req.params.id, ownerIds]
     );
 
     if (result.rows.length === 0) {
@@ -210,12 +238,16 @@ router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
 router.delete('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   try {
     const pool = req.app.locals.pool;
-    const old = await pool.query('SELECT property_id FROM tenants WHERE id = $1 AND user_id = $2', [req.params.id, req.userId]);
+    const ownerIds = await getOwnerIds(pool, req.userId);
+    const old = await pool.query(
+      'SELECT property_id FROM tenants WHERE id = $1 AND user_id = ANY($2::int[])',
+      [req.params.id, ownerIds]
+    );
     const propertyId = old.rows[0]?.property_id ?? null;
 
     const result = await pool.query(
-      'DELETE FROM tenants WHERE id = $1 AND user_id = $2 RETURNING id',
-      [req.params.id, req.userId]
+      'DELETE FROM tenants WHERE id = $1 AND user_id = ANY($2::int[]) RETURNING id',
+      [req.params.id, ownerIds]
     );
 
     if (result.rows.length === 0) {

@@ -9,7 +9,7 @@
  * POST /api/ai/score-tenant/:id        → individual tenant risk scoring
  */
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireRole } from '../middleware/auth.js';
 import { getOwnerIds } from '../middleware/teamAccess.js';
 
 const router = express.Router();
@@ -38,7 +38,7 @@ function parseJSON(text) {
 }
 
 // ── GET /api/ai/recommendation ────────────────────────────────────────────────
-router.get('/recommendation', authenticateToken, async (req, res) => {
+router.get('/recommendation', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   const userId = req.userId;
 
@@ -161,7 +161,7 @@ router.get('/recommendation', authenticateToken, async (req, res) => {
 });
 
 // ── POST /api/ai/screen-applicant/:id ─────────────────────────────────────────
-router.post('/screen-applicant/:id', authenticateToken, async (req, res) => {
+router.post('/screen-applicant/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   const userId = req.userId;
   const appId = parseInt(req.params.id, 10);
@@ -259,7 +259,7 @@ router.post('/screen-applicant/:id', authenticateToken, async (req, res) => {
 });
 
 // ── POST /api/ai/classify-maintenance/:id ─────────────────────────────────────
-router.post('/classify-maintenance/:id', authenticateToken, async (req, res) => {
+router.post('/classify-maintenance/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   const userId = req.userId;
   const reqId = parseInt(req.params.id, 10);
@@ -338,7 +338,7 @@ router.post('/classify-maintenance/:id', authenticateToken, async (req, res) => 
 });
 
 // ── GET /api/ai/income-analysis ───────────────────────────────────────────────
-router.get('/income-analysis', authenticateToken, async (req, res) => {
+router.get('/income-analysis', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   const userId = req.userId;
 
@@ -449,7 +449,7 @@ router.get('/income-analysis', authenticateToken, async (req, res) => {
 });
 
 // ── GET /api/ai/insights-summary ─────────────────────────────────────────────
-router.get('/insights-summary', authenticateToken, async (req, res) => {
+router.get('/insights-summary', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   const userId = req.userId;
   try {
@@ -486,7 +486,7 @@ router.get('/insights-summary', authenticateToken, async (req, res) => {
 });
 
 // ── GET /api/ai/property-insights/:id ─────────────────────────────────────────
-router.get('/property-insights/:id', authenticateToken, async (req, res) => {
+router.get('/property-insights/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   const userId = req.userId;
   const propId = parseInt(req.params.id, 10);
@@ -606,7 +606,7 @@ function generatePropertySuggestions(c) {
 
 // ── POST /api/ai/property-analysis/:id/:type ─────────────────────────────────
 // type: market-rent | property-value | expense-leaks | tenant-risk | cashflow
-router.post('/property-analysis/:id/:type', authenticateToken, async (req, res) => {
+router.post('/property-analysis/:id/:type', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   const userId = req.userId;
   const propId = parseInt(req.params.id, 10);
@@ -826,7 +826,7 @@ router.post('/property-analysis/:id/:type', authenticateToken, async (req, res) 
 });
 
 // ── POST /api/ai/score-tenant/:id ─────────────────────────────────────────────
-router.post('/score-tenant/:id', authenticateToken, async (req, res) => {
+router.post('/score-tenant/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   const tenantId = parseInt(req.params.id, 10);
   if (!tenantId) return res.status(400).json({ error: 'Invalid tenant ID' });

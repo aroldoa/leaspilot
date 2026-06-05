@@ -11,14 +11,14 @@
  */
 import express from 'express';
 import crypto from 'crypto';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // ── Listing management ────────────────────────────────────────────────────────
 
 // Get (or auto-create) listing for a property
-router.get('/listing/:propertyId', authenticateToken, async (req, res) => {
+router.get('/listing/:propertyId', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   try {
     const prop = await pool.query(
@@ -48,7 +48,7 @@ router.get('/listing/:propertyId', authenticateToken, async (req, res) => {
 });
 
 // Update listing settings (fee, active)
-router.put('/listing/:propertyId', authenticateToken, async (req, res) => {
+router.put('/listing/:propertyId', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   const { application_fee, is_active } = req.body;
   try {
@@ -72,7 +72,7 @@ router.put('/listing/:propertyId', authenticateToken, async (req, res) => {
 });
 
 // Regenerate shareable token (old link stops working)
-router.post('/listing/:propertyId/regenerate', authenticateToken, async (req, res) => {
+router.post('/listing/:propertyId/regenerate', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   try {
     const prop = await pool.query(
@@ -98,7 +98,7 @@ router.post('/listing/:propertyId/regenerate', authenticateToken, async (req, re
 // ── Application review ────────────────────────────────────────────────────────
 
 // List all applications across this landlord's properties
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   try {
     const result = await pool.query(`
@@ -121,7 +121,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // Single application full detail
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   try {
     const result = await pool.query(`
@@ -139,7 +139,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // Update review status
-router.put('/:id/status', authenticateToken, async (req, res) => {
+router.put('/:id/status', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   const { status } = req.body;
   const valid = ['submitted', 'under_review', 'approved', 'denied'];

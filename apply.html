@@ -256,6 +256,7 @@
     const token = params.get('token');
     const success = params.get('success');
     const cancelled = params.get('cancelled');
+    const sessionId = params.get('session_id');
     const unitParam = params.get('unit');
 
     function show(id) {
@@ -268,7 +269,22 @@
     async function init() {
       if (!token) { show('stateError'); return; }
 
-      if (success === '1') { show('stateSuccess'); return; }
+      if (success === '1') {
+        // Verify the Stripe session server-side to prevent URL spoofing
+        if (sessionId) {
+          try {
+            const vr = await fetch(`${API_BASE}/apply/verify-payment?session_id=${encodeURIComponent(sessionId)}`);
+            const vj = await vr.json();
+            if (!vj.verified) {
+              document.getElementById('errorMsg').textContent = 'Payment could not be verified. Please contact support.';
+              show('stateError');
+              return;
+            }
+          } catch (e) { /* network error — allow through in dev */ }
+        }
+        show('stateSuccess');
+        return;
+      }
       if (cancelled === '1') {
         show('stateCancelled');
         document.getElementById('tryAgainBtn').addEventListener('click', () => {

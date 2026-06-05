@@ -1,11 +1,11 @@
 import express from 'express';
 import crypto from 'crypto';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // POST /api/invites — create an invite (grants access to ALL of the owner's properties)
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   const { invited_email, role = 'manager' } = req.body;
 
@@ -29,7 +29,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // GET /api/invites — list pending invites + active team members
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, requireRole('Portfolio Manager'), async (req, res) => {
   const pool = req.app.locals.pool;
   try {
     const [invites, members] = await Promise.all([

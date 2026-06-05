@@ -255,4 +255,27 @@ router.post('/:token', applySubmitLimit, async (req, res) => {
   }
 });
 
+// Verify a completed Stripe checkout session (prevents success-URL spoofing)
+router.get('/verify-payment', applyReadLimit, async (req, res) => {
+  const { session_id } = req.query;
+  if (!session_id || !/^cs_(test|live)_[A-Za-z0-9]+$/.test(session_id)) {
+    return res.status(400).json({ verified: false, error: 'Invalid session ID' });
+  }
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeKey) {
+    // Dev mode without Stripe — trust the URL
+    return res.json({ verified: true });
+  }
+  try {
+    const Stripe = (await import('stripe')).default;
+    const stripe = new Stripe(stripeKey);
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    const paid = session.payment_status === 'paid';
+    res.json({ verified: paid, payment_status: session.payment_status });
+  } catch (err) {
+    console.error('Verify payment error:', err);
+    res.status(500).json({ verified: false, error: 'Could not verify payment' });
+  }
+});
+
 export default router;

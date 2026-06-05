@@ -68,12 +68,36 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       const paymentId = parseInt(session.metadata.payment_id, 10);
       if (paymentId) {
         try {
-          await pool.query(
+          // Mark rent payment paid
+          const rp = await pool.query(
             `UPDATE rent_payments
              SET status = 'paid', stripe_payment_intent = $1, updated_at = NOW()
-             WHERE id = $2 AND status != 'paid'`,
+             WHERE id = $2 AND status != 'paid'
+             RETURNING tenant_id, amount`,
             [session.payment_intent, paymentId]
           );
+
+          // Sync to transactions ledger so managers see the income
+          if (rp.rows.length > 0) {
+            const { tenant_id, amount } = rp.rows[0];
+            const tenantRow = await pool.query(
+              `SELECT t.user_id, t.property_id, u.id as owner_id
+               FROM tenants t
+               JOIN users u ON u.id = t.user_id
+               WHERE t.id = $1`,
+              [tenant_id]
+            );
+            if (tenantRow.rows.length > 0) {
+              const { owner_id, property_id } = tenantRow.rows[0];
+              await pool.query(
+                `INSERT INTO transactions
+                   (user_id, type, description, amount, category, property_id, transaction_date, status)
+                 VALUES ($1, 'income', 'Rent payment (Stripe)', $2, 'Rent', $3, CURRENT_DATE, 'cleared')
+                 ON CONFLICT DO NOTHING`,
+                [owner_id, amount, property_id]
+              );
+            }
+          }
         } catch (err) {
           console.error('Rent webhook DB error:', err);
           return res.status(500).json({ error: 'Database error' });
@@ -144,7 +168,7 @@ router.get('/balance', (req, res) => {
 });
 
 // GET /api/tenant/payments - rent payment history
-router.get('/payments', authenticateToken, requireTenant, async (req, res) => {
+router.get('/payments', async (req, res) => {
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
@@ -160,18 +184,20 @@ router.get('/payments', authenticateToken, requireTenant, async (req, res) => {
 });
 
 // POST /api/tenant/pay - create Stripe Checkout Session for rent payment
-router.post('/pay', authenticateToken, requireTenant, async (req, res) => {
+router.post('/pay', async (req, res) => {
   const pool = req.app.locals.pool;
   const stripeKey = process.env.STRIPE_SECRET_KEY;
 
   try {
     const tenantResult = await pool.query(
       `SELECT t.id, t.first_name, t.last_name, t.email, t.property_id, t.unit,
-              p.rent, p.name AS property_name,
+              p.rent AS property_rent, p.name AS property_name,
+              COALESCE(pu.rent, p.rent) AS rent,
               u.stripe_account_id, u.stripe_charges_enabled
        FROM tenants t
        JOIN properties p ON p.id = t.property_id
        JOIN users u ON u.id = p.user_id
+       LEFT JOIN property_units pu ON pu.property_id = t.property_id AND pu.unit_label = t.unit
        WHERE t.id = $1`,
       [req.tenantId]
     );

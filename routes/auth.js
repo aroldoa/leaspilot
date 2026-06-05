@@ -112,7 +112,7 @@ async function sendResetEmail(toEmail, resetUrl) {
 // Register
 router.post('/register', registerLimiter, async (req, res) => {
   try {
-    const { email, password, name, company } = req.body;
+    const { email, password, name } = req.body;
     if (!email || !EMAIL_REGEX.test(email)) {
       return res.status(400).json({ error: 'Valid email is required' });
     }
@@ -305,8 +305,8 @@ router.post('/reset-password', resetLimiter, async (req, res) => {
   if (!token || typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
     return res.status(400).json({ error: 'Invalid or missing token' });
   }
-  if (!password || String(password).length < MIN_PASSWORD_LENGTH) {
-    return res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+  if (!password || !isStrongPassword(String(password))) {
+    return res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters and include an uppercase letter and a number` });
   }
 
   try {

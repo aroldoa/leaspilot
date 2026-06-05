@@ -60,12 +60,12 @@ router.patch('/:id', authenticateToken, requireRole('Portfolio Manager'), async 
       values.push(Number.isInteger(cid) ? cid : null);
     }
     if (updates.length === 0) return res.status(400).json({ error: 'Provide status, assigned_vendor, and/or assigned_contractor_id' });
-    values.push(id, req.userId);
+    values.push(id, await getOwnerIds(pool, req.userId));
     const result = await pool.query(
       `UPDATE maintenance_requests mr
        SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
        FROM properties p
-       WHERE mr.id = $${idx} AND mr.property_id = p.id AND p.user_id = $${idx + 1}
+       WHERE mr.id = $${idx} AND mr.property_id = p.id AND p.user_id = ANY($${idx + 1}::int[])
        RETURNING mr.id, mr.status, mr.assigned_vendor, mr.assigned_contractor_id, mr.updated_at,
                  mr.subject, mr.priority, mr.tenant_id, p.name as property_name`,
       values

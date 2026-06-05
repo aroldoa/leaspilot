@@ -75,11 +75,14 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         const status = obj.status;
         const priceId = obj.items?.data?.[0]?.price?.id;
         const plan = planFromPrice(priceId) || obj.items?.data?.[0]?.price?.nickname || 'starter';
+        // Keep paid plan for active/trialing/past_due — only reset to free when truly ended
+        const PAID_STATUSES = ['active', 'trialing', 'past_due', 'unpaid'];
+        const effectivePlan = PAID_STATUSES.includes(status) ? plan : 'free';
         await pool.query(
           `UPDATE users
            SET subscription_id = $1, subscription_status = $2, plan = $3
            WHERE stripe_customer_id = $4`,
-          [obj.id, status, status === 'active' ? plan : 'free', obj.customer]
+          [obj.id, status, effectivePlan, obj.customer]
         );
         break;
       }
@@ -162,7 +165,7 @@ router.get('/status', async (req, res) => {
       subscription_status: row.subscription_status || 'inactive',
       subscription_id: row.subscription_id || null,
       has_customer: !!row.stripe_customer_id,
-      is_active: row.subscription_status === 'active',
+      is_active: ['active', 'trialing'].includes(row.subscription_status),
     });
   } catch (err) {
     console.error('Billing status error:', err);
@@ -186,7 +189,8 @@ function planFromPrice(priceId) {
       if (process.env[key] === priceId) return plan;
     }
   }
-  return 'pro';
+  // Unknown price → default to starter (most restrictive paid tier) to be safe
+  return 'starter';
 }
 
 // POST /api/billing/subscribe — create Checkout Session for subscription

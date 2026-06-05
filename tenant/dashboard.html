@@ -184,12 +184,27 @@
             balanceLine.classList.add('hidden');
           }
         }
-        if (balance <= 0) {
-          if (payBtn) payBtn.classList.add('hidden');
-          if (allSetEl) allSetEl.classList.remove('hidden');
-        } else {
-          if (payBtn) payBtn.classList.remove('hidden');
-          if (allSetEl) allSetEl.classList.add('hidden');
+        // Show pay button based on whether the tenant has rent set, not balance
+        // (balance is rarely updated; rent amount is the reliable signal)
+        try {
+          const lease = await API.get('/tenant/lease');
+          const rent = parseFloat(lease.property_rent) || 0;
+          if (rent > 0) {
+            if (payBtn) payBtn.classList.remove('hidden');
+            if (allSetEl) allSetEl.classList.add('hidden');
+          } else {
+            if (payBtn) payBtn.classList.add('hidden');
+            if (allSetEl) allSetEl.classList.remove('hidden');
+          }
+        } catch (e) {
+          // Fallback: show pay button if balance > 0
+          if (balance <= 0) {
+            if (payBtn) payBtn.classList.add('hidden');
+            if (allSetEl) allSetEl.classList.remove('hidden');
+          } else {
+            if (payBtn) payBtn.classList.remove('hidden');
+            if (allSetEl) allSetEl.classList.add('hidden');
+          }
         }
       } catch (e) {
         const balanceLine = document.getElementById('rentBalanceLine');

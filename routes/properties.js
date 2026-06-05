@@ -45,21 +45,33 @@ const PLAN_UNIT_LIMITS  = { starter: 5, growth: 25, portfolio: 100 };
 const OWNER_EMAIL = 'aroldo@investsupreme.com';
 
 async function checkUnitLimit(pool, userId, incomingUnits, excludePropertyId = null) {
-  const userResult = await pool.query(
-    'SELECT email, plan FROM users WHERE id = $1',
+  // Resolve the billing owner: if the user is a collaborator, use the owner's plan
+  const ownerRow = await pool.query(
+    `SELECT COALESCE(tm.owner_user_id, u.id) AS owner_id, u.email, u.plan
+     FROM users u
+     LEFT JOIN team_members tm ON tm.member_user_id = u.id
+     WHERE u.id = $1
+     LIMIT 1`,
     [userId]
   );
-  const user = userResult.rows[0];
-  if (!user) return { allowed: false, error: 'User not found' };
+  if (!ownerRow.rows.length) return { allowed: false, error: 'User not found' };
 
-  // Owner has no limit
-  if (user.email.toLowerCase() === OWNER_EMAIL.toLowerCase()) return { allowed: true };
+  const { owner_id, email, plan: rawPlan } = ownerRow.rows[0];
 
-  const plan = (user.plan || 'free').toLowerCase();
+  // Platform owner has no limit
+  if (email.toLowerCase() === OWNER_EMAIL.toLowerCase()) return { allowed: true };
+
+  // Also check owner email when acting as collaborator
+  if (owner_id !== userId) {
+    const ownerEmail = await pool.query('SELECT email FROM users WHERE id = $1', [owner_id]);
+    if (ownerEmail.rows[0]?.email?.toLowerCase() === OWNER_EMAIL.toLowerCase()) return { allowed: true };
+  }
+
+  const plan = (rawPlan || 'free').toLowerCase();
 
   // Free plan: limited to 1 property
   if (plan === 'free' || plan === 'inactive') {
-    const params = [userId];
+    const params = [owner_id];
     let sql = `SELECT COUNT(*)::int AS total FROM properties WHERE user_id = $1`;
     if (excludePropertyId) { sql += ` AND id != $2`; params.push(excludePropertyId); }
     const { rows } = await pool.query(sql, params);
@@ -73,11 +85,10 @@ async function checkUnitLimit(pool, userId, incomingUnits, excludePropertyId = n
     return { allowed: true };
   }
 
-  // Paid plans: limited by total units
-  const limit = PLAN_UNIT_LIMITS[plan];
-  if (!limit) return { allowed: true }; // unknown plan — allow
+  // Paid plans: limited by total units — unknown plan uses starter limit as a safe fallback
+  const limit = PLAN_UNIT_LIMITS[plan] ?? PLAN_UNIT_LIMITS['starter'];
 
-  const params = [userId];
+  const params = [owner_id];
   let sql = `SELECT COALESCE(SUM(number_of_units), 0)::int AS total FROM properties WHERE user_id = $1`;
   if (excludePropertyId) { sql += ` AND id != $2`; params.push(excludePropertyId); }
   const { rows } = await pool.query(sql, params);
@@ -236,9 +247,9 @@ router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
        SET name = $1, type = $2, address = $3, city = $4, state = $5, zip = $6,
            bedrooms = $7, bathrooms = $8, sqft = $9, rent = $10, image_url = $11,
            status = $12, number_of_units = $13, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $14 AND user_id = $15
+       WHERE id = $14 AND user_id = ANY($15::int[])
        RETURNING *`,
-      [name, type, address, city, state, zip, isNaN(bedrooms) ? 0 : bedrooms, isNaN(bathrooms) ? 0 : bathrooms, isNaN(sqft) ? 0 : sqft, isNaN(rent) ? 0 : rent, image_url, status, safeNumUnits, req.params.id, req.userId]
+      [name, type, address, city, state, zip, isNaN(bedrooms) ? 0 : bedrooms, isNaN(bathrooms) ? 0 : bathrooms, isNaN(sqft) ? 0 : sqft, isNaN(rent) ? 0 : rent, image_url, status, safeNumUnits, req.params.id, await getOwnerIds(pool, req.userId)]
     );
 
     if (result.rows.length === 0) {
@@ -330,8 +341,8 @@ router.delete('/:id', authenticateToken, requireRole('Portfolio Manager'), async
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
-      'DELETE FROM properties WHERE id = $1 AND user_id = $2 RETURNING id',
-      [req.params.id, req.userId]
+      'DELETE FROM properties WHERE id = $1 AND user_id = ANY($2::int[]) RETURNING id',
+      [req.params.id, await getOwnerIds(pool, req.userId)]
     );
 
     if (result.rows.length === 0) {

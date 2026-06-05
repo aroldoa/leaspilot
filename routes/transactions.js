@@ -31,8 +31,8 @@ router.get('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
       `SELECT t.*, p.name as property_name
        FROM transactions t
        LEFT JOIN properties p ON t.property_id = p.id
-       WHERE t.id = $1 AND t.user_id = $2`,
-      [req.params.id, req.userId]
+       WHERE t.id = $1 AND t.user_id = ANY($2::int[])`,
+      [req.params.id, await getOwnerIds(pool, req.userId)]
     );
 
     if (result.rows.length === 0) {
@@ -82,9 +82,9 @@ router.put('/:id', authenticateToken, requireRole('Portfolio Manager'), async (r
        SET type = $1, description = $2, amount = $3, category = $4,
            property_id = $5, transaction_date = $6, status = $7,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $8 AND user_id = $9
+       WHERE id = $8 AND user_id = ANY($9::int[])
        RETURNING *`,
-      [type, description, amount, category, property_id, transaction_date, status, req.params.id, req.userId]
+      [type, description, amount, category, property_id, transaction_date, status, req.params.id, await getOwnerIds(pool, req.userId)]
     );
 
     if (result.rows.length === 0) {
@@ -103,8 +103,8 @@ router.delete('/:id', authenticateToken, requireRole('Portfolio Manager'), async
   try {
     const pool = req.app.locals.pool;
     const result = await pool.query(
-      'DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING id',
-      [req.params.id, req.userId]
+      'DELETE FROM transactions WHERE id = $1 AND user_id = ANY($2::int[]) RETURNING id',
+      [req.params.id, await getOwnerIds(pool, req.userId)]
     );
 
     if (result.rows.length === 0) {

@@ -8,6 +8,7 @@ import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { createPool } from './db/pool.js';
 import { initializeDatabase } from './db/schema.js';
@@ -109,7 +110,22 @@ function corsOrigin(origin, cb) {
 app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(compression());
 app.use(cookieParser());
-app.use(express.json({ limit: '1mb' }));
+
+// Raw body for Stripe webhooks — MUST be before express.json()
+// stripe.webhooks.constructEvent() requires the unparsed raw buffer
+const STRIPE_WEBHOOK_PATHS = [
+  '/api/apply/webhook',
+  '/api/tenant/webhook',
+  '/api/stripe/webhook',
+  '/api/billing/webhook',
+];
+app.use((req, res, next) => {
+  if (STRIPE_WEBHOOK_PATHS.includes(req.path)) {
+    express.raw({ type: 'application/json' })(req, res, next);
+  } else {
+    express.json({ limit: '1mb' })(req, res, next);
+  }
+});
 
 // Root and status first so they always work
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
@@ -146,8 +162,20 @@ app.get('/uploads/avatars/:filename', (req, res, next) => {
 
 // Serve static files from project root
 app.use(express.static(__dirname));
-// Serve uploaded files (maintenance photos, etc.)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Serve uploaded files (maintenance photos, etc.) — require a valid JWT token
+// Avatars are handled separately above with their own endpoint
+app.use('/uploads', (req, res, next) => {
+  const token = req.cookies?.token
+    || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null);
+  if (!token) return res.status(401).end();
+  try {
+    jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
+    next();
+  } catch {
+    return res.status(401).end();
+  }
+}, express.static(path.join(__dirname, 'uploads')));
 
 // Request logging (development only)
 if (!isProduction) {
